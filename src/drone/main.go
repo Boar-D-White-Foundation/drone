@@ -39,11 +39,15 @@ func main() {
 	cfg := Config{
 		TgKey:                      os.Getenv("DRONE_TG_BOT_API_KEY"),
 		LCDailyCron:                os.Getenv("DRONE_LC_DAILY_CRON"),
+		LCDailyStickerID:           os.Getenv("DRONE_LC_DAILY_STICKER_ID"),
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
 	}
 	if len(cfg.LCDailyCron) == 0 {
 		cfg.LCDailyCron = "0 1 * * *" // every day at 01:00 UTC
+	}
+	if len(cfg.LCDailyStickerID) == 0 {
+		cfg.LCDailyStickerID = "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
 	}
 	if cfg.BoarDWhiteChatID == 0 {
 		cfg.BoarDWhiteChatID = tele.ChatID(-1001640461540)

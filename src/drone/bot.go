@@ -15,6 +15,7 @@ import (
 type Config struct {
 	TgKey                      string
 	LCDailyCron                string
+	LCDailyStickerID           string
 	BoarDWhiteChatID           tele.ChatID
 	BoarDWhiteLeetCodeThreadID int
 }
@@ -31,6 +32,7 @@ func StartDrone(ctx context.Context, cfg Config) error {
 		tgManager: tg.Manager{
 			BoarDWhiteChatID:           cfg.BoarDWhiteChatID,
 			BoarDWhiteLeetCodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
+			LCDailyStickerID:           cfg.LCDailyStickerID,
 		},
 	}
 
