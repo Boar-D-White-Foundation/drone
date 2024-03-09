@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetDailyLink(t *testing.T) {
+func TestSkipGetDailyLink(t *testing.T) {
 	ctx := context.Background()
 	link, err := leetcode.GetDailyLink(ctx)
 	require.NoError(t, err)
