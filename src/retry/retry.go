@@ -2,17 +2,11 @@ package retry
 
 import (
 	"context"
-	"errors"
 	"time"
 )
 
 type break_ struct {
 	error
-}
-
-func (break_) Is(err error) bool {
-	_, ok := err.(break_)
-	return ok
 }
 
 func Break(err error) error {
@@ -41,8 +35,8 @@ func Do[T any](ctx context.Context, backoff Backoff, f func() (T, error)) (T, er
 		if err == nil {
 			return res, nil
 		}
-		if errors.Is(err, break_{}) {
-			return res, err.(break_).error
+		if err, ok := err.(break_); ok {
+			return res, err.error
 		}
 
 		delay, ok := backoff.GetDelay(attempt)
