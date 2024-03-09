@@ -1,0 +1,10 @@
+version: '3'
+services:
+  drone:
+    restart: always
+    build:
+      context: .
+    env_file: .env
+    environment:
+      - DRONE_TG_BOT_API_KEY=${DRONE_TG_BOT_API_KEY}
+      - DRONE_LC_DAILY_CRON=${DRONE_LC_DAILY_CRON}
