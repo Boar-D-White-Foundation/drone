@@ -42,7 +42,7 @@ func Do[T any](ctx context.Context, backoff Backoff, f func() (T, error)) (T, er
 			return res, nil
 		}
 		if errors.Is(err, break_{}) {
-			return res, err
+			return res, err.(break_).error
 		}
 
 		delay, ok := backoff.GetDelay(attempt)

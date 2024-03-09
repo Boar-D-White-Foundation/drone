@@ -8,15 +8,17 @@ import (
 
 const (
 	DefaultDailyHeader = "LeetCode Daily Question"
-
-	boarDWhiteChatID           = tele.ChatID(-1001640461540)
-	boarDWhiteLeetCodeThreadID = 10095
 )
 
-func SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink string) error {
+type Manager struct {
+	BoarDWhiteChatID           tele.ChatID
+	BoarDWhiteLeetCodeThreadID int
+}
+
+func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink string) error {
 	payload := fmt.Sprintf("%v\n%v", header, dailyLink)
 	opts := tele.SendOptions{
-		ThreadID: boarDWhiteLeetCodeThreadID,
+		ThreadID: m.BoarDWhiteLeetCodeThreadID,
 		Entities: []tele.MessageEntity{
 			{
 				Type:   tele.EntitySpoiler,
@@ -25,7 +27,7 @@ func SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink string) error {
 			},
 		},
 	}
-	_, err := bot.Send(boarDWhiteChatID, payload, &opts)
+	_, err := bot.Send(m.BoarDWhiteChatID, payload, &opts)
 	if err != nil {
 		return err
 	}
