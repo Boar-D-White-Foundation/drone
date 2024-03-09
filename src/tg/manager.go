@@ -18,7 +18,8 @@ type Manager struct {
 func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink string) error {
 	payload := fmt.Sprintf("%v\n%v", header, dailyLink)
 	opts := tele.SendOptions{
-		ThreadID: m.BoarDWhiteLeetCodeThreadID,
+		ThreadID:              m.BoarDWhiteLeetCodeThreadID,
+		DisableWebPagePreview: true,
 		Entities: []tele.MessageEntity{
 			{
 				Type:   tele.EntitySpoiler,
