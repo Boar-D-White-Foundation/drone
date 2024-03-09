@@ -56,6 +56,5 @@ func main() {
 		cfg.BoarDWhiteLeetCodeThreadID = 10095
 	}
 
-	err = StartDrone(ctx, cfg)
-	must(err)
+	must(StartDrone(ctx, cfg))
 }

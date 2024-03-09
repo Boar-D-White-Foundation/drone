@@ -61,5 +61,5 @@ func GetDailyLink(ctx context.Context) (string, error) {
 		return "", err
 	}
 
-	return leetCodeUrl + link, err
+	return leetCodeUrl + link, nil
 }
