@@ -8,6 +8,11 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
+const (
+	defaultStickerID = "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
+	LCDPinBadgerKey  = "lcd-pinned-message"
+)
+
 type Config struct {
 	TgKey                      string
 	LCDailyCron                string
@@ -30,11 +35,11 @@ func LoadConfig() (Config, error) {
 
 	return Config{
 		TgKey:                      os.Getenv("DRONE_TG_BOT_API_KEY"),
-		LCDailyCron:                getEnvDefault("DRONE_LC_DAILY_CRON", "0 0 * * *"), // every hour
-		LCDailyStickerID:           getEnvDefault("DRONE_LC_DAILY_STICKER_ID", "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"),
+		LCDailyCron:                getEnvDefault("DRONE_LC_DAILY_CRON", "0 * * * *"), // every hour
+		LCDailyStickerID:           getEnvDefault("DRONE_LC_DAILY_STICKER_ID", defaultStickerID),
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
-		BadgerPath:                 getEnvDefault("DRONE_BADGER_PATH", "/tmp/badger"),
+		BadgerPath:                 getEnvDefault("DRONE_BADGER_PATH", "badger"), // default to relative path inside the working dir
 	}, nil
 }
 

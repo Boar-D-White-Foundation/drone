@@ -12,6 +12,7 @@ import (
 	"github.com/frosthamster/drone/src/tg"
 	"github.com/go-co-op/gocron/v2"
 	tele "gopkg.in/telebot.v3"
+	"strconv"
 )
 
 func StartDrone(ctx context.Context, cfg Config) error {
@@ -22,10 +23,20 @@ func StartDrone(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	db, err := badger.Open(badger.DefaultOptions(cfg.BadgerPath))
+	dbOpts := badger.DefaultOptions(cfg.BadgerPath).
+		// https://github.com/dgraph-io/badger/issues/1297#issuecomment-612941482
+		WithValueLogFileSize(1024 * 1024 * 16).
+		WithNumVersionsToKeep(1).
+		WithCompactL0OnClose(true).
+		WithNumLevelZeroTables(1).
+		WithNumLevelZeroTablesStall(2)
+	db, err := badger.Open(dbOpts)
+
 	if err != nil {
 		return fmt.Errorf("db open: %w", err)
 	}
+
+	defer db.Close()
 
 	dr := drone{
 		bot: bot,
@@ -96,28 +107,41 @@ func (d *drone) publishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get link: %w", err)
 	}
 
-	key := []byte("last_link")
+	key := []byte(LCDPinBadgerKey)
 	err = d.db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
+
 		switch {
 		case err == nil:
-			// ok
+			err = item.Value(func(val []byte) error {
+				pinnedId, _ := strconv.Atoi(string(val[:]))
+				chat := &tele.Chat{ID: int64(d.tgManager.BoarDWhiteChatID)}
+				err = d.bot.Unpin(chat, pinnedId)
+				if err != nil {
+					return fmt.Errorf("unpin %w", err)
+				}
+				return nil
+			})
+			if err != nil {
+				return fmt.Errorf("get value %w", err)
+			}
 		case errors.Is(err, badger.ErrKeyNotFound):
-			// ok
+			// do nothing if there is no previous pin
 		default:
 			return fmt.Errorf("get key %q: %w", key, err)
 		}
 
-		if item.String() == link {
-			return nil
-		}
-
-		err = d.tgManager.SendLCDailyToBoarDWhite(d.bot, tg.DefaultDailyHeader, link)
+		message, err := d.tgManager.SendLCDailyToBoarDWhite(d.bot, tg.DefaultDailyHeader, link)
 		if err != nil {
 			return fmt.Errorf("send daily: %w", err)
 		}
 
-		err = txn.Set(key, []byte(link))
+		err = d.bot.Pin(message)
+		if err != nil {
+			return fmt.Errorf("pin: %w", err)
+		}
+
+		err = txn.Set(key, []byte(strconv.Itoa(message.ID)))
 		if err != nil {
 			return fmt.Errorf("set key %q: %w", key, err)
 		}

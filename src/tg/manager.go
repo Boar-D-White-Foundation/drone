@@ -17,9 +17,9 @@ type Manager struct {
 	LCDailyStickerID           string
 }
 
-func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink string) error {
+func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink string) (*tele.Message, error) {
 	payload := fmt.Sprintf("%v\n%v", header, dailyLink)
-	_, err := bot.Send(m.BoarDWhiteChatID, payload, &tele.SendOptions{
+	message, err := bot.Send(m.BoarDWhiteChatID, payload, &tele.SendOptions{
 		ThreadID:              m.BoarDWhiteLeetCodeThreadID,
 		DisableWebPagePreview: true,
 		Entities: []tele.MessageEntity{
@@ -31,7 +31,7 @@ func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink strin
 		},
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	slog.Info("published lc daily", slog.String("link", dailyLink))
 
@@ -40,8 +40,8 @@ func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink strin
 		ThreadID: m.BoarDWhiteLeetCodeThreadID,
 	})
 	if err != nil {
-		return err
+		return nil, err
 	}
 	slog.Info("published daily sticker", slog.String("id", m.LCDailyStickerID))
-	return nil
+	return message, nil
 }
