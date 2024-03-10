@@ -10,7 +10,6 @@ import (
 
 const (
 	defaultStickerID = "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
-	LCDPinBadgerKey  = "lcd-pinned-message"
 )
 
 type Config struct {

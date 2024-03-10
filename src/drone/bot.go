@@ -2,50 +2,39 @@ package main
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log/slog"
 	"time"
 
-	"github.com/dgraph-io/badger/v4"
-	"github.com/frosthamster/drone/src/leetcode"
+	"github.com/frosthamster/drone/src/boardwhite"
 	"github.com/frosthamster/drone/src/tg"
 	"github.com/go-co-op/gocron/v2"
-	tele "gopkg.in/telebot.v3"
-	"strconv"
 )
 
 func StartDrone(ctx context.Context, cfg Config) error {
-	bot, err := tele.NewBot(tele.Settings{
-		Token: cfg.TgKey,
-	})
+	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID)
 	if err != nil {
-		return err
+		return fmt.Errorf("new tg client: %w", err)
 	}
 
-	dbOpts := badger.DefaultOptions(cfg.BadgerPath).
-		// https://github.com/dgraph-io/badger/issues/1297#issuecomment-612941482
-		WithValueLogFileSize(1024 * 1024 * 16).
-		WithNumVersionsToKeep(1).
-		WithCompactL0OnClose(true).
-		WithNumLevelZeroTables(1).
-		WithNumLevelZeroTablesStall(2)
-	db, err := badger.Open(dbOpts)
-
+	db, err := NewBadger(cfg.BadgerPath)
 	if err != nil {
 		return fmt.Errorf("db open: %w", err)
 	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			slog.Error("failed to close db", err)
+		}
+	}()
 
-	defer db.Close()
+	bw := boardwhite.NewService(
+		cfg.BoarDWhiteLeetCodeThreadID,
+		telegramClient,
+		db,
+	)
 
 	dr := drone{
-		bot: bot,
-		tgManager: tg.Manager{
-			BoarDWhiteChatID:           cfg.BoarDWhiteChatID,
-			BoarDWhiteLeetCodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
-			LCDailyStickerID:           cfg.LCDailyStickerID,
-		},
-		db: db,
+		boardwhite: bw,
 	}
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
@@ -96,61 +85,9 @@ func wrapErrors(name string, f func(context.Context) error) func(context.Context
 }
 
 type drone struct {
-	bot       *tele.Bot
-	db        *badger.DB
-	tgManager tg.Manager
+	boardwhite *boardwhite.Service
 }
 
 func (d *drone) publishLCDaily(ctx context.Context) error {
-	link, err := leetcode.GetDailyLink(ctx)
-	if err != nil {
-		return fmt.Errorf("get link: %w", err)
-	}
-
-	key := []byte(LCDPinBadgerKey)
-	err = d.db.Update(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-
-		switch {
-		case err == nil:
-			err = item.Value(func(val []byte) error {
-				pinnedId, _ := strconv.Atoi(string(val[:]))
-				chat := &tele.Chat{ID: int64(d.tgManager.BoarDWhiteChatID)}
-				err = d.bot.Unpin(chat, pinnedId)
-				if err != nil {
-					return fmt.Errorf("unpin %w", err)
-				}
-				return nil
-			})
-			if err != nil {
-				return fmt.Errorf("get value %w", err)
-			}
-		case errors.Is(err, badger.ErrKeyNotFound):
-			// do nothing if there is no previous pin
-		default:
-			return fmt.Errorf("get key %q: %w", key, err)
-		}
-
-		message, err := d.tgManager.SendLCDailyToBoarDWhite(d.bot, tg.DefaultDailyHeader, link)
-		if err != nil {
-			return fmt.Errorf("send daily: %w", err)
-		}
-
-		err = d.bot.Pin(message)
-		if err != nil {
-			return fmt.Errorf("pin: %w", err)
-		}
-
-		err = txn.Set(key, []byte(strconv.Itoa(message.ID)))
-		if err != nil {
-			return fmt.Errorf("set key %q: %w", key, err)
-		}
-
-		return nil
-	})
-	if err != nil {
-		return fmt.Errorf("db update: %w", err)
-	}
-
-	return nil
+	return d.boardwhite.PublishLCDaily(ctx)
 }
