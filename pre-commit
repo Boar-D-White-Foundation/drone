@@ -1,6 +1,7 @@
 #!/bin/bash
 set -ex
 
+go mod tidy
 gofmt -l src
 goimports -l src
 staticcheck ./src/...

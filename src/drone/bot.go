@@ -2,38 +2,45 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
-	"github.com/frosthamster/drone/src/leetcode"
+	"github.com/frosthamster/drone/src/boardwhite"
 	"github.com/frosthamster/drone/src/tg"
 	"github.com/go-co-op/gocron/v2"
-	tele "gopkg.in/telebot.v3"
 )
 
-type Config struct {
-	TgKey                      string
-	LCDailyCron                string
-	LCDailyStickerID           string
-	BoarDWhiteChatID           tele.ChatID
-	BoarDWhiteLeetCodeThreadID int
+func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, func(), error) {
+	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID)
+	if err != nil {
+		return nil, nil, fmt.Errorf("new tg client: %w", err)
+	}
+
+	db, err := NewBadger(cfg.BadgerPath)
+	if err != nil {
+		return nil, nil, fmt.Errorf("db open: %w", err)
+	}
+	closeFn := func() {
+		if err := db.Close(); err != nil {
+			slog.Error("failed to close db", err)
+		}
+	}
+
+	return boardwhite.NewService(
+		cfg.BoarDWhiteLeetCodeThreadID,
+		cfg.LCDailyStickerID,
+		telegramClient,
+		db,
+	), closeFn, nil
 }
 
 func StartDrone(ctx context.Context, cfg Config) error {
-	bot, err := tele.NewBot(tele.Settings{
-		Token: cfg.TgKey,
-	})
+	bw, closeFn, err := NewBoarDWhiteService(cfg)
 	if err != nil {
 		return err
 	}
-	dr := drone{
-		bot: bot,
-		tgManager: tg.Manager{
-			BoarDWhiteChatID:           cfg.BoarDWhiteChatID,
-			BoarDWhiteLeetCodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
-			LCDailyStickerID:           cfg.LCDailyStickerID,
-		},
-	}
+	defer closeFn()
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {
@@ -42,7 +49,7 @@ func StartDrone(ctx context.Context, cfg Config) error {
 
 	job, err := scheduler.NewJob(
 		gocron.CronJob(cfg.LCDailyCron, false),
-		gocron.NewTask(wrapErrors("publishLCDaily", dr.publishLCDaily), ctx),
+		gocron.NewTask(wrapErrors("publishLCDaily", bw.PublishLCDaily), ctx),
 	)
 	if err != nil {
 		return err
@@ -80,18 +87,4 @@ func wrapErrors(name string, f func(context.Context) error) func(context.Context
 		}
 		slog.Info("finished task run", slog.String("name", name))
 	}
-}
-
-type drone struct {
-	bot       *tele.Bot
-	tgManager tg.Manager
-}
-
-func (d *drone) publishLCDaily(ctx context.Context) error {
-	link, err := leetcode.GetDailyLink(ctx)
-	if err != nil {
-		return err
-	}
-
-	return d.tgManager.SendLCDailyToBoarDWhite(d.bot, tg.DefaultDailyHeader, link)
 }
