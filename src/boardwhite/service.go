@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
 	"strconv"
 
 	"github.com/dgraph-io/badger/v4"
@@ -13,13 +14,15 @@ import (
 
 type Service struct {
 	leetcodeThreadID int
+	dailyStickerID   string
 	db               *badger.DB
 	telegram         *tg.Client
 }
 
-func NewService(leetcodeThreadID int, telegram *tg.Client, db *badger.DB) *Service {
+func NewService(leetcodeThreadID int, dailyStickerID string, telegram *tg.Client, db *badger.DB) *Service {
 	return &Service{
 		leetcodeThreadID: leetcodeThreadID,
+		dailyStickerID:   dailyStickerID,
 		db:               db,
 		telegram:         telegram,
 	}
@@ -47,7 +50,7 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 				pinnedId, _ := strconv.Atoi(string(val))
 				err = s.telegram.Unpin(pinnedId)
 				if err != nil {
-					return fmt.Errorf("unpin %w", err)
+					slog.Error("err unpin", slog.Any("err", err))
 				}
 				return nil
 			})
@@ -63,6 +66,11 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		messageID, err := s.telegram.SendSpoilerLink(s.leetcodeThreadID, defaultDailyHeader, link)
 		if err != nil {
 			return fmt.Errorf("send daily: %w", err)
+		}
+
+		_, err = s.telegram.SendSticker(s.leetcodeThreadID, s.dailyStickerID)
+		if err != nil {
+			return fmt.Errorf("send sticker: %w", err)
 		}
 
 		err = s.telegram.Pin(messageID)
