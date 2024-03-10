@@ -11,31 +11,35 @@ import (
 	"github.com/go-co-op/gocron/v2"
 )
 
-func StartDrone(ctx context.Context, cfg Config) error {
+func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, func(), error) {
 	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID)
 	if err != nil {
-		return fmt.Errorf("new tg client: %w", err)
+		return nil, nil, fmt.Errorf("new tg client: %w", err)
 	}
 
 	db, err := NewBadger(cfg.BadgerPath)
 	if err != nil {
-		return fmt.Errorf("db open: %w", err)
+		return nil, nil, fmt.Errorf("db open: %w", err)
 	}
-	defer func() {
+	closeFn := func() {
 		if err := db.Close(); err != nil {
 			slog.Error("failed to close db", err)
 		}
-	}()
+	}
 
-	bw := boardwhite.NewService(
+	return boardwhite.NewService(
 		cfg.BoarDWhiteLeetCodeThreadID,
 		telegramClient,
 		db,
-	)
+	), closeFn, nil
+}
 
-	dr := drone{
-		boardwhite: bw,
+func StartDrone(ctx context.Context, cfg Config) error {
+	bw, closeFn, err := NewBoarDWhiteService(cfg)
+	if err != nil {
+		return err
 	}
+	defer closeFn()
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {
@@ -44,7 +48,7 @@ func StartDrone(ctx context.Context, cfg Config) error {
 
 	job, err := scheduler.NewJob(
 		gocron.CronJob(cfg.LCDailyCron, false),
-		gocron.NewTask(wrapErrors("publishLCDaily", dr.publishLCDaily), ctx),
+		gocron.NewTask(wrapErrors("publishLCDaily", bw.PublishLCDaily), ctx),
 	)
 	if err != nil {
 		return err
@@ -82,12 +86,4 @@ func wrapErrors(name string, f func(context.Context) error) func(context.Context
 		}
 		slog.Info("finished task run", slog.String("name", name))
 	}
-}
-
-type drone struct {
-	boardwhite *boardwhite.Service
-}
-
-func (d *drone) publishLCDaily(ctx context.Context) error {
-	return d.boardwhite.PublishLCDaily(ctx)
 }

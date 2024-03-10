@@ -11,6 +11,8 @@ RUN go build -v -o ./bin/drone ./src/drone
 
 FROM golang:1.22.1-alpine
 
+WORKDIR /opt/drone
+
 RUN apk add --update \
     bash \
     curl \

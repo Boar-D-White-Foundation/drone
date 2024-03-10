@@ -30,8 +30,8 @@ func NewClient(token string, chatID tele.ChatID) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) SendMessage(threadID int, header, text string) (int, error) {
-	payload := fmt.Sprintf("%s\n%s", header, text)
+func (c *Client) SendSpoilerLink(threadID int, header, link string) (int, error) {
+	payload := fmt.Sprintf("%s\n%s", header, link)
 
 	message, err := c.bot.Send(c.chatID, payload, &tele.SendOptions{
 		ThreadID:              threadID,
@@ -40,7 +40,7 @@ func (c *Client) SendMessage(threadID int, header, text string) (int, error) {
 			{
 				Type:   tele.EntitySpoiler,
 				Offset: len(header) + 1,
-				Length: len(text),
+				Length: len(link),
 			},
 		},
 	})

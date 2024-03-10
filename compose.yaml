@@ -4,6 +4,8 @@ services:
     restart: always
     build:
       context: .
+    volumes:
+      - data:/opt/drone/data
     env_file: .env
     environment:
       - DRONE_TG_BOT_API_KEY=${DRONE_TG_BOT_API_KEY}
@@ -11,3 +13,6 @@ services:
       - DRONE_BOAR_D_WHITE_CHAT_ID=${DRONE_BOAR_D_WHITE_CHAT_ID}
       - DRONE_BOAR_D_WHITE_LEET_CODE_THREAD_ID=${DRONE_BOAR_D_WHITE_LEET_CODE_THREAD_ID}
       - DRONE_LC_DAILY_STICKER_ID=${DRONE_LC_DAILY_STICKER_ID}
+
+volumes:
+  data:

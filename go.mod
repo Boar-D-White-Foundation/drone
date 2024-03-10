@@ -3,6 +3,7 @@ module github.com/frosthamster/drone
 go 1.22.1
 
 require (
+	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/go-co-op/gocron/v2 v2.2.5
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/automaxprocs v1.5.3
@@ -12,7 +13,6 @@ require (
 require (
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/dgraph-io/badger/v4 v4.2.0 // indirect
 	github.com/dgraph-io/ristretto v0.1.1 // indirect
 	github.com/dustin/go-humanize v1.0.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect

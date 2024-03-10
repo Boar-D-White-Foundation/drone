@@ -33,34 +33,36 @@ func LoadConfig() (Config, error) {
 	}
 
 	return Config{
-		TgKey:                      os.Getenv("DRONE_TG_BOT_API_KEY"),
-		LCDailyCron:                getEnvDefault("DRONE_LC_DAILY_CRON", "0 * * * *"), // every hour
+		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
+		// every day at 01:00 UTC
+		LCDailyCron:                getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),
 		LCDailyStickerID:           getEnvDefault("DRONE_LC_DAILY_STICKER_ID", defaultStickerID),
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
-		BadgerPath:                 getEnvDefault("DRONE_BADGER_PATH", "badger"), // default to relative path inside the working dir
+		// default to relative path inside the working dir
+		BadgerPath: getEnvDefault("DRONE_BADGER_PATH", "data/badger"),
 	}, nil
 }
 
 func getEnvDefault(key, value string) string {
-	v, ok := os.LookupEnv(key)
-	if !ok {
+	v := os.Getenv(key)
+	if len(v) == 0 {
 		return value
 	}
 	return v
 }
 
 func getEnvIntDefault(key string, value int) (int, error) {
-	v, ok := os.LookupEnv(key)
-	if !ok {
+	v := os.Getenv(key)
+	if len(v) == 0 {
 		return value, nil
 	}
 	return strconv.Atoi(v)
 }
 
 func getEnvInt64Default(key string, value int64) (int64, error) {
-	v, ok := os.LookupEnv(key)
-	if !ok {
+	v := os.Getenv(key)
+	if len(v) == 0 {
 		return value, nil
 	}
 	return strconv.ParseInt(v, 10, 64)

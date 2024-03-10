@@ -60,7 +60,7 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 			return fmt.Errorf("get key %q: %w", key, err)
 		}
 
-		messageID, err := s.telegram.SendMessage(s.leetcodeThreadID, defaultDailyHeader, link)
+		messageID, err := s.telegram.SendSpoilerLink(s.leetcodeThreadID, defaultDailyHeader, link)
 		if err != nil {
 			return fmt.Errorf("send daily: %w", err)
 		}
