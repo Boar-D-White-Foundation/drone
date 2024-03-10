@@ -2,22 +2,17 @@ package main
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/dgraph-io/badger/v4"
 	"github.com/frosthamster/drone/src/leetcode"
 	"github.com/frosthamster/drone/src/tg"
 	"github.com/go-co-op/gocron/v2"
 	tele "gopkg.in/telebot.v3"
 )
-
-type Config struct {
-	TgKey                      string
-	LCDailyCron                string
-	LCDailyStickerID           string
-	BoarDWhiteChatID           tele.ChatID
-	BoarDWhiteLeetCodeThreadID int
-}
 
 func StartDrone(ctx context.Context, cfg Config) error {
 	bot, err := tele.NewBot(tele.Settings{
@@ -26,6 +21,12 @@ func StartDrone(ctx context.Context, cfg Config) error {
 	if err != nil {
 		return err
 	}
+
+	db, err := badger.Open(badger.DefaultOptions(cfg.BadgerPath))
+	if err != nil {
+		return fmt.Errorf("db open: %w", err)
+	}
+
 	dr := drone{
 		bot: bot,
 		tgManager: tg.Manager{
@@ -33,6 +34,7 @@ func StartDrone(ctx context.Context, cfg Config) error {
 			BoarDWhiteLeetCodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
 			LCDailyStickerID:           cfg.LCDailyStickerID,
 		},
+		db: db,
 	}
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
@@ -84,14 +86,47 @@ func wrapErrors(name string, f func(context.Context) error) func(context.Context
 
 type drone struct {
 	bot       *tele.Bot
+	db        *badger.DB
 	tgManager tg.Manager
 }
 
 func (d *drone) publishLCDaily(ctx context.Context) error {
 	link, err := leetcode.GetDailyLink(ctx)
 	if err != nil {
-		return err
+		return fmt.Errorf("get link: %w", err)
 	}
 
-	return d.tgManager.SendLCDailyToBoarDWhite(d.bot, tg.DefaultDailyHeader, link)
+	key := []byte("last_link")
+	err = d.db.Update(func(txn *badger.Txn) error {
+		item, err := txn.Get(key)
+		switch {
+		case err == nil:
+			// ok
+		case errors.Is(err, badger.ErrKeyNotFound):
+			// ok
+		default:
+			return fmt.Errorf("get key %q: %w", key, err)
+		}
+
+		if item.String() == link {
+			return nil
+		}
+
+		err = d.tgManager.SendLCDailyToBoarDWhite(d.bot, tg.DefaultDailyHeader, link)
+		if err != nil {
+			return fmt.Errorf("send daily: %w", err)
+		}
+
+		err = txn.Set(key, []byte(link))
+		if err != nil {
+			return fmt.Errorf("set key %q: %w", key, err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return fmt.Errorf("db update: %w", err)
+	}
+
+	return nil
 }
