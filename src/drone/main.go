@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os"
 	"os/signal"
 	"strconv"
@@ -16,7 +16,7 @@ func must(err error) {
 		return
 	}
 
-	_, _ = fmt.Fprint(os.Stderr, err.Error())
+	slog.Error("err in main", slog.Any("err", err))
 	os.Exit(1)
 }
 

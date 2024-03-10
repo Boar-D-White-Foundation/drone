@@ -2,6 +2,7 @@ package tg
 
 import (
 	"fmt"
+	"log/slog"
 
 	tele "gopkg.in/telebot.v3"
 )
@@ -32,6 +33,7 @@ func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink strin
 	if err != nil {
 		return err
 	}
+	slog.Info("published lc daily", slog.String("link", dailyLink))
 
 	sticker := tele.Sticker{File: tele.File{FileID: m.LCDailyStickerID}}
 	_, err = bot.Send(m.BoarDWhiteChatID, &sticker, &tele.SendOptions{
@@ -40,7 +42,6 @@ func (m *Manager) SendLCDailyToBoarDWhite(bot *tele.Bot, header, dailyLink strin
 	if err != nil {
 		return err
 	}
-
-	fmt.Println("Published lc daily:", dailyLink)
+	slog.Info("published daily sticker", slog.String("id", m.LCDailyStickerID))
 	return nil
 }

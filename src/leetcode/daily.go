@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"os/exec"
 	"time"
 
@@ -40,7 +41,7 @@ func GetDailyLink(ctx context.Context) (string, error) {
 		Delay:       time.Second,
 		MaxAttempts: 10,
 	}
-	link, err := retry.Do(ctx, backoff, func() (string, error) {
+	link, err := retry.Do(ctx, "lc daily fetch", backoff, func() (string, error) {
 		out, err := exec.Command("bash", "-c", dailyQuestionCurlQuery).Output()
 		if err != nil {
 			return "", err
@@ -60,6 +61,7 @@ func GetDailyLink(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	slog.Info("fetched lc daily", slog.String("link", link))
 
 	return leetCodeUrl + link, nil
 }

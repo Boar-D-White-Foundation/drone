@@ -2,8 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
+	"log/slog"
 	"time"
 
 	"github.com/frosthamster/drone/src/leetcode"
@@ -54,7 +53,12 @@ func StartDrone(ctx context.Context, cfg Config) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Started scheduler, publishLCDaily", cfg.LCDailyCron, "next run:", t.String())
+	slog.Info(
+		"started scheduler",
+		slog.String("task", "publishLCDaily"),
+		slog.String("cron", cfg.LCDailyCron),
+		slog.String("next_run", t.String()),
+	)
 
 	<-ctx.Done()
 	return scheduler.Shutdown()
@@ -64,14 +68,17 @@ func wrapErrors(name string, f func(context.Context) error) func(context.Context
 	return func(ctx context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				_, _ = fmt.Fprintln(os.Stderr, "PANIC:", name, err)
+				slog.Error("panic in task", slog.String("name", name), slog.Any("err", err))
 			}
 		}()
 
+		slog.Info("started task run", slog.String("name", name))
 		err := f(ctx)
 		if err != nil {
-			_, _ = fmt.Fprintln(os.Stderr, "ERROR:", name, err.Error())
+			slog.Error("err in task", slog.String("name", name), slog.Any("err", err))
+			return
 		}
+		slog.Info("finished task run", slog.String("name", name))
 	}
 }
 
