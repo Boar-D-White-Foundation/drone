@@ -10,10 +10,10 @@ import (
 var rawQuestions []byte
 
 type Question struct {
-	ID         int
-	Title      string
+	ID         int    `json:"id"`
+	Title      string `json:"title"`
 	Slug       string `json:"title_slug"`
-	Difficulty string
+	Difficulty string `json:"difficulty"`
 }
 
 func (q Question) LeetcodeLink() string {

@@ -31,7 +31,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 	}
 	q := qs[idx.Int64()]
 
-	link := fmt.Sprintf("%s\n%s", q.LeetcodeLink(), q.LeetcodeLink())
+	link := fmt.Sprintf("%s\n%s", q.LeetcodeLink(), q.LeetcodeCaLink())
 
 	key := []byte(keyNeetcodePinnedMessage)
 
