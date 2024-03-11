@@ -30,6 +30,7 @@ func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, func(), error) {
 	return boardwhite.NewService(
 		cfg.BoarDWhiteLeetCodeThreadID,
 		cfg.LCDailyStickerID,
+		cfg.NCDailyStickerID,
 		telegramClient,
 		db,
 	), closeFn, nil

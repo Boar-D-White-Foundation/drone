@@ -35,7 +35,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 
 	key := []byte(keyNeetcodePinnedMessage)
 
-	return s.publish(neetcodeDailyHeader, link, key)
+	return s.publish(neetcodeDailyHeader, link, s.dailyNCStickerID, key)
 }
 
 func weekdayToDifficulty(wd time.Weekday) string {

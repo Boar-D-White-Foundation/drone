@@ -12,21 +12,29 @@ import (
 
 type Service struct {
 	leetcodeThreadID int
-	dailyStickerID   string
+	dailyLCStickerID string
+	dailyNCStickerID string
 	db               *badger.DB
 	telegram         *tg.Client
 }
 
-func NewService(leetcodeThreadID int, dailyStickerID string, telegram *tg.Client, db *badger.DB) *Service {
+func NewService(
+	leetcodeThreadID int,
+	dailyLCStickerID string,
+	dailyNCStickerID string,
+	telegram *tg.Client,
+	db *badger.DB,
+) *Service {
 	return &Service{
 		leetcodeThreadID: leetcodeThreadID,
-		dailyStickerID:   dailyStickerID,
+		dailyLCStickerID: dailyLCStickerID,
+		dailyNCStickerID: dailyNCStickerID,
 		db:               db,
 		telegram:         telegram,
 	}
 }
 
-func (s *Service) publish(header, text string, key []byte) error {
+func (s *Service) publish(header, text, stickerID string, key []byte) error {
 	err := s.db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 
@@ -54,7 +62,7 @@ func (s *Service) publish(header, text string, key []byte) error {
 			return fmt.Errorf("send daily: %w", err)
 		}
 
-		_, err = s.telegram.SendSticker(s.leetcodeThreadID, s.dailyStickerID)
+		_, err = s.telegram.SendSticker(s.leetcodeThreadID, stickerID)
 		if err != nil {
 			return fmt.Errorf("send sticker: %w", err)
 		}
