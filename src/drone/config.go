@@ -9,7 +9,8 @@ import (
 )
 
 const (
-	defaultStickerID = "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
+	defaultLCStickerID = "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
+	defaultNCStickerID = "CAACAgIAAxkBAAELqk5l72yJkbx4_vskG3n6zWoWaAnA3QACazYAArJX2UsY5inoNwaFoTQE"
 )
 
 type Config struct {
@@ -17,6 +18,7 @@ type Config struct {
 	LCDailyCron                string
 	LCDailyStickerID           string
 	NCDailyCron                string
+	NCDailyStickerID           string
 	BoarDWhiteChatID           tele.ChatID
 	BoarDWhiteLeetCodeThreadID int
 	BadgerPath                 string
@@ -37,9 +39,10 @@ func LoadConfig() (Config, error) {
 		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
 		// every day at 01:00 UTC
 		LCDailyCron:      getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),
-		LCDailyStickerID: getEnvDefault("DRONE_LC_DAILY_STICKER_ID", defaultStickerID),
+		LCDailyStickerID: getEnvDefault("DRONE_LC_DAILY_STICKER_ID", defaultLCStickerID),
 		// every day at 13:00 UTC
 		NCDailyCron:                getEnvDefault("DRONE_NC_DAILY_CRON", "0 13 * * *"),
+		NCDailyStickerID:           getEnvDefault("DRONE_NC_DAILY_STICKER_ID", defaultNCStickerID),
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
 		// default to relative path inside the working dir

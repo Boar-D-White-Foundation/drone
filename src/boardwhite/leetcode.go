@@ -21,5 +21,5 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 
 	key := []byte(keyLeetcodePinnedMessage)
 
-	return s.publish(defaultDailyHeader, link, key)
+	return s.publish(defaultDailyHeader, link, s.dailyLCStickerID, key)
 }
