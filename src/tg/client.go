@@ -73,7 +73,7 @@ func (c *Client) Pin(id int) error {
 		ChatID:    c.chat.ID,
 	}
 
-	return c.bot.Pin(msg)
+	return c.bot.Pin(msg, tele.Silent)
 }
 
 func (c *Client) Unpin(id int) error {
