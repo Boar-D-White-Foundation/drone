@@ -47,28 +47,64 @@ func StartDrone(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	job, err := scheduler.NewJob(
-		gocron.CronJob(cfg.LCDailyCron, false),
-		gocron.NewTask(wrapErrors("publishLCDaily", bw.PublishLCDaily), ctx),
-	)
+	jobs := make([]job, 0)
+	jb, err := registerJob(ctx, scheduler, "PublishLCDaily", cfg.LCDailyCron, bw.PublishLCDaily)
 	if err != nil {
 		return err
 	}
+	jobs = append(jobs, jb)
+
+	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NCDailyCron, bw.PublishNCDaily)
+	if err != nil {
+		return err
+	}
+	jobs = append(jobs, jb)
 
 	scheduler.Start()
-	t, err := job.NextRun()
-	if err != nil {
-		return err
+	slog.Info("started scheduler")
+	for _, jb := range jobs {
+		t, err := jb.NextRun()
+		if err != nil {
+			return err
+		}
+		slog.Info(
+			"scheduled job",
+			slog.String("name", jb.name),
+			slog.String("cron", jb.cron),
+			slog.String("next_run", t.String()),
+		)
 	}
-	slog.Info(
-		"started scheduler",
-		slog.String("task", "publishLCDaily"),
-		slog.String("cron", cfg.LCDailyCron),
-		slog.String("next_run", t.String()),
-	)
 
 	<-ctx.Done()
 	return scheduler.Shutdown()
+}
+
+type job struct {
+	gocron.Job
+
+	name string
+	cron string
+}
+
+func registerJob(
+	ctx context.Context,
+	s gocron.Scheduler,
+	name, cron string,
+	f func(context.Context) error,
+) (job, error) {
+	jb, err := s.NewJob(
+		gocron.CronJob(cron, false),
+		gocron.NewTask(wrapErrors(name, f), ctx),
+	)
+	if err != nil {
+		return job{}, err
+	}
+
+	return job{
+		Job:  jb,
+		name: name,
+		cron: cron,
+	}, nil
 }
 
 func wrapErrors(name string, f func(context.Context) error) func(context.Context) {
