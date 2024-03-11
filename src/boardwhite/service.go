@@ -1,14 +1,12 @@
 package boardwhite
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"strconv"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/frosthamster/drone/src/leetcode"
 	"github.com/frosthamster/drone/src/tg"
 )
 
@@ -28,20 +26,8 @@ func NewService(leetcodeThreadID int, dailyStickerID string, telegram *tg.Client
 	}
 }
 
-const (
-	defaultDailyHeader = "LeetCode Daily Question"
-
-	keyLeetcodePinnedMessage = "leetcode:pinned_message"
-)
-
-func (s *Service) PublishLCDaily(ctx context.Context) error {
-	link, err := leetcode.GetDailyLink(ctx)
-	if err != nil {
-		return fmt.Errorf("get link: %w", err)
-	}
-
-	key := []byte(keyLeetcodePinnedMessage)
-	err = s.db.Update(func(txn *badger.Txn) error {
+func (s *Service) publish(header, text string, key []byte) error {
+	err := s.db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
 
 		switch {
@@ -63,7 +49,7 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 			return fmt.Errorf("get key %q: %w", key, err)
 		}
 
-		messageID, err := s.telegram.SendSpoilerLink(s.leetcodeThreadID, defaultDailyHeader, link)
+		messageID, err := s.telegram.SendSpoilerLink(s.leetcodeThreadID, header, text)
 		if err != nil {
 			return fmt.Errorf("send daily: %w", err)
 		}

@@ -16,6 +16,7 @@ type Config struct {
 	TgKey                      string
 	LCDailyCron                string
 	LCDailyStickerID           string
+	NCDailyCron                string
 	BoarDWhiteChatID           tele.ChatID
 	BoarDWhiteLeetCodeThreadID int
 	BadgerPath                 string
@@ -35,8 +36,10 @@ func LoadConfig() (Config, error) {
 	return Config{
 		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
 		// every day at 01:00 UTC
-		LCDailyCron:                getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),
-		LCDailyStickerID:           getEnvDefault("DRONE_LC_DAILY_STICKER_ID", defaultStickerID),
+		LCDailyCron:      getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),
+		LCDailyStickerID: getEnvDefault("DRONE_LC_DAILY_STICKER_ID", defaultStickerID),
+		// every day at 13:00 UTC
+		NCDailyCron:                getEnvDefault("DRONE_NC_DAILY_CRON", "0 13 * * *"),
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
 		// default to relative path inside the working dir

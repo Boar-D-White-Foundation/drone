@@ -55,6 +55,14 @@ func StartDrone(ctx context.Context, cfg Config) error {
 		return err
 	}
 
+	_, err = scheduler.NewJob(
+		gocron.CronJob(cfg.NCDailyCron, false),
+		gocron.NewTask(wrapErrors("publishNCDaily", bw.PublishNCDaily), ctx),
+	)
+	if err != nil {
+		return err
+	}
+
 	scheduler.Start()
 	t, err := job.NextRun()
 	if err != nil {
