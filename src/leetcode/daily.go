@@ -21,7 +21,7 @@ const (
 	// leetcode probably uses tls fingerprinting to filter out non-standard http clients, so we can't use go http.Client
 	// but for some reason curl works quite ok, so we just use it via os exec
 	// as an alternative we can explore usage of uTLS to mimic as chrome
-	dailyQuestionCurlQuery = `curl -vvv -X POST 'https://leetcode.com/graphql/'` +
+	dailyQuestionCurlQuery = `curl -vvv --ipv4 -X POST 'https://leetcode.com/graphql/'` +
 		` -H 'Content-type: application/json'` +
 		` -H 'Origin: leetcode.com'` +
 		` -H 'User-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'` +
