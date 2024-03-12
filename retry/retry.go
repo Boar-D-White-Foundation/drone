@@ -2,6 +2,7 @@ package retry
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"time"
 )
@@ -38,9 +39,10 @@ func Do[T any](ctx context.Context, name string, backoff Backoff, f func() (T, e
 			slog.Info("completed retry", slog.String("name", name), slog.Int("attempt", attempt))
 			return res, nil
 		}
-		if err, ok := err.(break_); ok {
+		var errBr break_
+		if errors.As(err, &errBr) {
 			slog.Info("break retry", slog.String("name", name), slog.Int("attempt", attempt))
-			return res, err.error
+			return res, errBr.error
 		}
 
 		slog.Info(

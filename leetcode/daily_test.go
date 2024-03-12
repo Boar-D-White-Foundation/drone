@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/frosthamster/drone/src/leetcode"
+	"github.com/frosthamster/drone/leetcode"
 	"github.com/stretchr/testify/require"
 )
 

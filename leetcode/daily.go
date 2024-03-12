@@ -9,7 +9,7 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/frosthamster/drone/src/retry"
+	"github.com/frosthamster/drone/retry"
 )
 
 var (

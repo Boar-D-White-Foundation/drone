@@ -7,7 +7,7 @@ import (
 	"strconv"
 
 	"github.com/dgraph-io/badger/v4"
-	"github.com/frosthamster/drone/src/tg"
+	"github.com/frosthamster/drone/tg"
 )
 
 type Service struct {

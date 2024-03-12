@@ -1,0 +1,10 @@
+linters:
+  presets:
+    - bugs
+    - performance
+    - sql
+  enable:
+    - gofmt
+    - goimports
+  disable:
+    - exhaustive
