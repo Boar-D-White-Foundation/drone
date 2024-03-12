@@ -3,8 +3,7 @@ Copyright © 2077, Boar D'White foundation. All rights reserved.
 
 ## Repo setup
 ```shell
-$ go install honnef.co/go/tools/cmd/staticcheck@latest
-$ go install golang.org/x/tools/cmd/goimports@latest
+$ curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
 $ ln -sf $(pwd)/pre-commit .git/hooks/pre-commit
 ```
 
