@@ -4,3 +4,9 @@ set -ex
 go mod tidy
 golangci-lint run ./...
 go test -skip='TestSkip.*' ./...
+
+if [ "$(git status --porcelain --untracked-files=no ./cmd/python | wc -l)" -gt 0 ];
+then
+    ruff check ./cmd/python
+    ruff format ./cmd/python
+fi
