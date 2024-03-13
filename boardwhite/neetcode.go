@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/neetcode"
 )
 
@@ -27,16 +28,17 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 
 	var group neetcode.Group
 	var question neetcode.Question
+	idx := dayIndex
 	for _, g := range groups {
-		if dayIndex < len(g.Questions) {
+		if idx < len(g.Questions) {
 			group = g
-			question = g.Questions[dayIndex]
+			question = g.Questions[idx]
 			break
 		}
-		dayIndex -= len(g.Questions)
+		idx -= len(g.Questions)
 	}
 
-	header := fmt.Sprintf("NeetCode: %s [%d / 150]", group.Name, dayIndex+1)
+	header := fmt.Sprintf("NeetCode: %s [%d / %d]", group.Name, dayIndex+1, totalQuestions)
 
 	var link strings.Builder
 	link.WriteString(question.LCLink)
@@ -45,6 +47,16 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 		link.WriteString(question.FreeLink)
 	}
 
+	var stickerID string
+	if group.Name == "1-D DP" || group.Name == "2-D DP" {
+		stickerID = s.dpStickerID
+	} else {
+		stickerID, err = iter.PickRandom(s.dailyStickersIDs)
+		if err != nil {
+			return fmt.Errorf("get sticker: %w", err)
+		}
+	}
+
 	key := []byte(keyNeetcodePinnedMessage)
-	return s.publish(header, link.String(), s.dailyNCStickerID, key)
+	return s.publish(header, link.String(), stickerID, key)
 }

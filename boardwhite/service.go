@@ -13,8 +13,8 @@ import (
 
 type Service struct {
 	leetcodeThreadID int
-	dailyLCStickerID string
-	dailyNCStickerID string
+	dailyStickersIDs []string
+	dpStickerID      string
 	dailyNCStartDate time.Time
 	db               *badger.DB
 	telegram         *tg.Client
@@ -22,8 +22,8 @@ type Service struct {
 
 func NewService(
 	leetcodeThreadID int,
-	dailyLCStickerID string,
-	dailyNCStickerID string,
+	dailyStickersIDs []string,
+	dpStickerID string,
 	dailyNCStartDate time.Time,
 	telegram *tg.Client,
 	db *badger.DB,
@@ -33,8 +33,8 @@ func NewService(
 	}
 	return &Service{
 		leetcodeThreadID: leetcodeThreadID,
-		dailyLCStickerID: dailyLCStickerID,
-		dailyNCStickerID: dailyNCStickerID,
+		dailyStickersIDs: dailyStickersIDs,
+		dpStickerID:      dpStickerID,
 		dailyNCStartDate: dailyNCStartDate,
 		db:               db,
 		telegram:         telegram,

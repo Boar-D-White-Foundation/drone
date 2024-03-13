@@ -45,7 +45,7 @@
         "free_link": ""
       },
       {
-        "name": "Encode and Decode Strings  ",
+        "name": "Encode and Decode Strings",
         "difficulty": "medium",
         "lc_link": "https://leetcode.com/problems/encode-and-decode-strings/",
         "free_link": "https://neetcode.io/problems/string-encode-and-decode/"
@@ -516,7 +516,7 @@
         "free_link": ""
       },
       {
-        "name": "Walls And Gates  ",
+        "name": "Walls And Gates",
         "difficulty": "medium",
         "lc_link": "https://leetcode.com/problems/walls-and-gates/",
         "free_link": "https://neetcode.io/problems/islands-and-treasure"
@@ -540,13 +540,13 @@
         "free_link": ""
       },
       {
-        "name": "Number of Connected Components In An Undirected Graph  ",
+        "name": "Number of Connected Components In An Undirected Graph",
         "difficulty": "medium",
         "lc_link": "https://leetcode.com/problems/number-of-connected-components-in-an-undirected-graph/",
         "free_link": "https://neetcode.io/problems/count-connected-components"
       },
       {
-        "name": "Graph Valid Tree  ",
+        "name": "Graph Valid Tree",
         "difficulty": "medium",
         "lc_link": "https://leetcode.com/problems/graph-valid-tree/",
         "free_link": "https://neetcode.io/problems/valid-tree"
@@ -634,7 +634,7 @@
         "free_link": ""
       },
       {
-        "name": "Alien Dictionary  ",
+        "name": "Alien Dictionary",
         "difficulty": "hard",
         "lc_link": "https://leetcode.com/problems/alien-dictionary/",
         "free_link": "https://neetcode.io/problems/foreign-dictionary"
@@ -669,13 +669,13 @@
         "free_link": ""
       },
       {
-        "name": "Meeting Rooms  ",
+        "name": "Meeting Rooms",
         "difficulty": "easy",
         "lc_link": "https://leetcode.com/problems/meeting-rooms/",
         "free_link": "https://neetcode.io/problems/meeting-schedule"
       },
       {
-        "name": "Meeting Rooms II  ",
+        "name": "Meeting Rooms II",
         "difficulty": "medium",
         "lc_link": "https://leetcode.com/problems/meeting-rooms-ii/",
         "free_link": "https://neetcode.io/problems/meeting-schedule-ii"

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 )
 
@@ -19,7 +20,11 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get link: %w", err)
 	}
 
-	key := []byte(keyLeetcodePinnedMessage)
+	stickerID, err := iter.PickRandom(s.dailyStickersIDs)
+	if err != nil {
+		return fmt.Errorf("get sticker: %w", err)
+	}
 
-	return s.publish(defaultDailyHeader, link, s.dailyLCStickerID, key)
+	key := []byte(keyLeetcodePinnedMessage)
+	return s.publish(defaultDailyHeader, link, stickerID, key)
 }

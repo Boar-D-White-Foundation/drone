@@ -47,11 +47,13 @@ def main():
     groups = driver.find_elements(By.CSS_SELECTOR, ".node-group label")
     print("loaded groups", [group.text for group in groups], file=sys.stderr)
     for group in groups:
-        print(f"processing: {group.text}", file=sys.stderr)
+        group_name = group.text.strip()
+        assert group_name
+        print(f"processing: {group_name}", file=sys.stderr)
         group.click()
         questions = []
         group_result = {
-            "group_name": group.text,
+            "group_name": group_name,
             "questions": questions,
         }
 
@@ -62,19 +64,19 @@ def main():
                 lambda _: (problem_col.is_displayed() and difficulty_col.is_displayed())
             )
 
-            name = problem_col.text
-            difficulty = difficulty_col.find_element(By.CSS_SELECTOR, "b").text.lower()
+            name = problem_col.text.strip()
+            difficulty = difficulty_col.find_element(By.CSS_SELECTOR, "b").text.lower().strip()
             lc_link, free_link = "", ""
             for anchor in problem_col.find_elements(By.CSS_SELECTOR, "a"):
-                link = anchor.get_attribute("href")
+                link = anchor.get_attribute("href").strip()
                 if "leetcode" in link:
                     lc_link = link
                 elif "neetcode" in link:
                     free_link = link
 
-            assert name, group.text
-            assert difficulty, group.text
-            assert lc_link, group.text
+            assert name, group_name
+            assert difficulty, group_name
+            assert lc_link, group_name
             questions.append(
                 {
                     "name": name,
@@ -87,13 +89,13 @@ def main():
         result.append(group_result)
         esc_btn = next(
             bt
-            for bt in driver.find_elements(
-                By.CSS_SELECTOR, ".my-sidebar .close-container button"
-            )
+            for bt in driver.find_elements(By.CSS_SELECTOR, ".my-sidebar .close-container button")
             if bt.text == "ESC"
         )
         esc_btn.click()
 
+    assert len(_GROUPS_ORDER) == len(result), result
+    assert sum(len(group["questions"]) for group in result) == 150, result
     order_key = {group_name: i for i, group_name in enumerate(_GROUPS_ORDER)}
     result.sort(key=lambda e: order_key[e["group_name"]])
 
