@@ -6,12 +6,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestQuestions(t *testing.T) {
-	qs, err := Questions()
+func TestGroups(t *testing.T) {
+	groups, err := Groups()
 	require.NoError(t, err)
 
-	for _, q := range qs {
-		require.NotEmpty(t, q.LeetcodeLink())
-		require.NotEmpty(t, q.LeetcodeCaLink())
+	for _, g := range groups {
+		require.NotEmpty(t, g.Name)
+		for _, q := range g.Questions {
+			require.NotEmpty(t, q.Name)
+			require.NotEmpty(t, q.Difficulty)
+			require.NotEmpty(t, q.LCLink)
+			require.NotEqual(t, -1, DifficultyToSortOrder(q.Difficulty))
+		}
 	}
 }

@@ -2,49 +2,49 @@ package boardwhite
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
-	"math/big"
+	"strings"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/neetcode"
 )
 
 const (
-	neetcodeDailyHeader = "NeetCode Daily Question"
-
 	keyNeetcodePinnedMessage = "neetcode:pinned_message"
 )
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {
-	weekday := time.Now().Weekday()
-	difficulty := weekdayToDifficulty(weekday)
-
-	qs, err := neetcode.QuestionsByDifficulty(difficulty)
+	groups, err := neetcode.Groups()
 	if err != nil {
-		return fmt.Errorf("read questions: %w", err)
+		return fmt.Errorf("read groups: %w", err)
 	}
 
-	idx, err := rand.Int(rand.Reader, big.NewInt(int64(len(qs))))
-	if err != nil {
-		return fmt.Errorf("generate random: %w", err)
+	totalQuestions := 0
+	for _, g := range groups {
+		totalQuestions += len(g.Questions)
 	}
-	q := qs[idx.Int64()]
+	dayIndex := int(time.Now().Sub(s.dailyNCStartDate).Hours()/24) % totalQuestions
 
-	link := fmt.Sprintf("%s\n%s", q.LeetcodeLink(), q.LeetcodeCaLink())
+	var group neetcode.Group
+	var question neetcode.Question
+	for _, g := range groups {
+		if dayIndex < len(g.Questions) {
+			group = g
+			question = g.Questions[dayIndex]
+			break
+		}
+		dayIndex -= len(g.Questions)
+	}
+
+	header := fmt.Sprintf("NeetCode: %s [%d / 150]", group.Name, dayIndex+1)
+
+	var link strings.Builder
+	link.WriteString(question.LCLink)
+	if len(question.FreeLink) > 0 {
+		link.WriteString("\n")
+		link.WriteString(question.FreeLink)
+	}
 
 	key := []byte(keyNeetcodePinnedMessage)
-
-	return s.publish(neetcodeDailyHeader, link, s.dailyNCStickerID, key)
-}
-
-func weekdayToDifficulty(wd time.Weekday) string {
-	switch wd {
-	case time.Monday:
-		return "easy"
-	case time.Thursday:
-		return "hard"
-	default:
-		return "medium"
-	}
+	return s.publish(header, link.String(), s.dailyNCStickerID, key)
 }

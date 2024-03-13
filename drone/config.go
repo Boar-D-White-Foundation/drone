@@ -4,6 +4,7 @@ import (
 	"errors"
 	"os"
 	"strconv"
+	"time"
 
 	tele "gopkg.in/telebot.v3"
 )
@@ -19,6 +20,7 @@ type Config struct {
 	LCDailyStickerID           string
 	NCDailyCron                string
 	NCDailyStickerID           string
+	NCDailyStartDate           time.Time
 	BoarDWhiteChatID           tele.ChatID
 	BoarDWhiteLeetCodeThreadID int
 	BadgerPath                 string
@@ -35,6 +37,14 @@ func LoadConfig() (Config, error) {
 		return Config{}, errors.New("thread id is incorrect")
 	}
 
+	ncDailyStartDate, err := getEnvTimeDefault(
+		"DRONE_NC_DAILY_START_DATE",
+		time.Date(2024, 3, 14, 0, 0, 0, 0, time.UTC),
+	)
+	if err != nil {
+		return Config{}, errors.New("nc daily start date is incorrect")
+	}
+
 	return Config{
 		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
 		// every day at 01:00 UTC
@@ -43,6 +53,7 @@ func LoadConfig() (Config, error) {
 		// every day at 13:00 UTC
 		NCDailyCron:                getEnvDefault("DRONE_NC_DAILY_CRON", "0 13 * * *"),
 		NCDailyStickerID:           getEnvDefault("DRONE_NC_DAILY_STICKER_ID", defaultNCStickerID),
+		NCDailyStartDate:           ncDailyStartDate,
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
 		// default to relative path inside the working dir
@@ -72,4 +83,12 @@ func getEnvInt64Default(key string, value int64) (int64, error) {
 		return value, nil
 	}
 	return strconv.ParseInt(v, 10, 64)
+}
+
+func getEnvTimeDefault(key string, value time.Time) (time.Time, error) {
+	v := os.Getenv(key)
+	if len(v) == 0 {
+		return value, nil
+	}
+	return time.Parse("2006-01-02", v)
 }
