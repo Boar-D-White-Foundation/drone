@@ -1,4 +1,4 @@
-module github.com/frosthamster/drone
+module github.com/boar-d-white-foundation/drone
 
 go 1.22.1
 

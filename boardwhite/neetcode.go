@@ -7,7 +7,7 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/frosthamster/drone/neetcode"
+	"github.com/boar-d-white-foundation/drone/neetcode"
 )
 
 const (

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/frosthamster/drone/boardwhite"
-	"github.com/frosthamster/drone/tg"
+	"github.com/boar-d-white-foundation/drone/boardwhite"
+	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
 )
 

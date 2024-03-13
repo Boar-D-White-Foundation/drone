@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strconv"
 
+	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/dgraph-io/badger/v4"
-	"github.com/frosthamster/drone/tg"
 )
 
 type Service struct {
