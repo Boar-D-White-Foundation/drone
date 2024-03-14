@@ -13,7 +13,7 @@ import (
 )
 
 func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, error) {
-	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID)
+	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID, cfg.TgPollerTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("new tg client: %w", err)
 	}
@@ -63,6 +63,8 @@ func StartDrone(ctx context.Context, cfg Config) error {
 	jobs = append(jobs, jb)
 
 	scheduler.Start()
+	bw.Start()
+
 	slog.Info("started scheduler")
 	for _, jb := range jobs {
 		t, err := jb.NextRun()
@@ -76,8 +78,8 @@ func StartDrone(ctx context.Context, cfg Config) error {
 			slog.String("next_run", t.String()),
 		)
 	}
-
 	<-ctx.Done()
+	bw.Stop()
 	return scheduler.Shutdown()
 }
 

@@ -42,6 +42,7 @@ type Config struct {
 	BoarDWhiteChatID           tele.ChatID
 	BoarDWhiteLeetCodeThreadID int
 	BadgerPath                 string
+	TgPollerTimeout            int
 }
 
 func LoadConfig() (Config, error) {
@@ -68,6 +69,11 @@ func LoadConfig() (Config, error) {
 		return Config{}, errors.New("daily sticker id's is incorrect")
 	}
 
+	tgPollerTimeout, err := getEnvIntDefault("DRONE_TG_POLLER_TIMEOUT", 10)
+	if err != nil {
+		return Config{}, errors.New("tg poller timeout is incorrect")
+	}
+
 	return Config{
 		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
 		// every day at 01:00 UTC
@@ -80,7 +86,8 @@ func LoadConfig() (Config, error) {
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
 		// default to relative path inside the working dir
-		BadgerPath: getEnvDefault("DRONE_BADGER_PATH", "data/badger"),
+		BadgerPath:      getEnvDefault("DRONE_BADGER_PATH", "data/badger"),
+		TgPollerTimeout: tgPollerTimeout,
 	}, nil
 }
 
