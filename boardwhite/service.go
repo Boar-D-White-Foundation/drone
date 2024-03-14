@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
+	"time"
 
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/dgraph-io/badger/v4"
@@ -12,26 +13,32 @@ import (
 
 type Service struct {
 	leetcodeThreadID int
-	dailyLCStickerID string
-	dailyNCStickerID string
+	dailyStickersIDs []string
+	dpStickerID      string
+	dailyNCStartDate time.Time
 	db               *badger.DB
 	telegram         *tg.Client
 }
 
 func NewService(
 	leetcodeThreadID int,
-	dailyLCStickerID string,
-	dailyNCStickerID string,
+	dailyStickersIDs []string,
+	dpStickerID string,
+	dailyNCStartDate time.Time,
 	telegram *tg.Client,
 	db *badger.DB,
-) *Service {
+) (*Service, error) {
+	if dailyNCStartDate.After(time.Now()) {
+		return nil, errors.New("dailyNCStartDate should be in past")
+	}
 	return &Service{
 		leetcodeThreadID: leetcodeThreadID,
-		dailyLCStickerID: dailyLCStickerID,
-		dailyNCStickerID: dailyNCStickerID,
+		dailyStickersIDs: dailyStickersIDs,
+		dpStickerID:      dpStickerID,
+		dailyNCStartDate: dailyNCStartDate,
 		db:               db,
 		telegram:         telegram,
-	}
+	}, nil
 }
 
 func (s *Service) publish(header, text, stickerID string, key []byte) error {

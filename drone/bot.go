@@ -27,13 +27,19 @@ func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, func(), error) {
 		}
 	}
 
-	return boardwhite.NewService(
+	bw, err := boardwhite.NewService(
 		cfg.BoarDWhiteLeetCodeThreadID,
-		cfg.LCDailyStickerID,
-		cfg.NCDailyStickerID,
+		cfg.DailyStickerIDs,
+		cfg.DPStickerID,
+		cfg.NCDailyStartDate,
 		telegramClient,
 		db,
-	), closeFn, nil
+	)
+	if err != nil {
+		closeFn()
+		return nil, nil, err
+	}
+	return bw, closeFn, nil
 }
 
 func StartDrone(ctx context.Context, cfg Config) error {
