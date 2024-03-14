@@ -63,6 +63,8 @@ func StartDrone(ctx context.Context, cfg Config) error {
 	jobs = append(jobs, jb)
 
 	scheduler.Start()
+	bw.Start()
+
 	slog.Info("started scheduler")
 	for _, jb := range jobs {
 		t, err := jb.NextRun()
@@ -77,6 +79,7 @@ func StartDrone(ctx context.Context, cfg Config) error {
 		)
 	}
 	<-ctx.Done()
+	bw.Stop()
 	return scheduler.Shutdown()
 }
 
