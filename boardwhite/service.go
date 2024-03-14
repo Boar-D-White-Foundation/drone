@@ -41,6 +41,16 @@ func NewService(
 	}, nil
 }
 
+func (s *Service) Start() {
+	s.telegram.RegisterHandler(NeetCodeCounter{db: s.db})
+	s.telegram.RegisterHandler(ReactionHandler{})
+	s.telegram.Start()
+}
+
+func (s *Service) Stop() {
+	s.telegram.Stop()
+}
+
 func (s *Service) publish(header, text, stickerID string, key []byte) error {
 	err := s.db.Update(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)

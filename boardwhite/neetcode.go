@@ -2,17 +2,59 @@ package boardwhite
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/neetcode"
+	"github.com/dgraph-io/badger/v4"
+	tele "gopkg.in/telebot.v3"
 )
 
 const (
 	keyNeetcodePinnedMessage = "neetcode:pinned_message"
 )
+
+type NeetCodeCounter struct {
+	db *badger.DB
+}
+
+func (n NeetCodeCounter) Match(c tele.Context) bool {
+
+	message := c.Message()
+
+	// not a reply
+	if message.ReplyTo == nil {
+		return false
+	}
+
+	err := n.db.View(func(txn *badger.Txn) error {
+		item, err := txn.Get([]byte(keyNeetcodePinnedMessage))
+		// failed to get the key
+		if err != nil {
+			return err
+		}
+
+		return item.Value(func(val []byte) error {
+			pinnedId, _ := strconv.Atoi(string(val))
+			if message.ReplyTo.ID == pinnedId {
+				return nil
+			}
+			return errors.New("not a reply to the pinned message")
+		})
+
+	})
+	return err == nil
+}
+
+func (n NeetCodeCounter) Handle(c tele.Context) error {
+
+	// do something with the message
+	return nil
+}
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {
 	groups, err := neetcode.Groups()
