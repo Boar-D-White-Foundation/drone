@@ -20,10 +20,7 @@ func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, error) {
 
 	database := db.NewBadgerBD(cfg.BadgerPath)
 	bw, err := boardwhite.NewService(
-		cfg.BoarDWhiteLeetCodeThreadID,
-		cfg.DailyStickerIDs,
-		cfg.DPStickerID,
-		cfg.NCDailyStartDate,
+		cfg.ServiceConfig(),
 		telegramClient,
 		database,
 	)
