@@ -105,6 +105,22 @@ func (c *Client) SendSticker(threadID int, stickerID string) (int, error) {
 	return message.ID, nil
 }
 
+func (c *Client) ReplyWithSticker(stickerID string, msg *tele.Message) (int, error) {
+	sticker := tele.Sticker{
+		File: tele.File{
+			FileID: stickerID,
+		},
+	}
+	message, err := c.bot.Send(c.chatID, &sticker, &tele.SendOptions{
+		ReplyTo: msg,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("send: %w", err)
+	}
+
+	return message.ID, nil
+}
+
 func (c *Client) Pin(id int) error {
 	msg := tele.StoredMessage{
 		MessageID: strconv.Itoa(id),

@@ -7,11 +7,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/boardwhite"
 	tele "gopkg.in/telebot.v3"
 )
 
 const (
 	defaultDPStickerID = "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"
+
+	smithLoverStickerID = "CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE"
 )
 
 var (
@@ -43,6 +46,34 @@ type Config struct {
 	BoarDWhiteLeetCodeThreadID int
 	BadgerPath                 string
 	TgPollerTimeout            int
+	MockEgor                   MockEgorConfig
+}
+
+type MockEgorConfig struct {
+	Enabled    bool
+	Period     string
+	StrickerID string
+}
+
+func (cfg Config) ServiceConfig() boardwhite.ServiceConfig {
+	scfg := boardwhite.ServiceConfig{
+		LeetcodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
+		DailyStickersIDs: cfg.DailyStickerIDs,
+		DpStickerID:      cfg.DPStickerID,
+		DailyNCStartDate: cfg.NCDailyStartDate,
+		MockEgor: boardwhite.MockEgorConfig{
+			Enabled:   cfg.MockEgor.Enabled,
+			StickerID: cfg.MockEgor.StrickerID,
+		},
+	}
+
+	var err error
+	scfg.MockEgor.Period, err = time.ParseDuration(cfg.MockEgor.Period)
+	if err != nil {
+		scfg.MockEgor.Period = 72 * time.Hour
+	}
+
+	return scfg
 }
 
 func LoadConfig() (Config, error) {
@@ -74,6 +105,11 @@ func LoadConfig() (Config, error) {
 		return Config{}, errors.New("tg poller timeout is incorrect")
 	}
 
+	mockEgor, err := getEnvBoolDefault("DRONE_MOCK_EGOR_ENABLED", true)
+	if err != nil {
+		return Config{}, errors.New("DRONE_MOCK_EGOR_ENABLED is incorrect")
+	}
+
 	return Config{
 		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
 		// every day at 01:00 UTC
@@ -88,6 +124,12 @@ func LoadConfig() (Config, error) {
 		// default to relative path inside the working dir
 		BadgerPath:      getEnvDefault("DRONE_BADGER_PATH", "data/badger"),
 		TgPollerTimeout: tgPollerTimeout,
+		// mock egor
+		MockEgor: MockEgorConfig{
+			Enabled:    mockEgor,
+			Period:     getEnvDefault("DRONE_MOCK_EGOR_PERIOD", "72h"),
+			StrickerID: getEnvDefault("DRONE_MOCK_EGOR_STICKER_ID", smithLoverStickerID),
+		},
 	}, nil
 }
 
@@ -97,6 +139,14 @@ func getEnvDefault(key, value string) string {
 		return value
 	}
 	return v
+}
+
+func getEnvBoolDefault(key string, value bool) (bool, error) {
+	v := os.Getenv(key)
+	if len(v) == 0 {
+		return value, nil
+	}
+	return strconv.ParseBool(v)
 }
 
 func getEnvIntDefault(key string, value int) (int, error) {

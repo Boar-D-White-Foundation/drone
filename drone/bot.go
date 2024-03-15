@@ -28,10 +28,7 @@ func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, func(), error) {
 	}
 
 	bw, err := boardwhite.NewService(
-		cfg.BoarDWhiteLeetCodeThreadID,
-		cfg.DailyStickerIDs,
-		cfg.DPStickerID,
-		cfg.NCDailyStartDate,
+		cfg.ServiceConfig(),
 		telegramClient,
 		db,
 	)
