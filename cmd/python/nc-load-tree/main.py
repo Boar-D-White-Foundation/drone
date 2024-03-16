@@ -61,7 +61,7 @@ def main():
             cols = question.find_elements(By.CSS_SELECTOR, "td")
             problem_col, difficulty_col = cols[2], cols[3]
             wait.WebDriverWait(driver, timeout=2).until(
-                lambda _: (problem_col.is_displayed() and difficulty_col.is_displayed())
+                lambda _: problem_col.is_displayed() and difficulty_col.is_displayed()
             )
 
             name = problem_col.text.strip()
