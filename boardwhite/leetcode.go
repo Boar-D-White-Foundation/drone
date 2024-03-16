@@ -20,7 +20,7 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get link: %w", err)
 	}
 
-	stickerID, err := iter.PickRandom(s.dailyStickersIDs)
+	stickerID, err := iter.PickRandom(s.DailyStickersIDs)
 	if err != nil {
 		return fmt.Errorf("get sticker: %w", err)
 	}

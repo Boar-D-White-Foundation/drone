@@ -18,12 +18,19 @@ const (
 	keyNeetCodePinnedMessage = "boardwhite:neetcode:pinned_message"
 )
 
-type NeetCodeCounter struct {
+type neetCodeCounter struct {
 	ctx      context.Context
 	database db.DB
 }
 
-func (n NeetCodeCounter) Match(c tele.Context) bool {
+func newNeetCodeCounter(ctx context.Context, db db.DB) *neetCodeCounter {
+	return &neetCodeCounter{
+		ctx:      ctx,
+		database: db,
+	}
+}
+
+func (n neetCodeCounter) Match(c tele.Context) bool {
 
 	message := c.Message()
 
@@ -50,7 +57,7 @@ func (n NeetCodeCounter) Match(c tele.Context) bool {
 	return err == nil
 }
 
-func (n NeetCodeCounter) Handle(client *tg.Client, c tele.Context) error {
+func (n neetCodeCounter) Handle(client *tg.Client, c tele.Context) error {
 	message := c.Message()
 	return client.SetMessageReaction(message, tg.ReactionThumbsUp, true)
 }
@@ -65,7 +72,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 	for _, g := range groups {
 		totalQuestions += len(g.Questions)
 	}
-	dayIndex := int(time.Now().Sub(s.dailyNCStartDate).Hours()/24) % totalQuestions
+	dayIndex := int(time.Now().Sub(s.DailyNCStartDate).Hours()/24) % totalQuestions
 
 	var group neetcode.Group
 	var question neetcode.Question
@@ -90,9 +97,9 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 
 	var stickerID string
 	if group.Name == "1-D DP" || group.Name == "2-D DP" {
-		stickerID = s.dpStickerID
+		stickerID = s.DpStickerID
 	} else {
-		stickerID, err = iter.PickRandom(s.dailyStickersIDs)
+		stickerID, err = iter.PickRandom(s.DailyStickersIDs)
 		if err != nil {
 			return fmt.Errorf("get sticker: %w", err)
 		}

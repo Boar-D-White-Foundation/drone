@@ -20,10 +20,7 @@ func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, error) {
 
 	database := db.NewBadgerBD(cfg.BadgerPath)
 	bw, err := boardwhite.NewService(
-		cfg.BoarDWhiteLeetCodeThreadID,
-		cfg.DailyStickerIDs,
-		cfg.DPStickerID,
-		cfg.NCDailyStartDate,
+		cfg.ServiceConfig(),
 		telegramClient,
 		database,
 	)
@@ -63,6 +60,7 @@ func StartDrone(ctx context.Context, cfg Config) error {
 	jobs = append(jobs, jb)
 
 	scheduler.Start()
+
 	slog.Info("started scheduler")
 	for _, jb := range jobs {
 		t, err := jb.NextRun()
