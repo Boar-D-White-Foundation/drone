@@ -42,7 +42,7 @@ func NewService(
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	s.telegram.RegisterHandler(NeetCodeCounter{db: s.database})
+	s.telegram.RegisterHandler(NeetCodeCounter{database: s.database})
 	s.telegram.RegisterHandler(ReactionHandler{})
 	s.telegram.Start()
 	return s.database.Start(ctx)

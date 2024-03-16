@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/neetcode"
-	"github.com/dgraph-io/badger/v4"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -19,7 +19,8 @@ const (
 )
 
 type NeetCodeCounter struct {
-	db *badger.DB
+	ctx      context.Context
+	database db.DB
 }
 
 func (n NeetCodeCounter) Match(c tele.Context) bool {
@@ -31,27 +32,27 @@ func (n NeetCodeCounter) Match(c tele.Context) bool {
 		return false
 	}
 
-	err := n.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get([]byte(keyNeetcodePinnedMessage))
-		// failed to get the key
+	err := n.database.Do(n.ctx, func(tx db.Tx) error {
+
+		item, err := tx.Get([]byte(keyNeetCodePinnedMessage))
 		if err != nil {
 			return err
 		}
 
-		return item.Value(func(val []byte) error {
-			pinnedId, _ := strconv.Atoi(string(val))
-			if message.ReplyTo.ID == pinnedId {
-				return nil
-			}
-			return errors.New("not a reply to the pinned message")
-		})
+		pinnedId, _ := strconv.Atoi(string(item))
+
+		if message.ReplyTo.ID == pinnedId {
+			return nil
+		}
+
+		return errors.New("not a reply to the pinned message")
 
 	})
+
 	return err == nil
 }
 
 func (n NeetCodeCounter) Handle(c tele.Context) error {
-
 	// do something with the message
 	return nil
 }

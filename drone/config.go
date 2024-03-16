@@ -75,19 +75,16 @@ func LoadConfig() (Config, error) {
 	}
 
 	return Config{
-		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
-		// every day at 01:00 UTC
-		LCDailyCron: getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),
-		// every day at 12:00 UTC
-		NCDailyCron:                getEnvDefault("DRONE_NC_DAILY_CRON", "0 12 * * *"),
+		TgKey:                      os.Getenv("DRONE_TG_BOT_API_KEY"),
+		LCDailyCron:                getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),  // every day at 01:00 UTC
+		NCDailyCron:                getEnvDefault("DRONE_NC_DAILY_CRON", "0 12 * * *"), // every day at 12:00 UTC
 		NCDailyStartDate:           ncDailyStartDate,
 		DailyStickerIDs:            dailyStickerIDs,
 		DPStickerID:                getEnvDefault("DRONE_DP_STICKER_ID", defaultDPStickerID),
 		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
 		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
-		// default to relative path inside the working dir
-		BadgerPath:      getEnvDefault("DRONE_BADGER_PATH", "data/badger"),
-		TgPollerTimeout: tgPollerTimeout,
+		BadgerPath:                 getEnvDefault("DRONE_BADGER_PATH", "data/badger"), // default to relative path inside the working dir
+		TgPollerTimeout:            tgPollerTimeout,
 	}, nil
 }
 
