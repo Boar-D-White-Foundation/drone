@@ -1,14 +1,14 @@
 package boardwhite
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
-	"strconv"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/tg"
-	"github.com/dgraph-io/badger/v4"
 )
 
 type Service struct {
@@ -16,7 +16,7 @@ type Service struct {
 	dailyStickersIDs []string
 	dpStickerID      string
 	dailyNCStartDate time.Time
-	db               *badger.DB
+	database         db.DB
 	telegram         *tg.Client
 }
 
@@ -26,7 +26,7 @@ func NewService(
 	dpStickerID string,
 	dailyNCStartDate time.Time,
 	telegram *tg.Client,
-	db *badger.DB,
+	database db.DB,
 ) (*Service, error) {
 	if dailyNCStartDate.After(time.Now()) {
 		return nil, errors.New("dailyNCStartDate should be in past")
@@ -36,32 +36,30 @@ func NewService(
 		dailyStickersIDs: dailyStickersIDs,
 		dpStickerID:      dpStickerID,
 		dailyNCStartDate: dailyNCStartDate,
-		db:               db,
+		database:         database,
 		telegram:         telegram,
 	}, nil
 }
 
-func (s *Service) publish(header, text, stickerID string, key []byte) error {
-	err := s.db.Update(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
+func (s *Service) Start(ctx context.Context) error {
+	return s.database.Start(ctx)
+}
 
-		switch {
-		case err == nil:
-			err = item.Value(func(val []byte) error {
-				pinnedId, _ := strconv.Atoi(string(val))
-				err = s.telegram.Unpin(pinnedId)
-				if err != nil {
-					slog.Error("err unpin", slog.Any("err", err))
-				}
-				return nil
-			})
+func (s *Service) Stop() {
+	s.database.Stop()
+}
+
+func (s *Service) publish(ctx context.Context, header, text, stickerID string, pinnedMsgIDKey string) error {
+	err := s.database.Do(ctx, func(tx db.Tx) error {
+		pinnedId, err := db.GetJsonDefault[int](tx, pinnedMsgIDKey, 0)
+		if err != nil {
+			return fmt.Errorf("get key %q: %w", pinnedMsgIDKey, err)
+		}
+		if pinnedId != 0 {
+			err = s.telegram.Unpin(pinnedId)
 			if err != nil {
-				return fmt.Errorf("get value %w", err)
+				slog.Error("err unpin", slog.Any("err", err))
 			}
-		case errors.Is(err, badger.ErrKeyNotFound):
-			// do nothing if there is no previous pin
-		default:
-			return fmt.Errorf("get key %q: %w", key, err)
 		}
 
 		messageID, err := s.telegram.SendSpoilerLink(s.leetcodeThreadID, header, text)
@@ -79,9 +77,9 @@ func (s *Service) publish(header, text, stickerID string, key []byte) error {
 			return fmt.Errorf("pin: %w", err)
 		}
 
-		err = txn.Set(key, []byte(strconv.Itoa(messageID)))
+		err = db.SetJson(tx, pinnedMsgIDKey, messageID)
 		if err != nil {
-			return fmt.Errorf("set key %q: %w", key, err)
+			return fmt.Errorf("set key %s: %w", pinnedMsgIDKey, err)
 		}
 
 		return nil

@@ -11,7 +11,7 @@ import (
 const (
 	defaultDailyHeader = "LeetCode Daily Question"
 
-	keyLeetcodePinnedMessage = "leetcode:pinned_message"
+	keyLeetCodePinnedMessage = "boardwhite:leetcode:pinned_message"
 )
 
 func (s *Service) PublishLCDaily(ctx context.Context) error {
@@ -25,6 +25,5 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get sticker: %w", err)
 	}
 
-	key := []byte(keyLeetcodePinnedMessage)
-	return s.publish(defaultDailyHeader, link, stickerID, key)
+	return s.publish(ctx, defaultDailyHeader, link, stickerID, keyLeetCodePinnedMessage)
 }

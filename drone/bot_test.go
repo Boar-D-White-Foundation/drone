@@ -11,9 +11,12 @@ func TestSkipDrone(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := LoadConfig()
 	require.NoError(t, err)
-	bw, closeFn, err := NewBoarDWhiteService(cfg)
+	bw, err := NewBoarDWhiteService(cfg)
 	require.NoError(t, err)
-	defer closeFn()
+
+	err = bw.Start(ctx)
+	require.NoError(t, err)
+	defer bw.Stop()
 
 	err = bw.PublishLCDaily(ctx)
 	require.NoError(t, err)

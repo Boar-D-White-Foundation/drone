@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	keyNeetcodePinnedMessage = "neetcode:pinned_message"
+	keyNeetCodePinnedMessage = "boardwhite:neetcode:pinned_message"
 )
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {
@@ -57,6 +57,5 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 		}
 	}
 
-	key := []byte(keyNeetcodePinnedMessage)
-	return s.publish(header, link.String(), stickerID, key)
+	return s.publish(ctx, header, link.String(), stickerID, keyNeetCodePinnedMessage)
 }

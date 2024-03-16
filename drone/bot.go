@@ -7,47 +7,42 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/boardwhite"
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
 )
 
-func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, func(), error) {
+func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, error) {
 	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID)
 	if err != nil {
-		return nil, nil, fmt.Errorf("new tg client: %w", err)
+		return nil, fmt.Errorf("new tg client: %w", err)
 	}
 
-	db, err := NewBadger(cfg.BadgerPath)
-	if err != nil {
-		return nil, nil, fmt.Errorf("db open: %w", err)
-	}
-	closeFn := func() {
-		if err := db.Close(); err != nil {
-			slog.Error("failed to close db", err)
-		}
-	}
-
+	database := db.NewBadgerBD(cfg.BadgerPath)
 	bw, err := boardwhite.NewService(
 		cfg.BoarDWhiteLeetCodeThreadID,
 		cfg.DailyStickerIDs,
 		cfg.DPStickerID,
 		cfg.NCDailyStartDate,
 		telegramClient,
-		db,
+		database,
 	)
 	if err != nil {
-		closeFn()
-		return nil, nil, err
+		return nil, err
 	}
-	return bw, closeFn, nil
+	return bw, nil
 }
 
 func StartDrone(ctx context.Context, cfg Config) error {
-	bw, closeFn, err := NewBoarDWhiteService(cfg)
+	bw, err := NewBoarDWhiteService(cfg)
 	if err != nil {
 		return err
 	}
-	defer closeFn()
+
+	if err := bw.Start(ctx); err != nil {
+		return err
+	}
+	defer bw.Stop()
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {
