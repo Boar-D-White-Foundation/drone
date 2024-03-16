@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/neetcode"
+	"github.com/boar-d-white-foundation/drone/tg"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -33,15 +33,13 @@ func (n NeetCodeCounter) Match(c tele.Context) bool {
 	}
 
 	err := n.database.Do(n.ctx, func(tx db.Tx) error {
+		pinnedMessageId, err := db.GetJson[int](tx, keyNeetCodePinnedMessage)
 
-		item, err := tx.Get([]byte(keyNeetCodePinnedMessage))
 		if err != nil {
 			return err
 		}
 
-		pinnedId, _ := strconv.Atoi(string(item))
-
-		if message.ReplyTo.ID == pinnedId {
+		if message.ReplyTo.ID == pinnedMessageId {
 			return nil
 		}
 
@@ -52,9 +50,9 @@ func (n NeetCodeCounter) Match(c tele.Context) bool {
 	return err == nil
 }
 
-func (n NeetCodeCounter) Handle(c tele.Context) error {
-	// do something with the message
-	return nil
+func (n NeetCodeCounter) Handle(client *tg.Client, c tele.Context) error {
+	message := c.Message()
+	return client.SetMessageReaction(message, tg.ReactionThumbsUp, true)
 }
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 	"strconv"
-
 	"time"
 
 	tele "gopkg.in/telebot.v3"
@@ -37,14 +36,13 @@ func NewClient(token string, chatID tele.ChatID, pollerTimeoutSeconds int) (*Cli
 
 type BotUpdateHandler interface {
 	Match(c tele.Context) bool
-	Handle(c tele.Context) error
+	Handle(client *Client, c tele.Context) error
 }
 
 func (c *Client) RegisterHandler(handler BotUpdateHandler) {
 	c.handlers = append(c.handlers, handler)
 }
 func (c *Client) Start() {
-
 	handler := func(ctx tele.Context) error {
 		for _, handler := range c.handlers {
 
@@ -52,7 +50,7 @@ func (c *Client) Start() {
 				continue
 			}
 
-			err := handler.Handle(ctx)
+			err := handler.Handle(c, ctx)
 			if err != nil {
 				slog.Error("handle message", slog.Any("error", err))
 			}
@@ -116,4 +114,19 @@ func (c *Client) Pin(id int) error {
 
 func (c *Client) Unpin(id int) error {
 	return c.bot.Unpin(c.chat, id)
+}
+
+func (c *Client) SetMessageReaction(message *tele.Message, reaction *ReactionEmoji, isBig bool) error {
+	reactionOptions := &ReactionOptions{
+		MessageID: message.ID,
+		ChatID:    message.Chat.ID,
+		Reaction:  []*ReactionEmoji{reaction},
+		IsBig:     isBig,
+	}
+	_, err := c.bot.Raw("setMessageReaction", reactionOptions)
+	if err != nil {
+		slog.Error("err react", slog.Any("err", err))
+		return err
+	}
+	return nil
 }
