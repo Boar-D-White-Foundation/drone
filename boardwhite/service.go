@@ -51,10 +51,10 @@ func NewService(
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	s.telegram.RegisterHandler(NeetCodeCounter{database: s.database}, tele.OnText)
+	s.telegram.RegisterHandler(newNeetCodeCounter(ctx, s.database), tele.OnText)
 	s.telegram.RegisterHandler(ReactionHandler{})
 	if s.MockEgor.Enabled {
-		s.telegram.RegisterHandler(newMockEgorHandler(s.MockEgor, s.db, s.telegram))
+		s.telegram.RegisterHandler(newMockEgorHandler(s.MockEgor, ctx, s.database, s.telegram))
 	}
 	s.telegram.Start()
 	return s.database.Start(ctx)

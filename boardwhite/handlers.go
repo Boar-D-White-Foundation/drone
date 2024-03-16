@@ -1,13 +1,13 @@
 package boardwhite
 
 import (
+	"context"
 	"errors"
 	"fmt"
-	"log/slog"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/tg"
-	"github.com/dgraph-io/badger/v4"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -53,13 +53,15 @@ type MockEgorConfig struct {
 
 type mockEgorHandler struct {
 	MockEgorConfig
-	db       *badger.DB
+	ctx      context.Context
+	db       db.DB
 	telegram *tg.Client
 }
 
-func newMockEgorHandler(cfg MockEgorConfig, db *badger.DB, telegram *tg.Client) *mockEgorHandler {
+func newMockEgorHandler(cfg MockEgorConfig, ctx context.Context, db db.DB, telegram *tg.Client) *mockEgorHandler {
 	return &mockEgorHandler{
 		MockEgorConfig: cfg,
+		ctx:            ctx,
 		db:             db,
 		telegram:       telegram,
 	}
@@ -72,30 +74,17 @@ func (h *mockEgorHandler) Match(c tele.Context) bool {
 func (h *mockEgorHandler) Handle(client *tg.Client, c tele.Context) error {
 	message := c.Message()
 
-	key := []byte("mock:byegor")
+	key := "mock:byegor"
 
-	err := h.db.Update(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-
+	return h.db.Do(h.ctx, func(tx db.Tx) error {
 		shouldMock := true
+		t, err := db.GetJson[time.Time](tx, key)
 		switch {
 		case err == nil:
-			err := item.Value(func(val []byte) error {
-				t, err := time.Parse(time.RFC3339, string(val))
-				if err != nil {
-					slog.Warn("invalid time value", slog.Any("value", t), slog.Any("err", err))
-					return nil
-				}
-
-				if time.Since(t) < h.Period {
-					shouldMock = false
-				}
-				return nil
-			})
-			if err != nil {
-				return fmt.Errorf("value: %w", err)
+			if time.Since(t) < h.Period {
+				shouldMock = false
 			}
-		case errors.Is(err, badger.ErrKeyNotFound):
+		case errors.Is(err, db.ErrKeyNotFound):
 			// still do it
 		default:
 			return fmt.Errorf("get key %q: %w", key, err)
@@ -110,17 +99,13 @@ func (h *mockEgorHandler) Handle(client *tg.Client, c tele.Context) error {
 			return fmt.Errorf("reply with sticker: %w", err)
 		}
 
-		t := time.Now().Format(time.RFC3339)
-		err = txn.Set(key, []byte(t))
+		err = db.SetJson[time.Time](tx, key, time.Now())
+
 		if err != nil {
 			return fmt.Errorf("set key %q: %w", key, err)
 		}
 
 		return nil
 	})
-	if err != nil {
-		return fmt.Errorf("db update: %w", err)
-	}
 
-	return nil
 }

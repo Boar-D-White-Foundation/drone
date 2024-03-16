@@ -18,12 +18,19 @@ const (
 	keyNeetCodePinnedMessage = "boardwhite:neetcode:pinned_message"
 )
 
-type NeetCodeCounter struct {
+type neetCodeCounter struct {
 	ctx      context.Context
 	database db.DB
 }
 
-func (n NeetCodeCounter) Match(c tele.Context) bool {
+func newNeetCodeCounter(ctx context.Context, db db.DB) *neetCodeCounter {
+	return &neetCodeCounter{
+		ctx:      ctx,
+		database: db,
+	}
+}
+
+func (n neetCodeCounter) Match(c tele.Context) bool {
 
 	message := c.Message()
 
@@ -50,7 +57,7 @@ func (n NeetCodeCounter) Match(c tele.Context) bool {
 	return err == nil
 }
 
-func (n NeetCodeCounter) Handle(client *tg.Client, c tele.Context) error {
+func (n neetCodeCounter) Handle(client *tg.Client, c tele.Context) error {
 	message := c.Message()
 	return client.SetMessageReaction(message, tg.ReactionThumbsUp, true)
 }
