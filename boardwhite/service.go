@@ -9,6 +9,7 @@ import (
 
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/tg"
+	tele "gopkg.in/telebot.v3"
 )
 
 type Service struct {
@@ -42,7 +43,7 @@ func NewService(
 }
 
 func (s *Service) Start(ctx context.Context) error {
-	s.telegram.RegisterHandler(NeetCodeCounter{database: s.database})
+	s.telegram.RegisterHandler(NeetCodeCounter{database: s.database}, tele.OnText)
 	s.telegram.RegisterHandler(ReactionHandler{})
 	s.telegram.Start()
 	return s.database.Start(ctx)

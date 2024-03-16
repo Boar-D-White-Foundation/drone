@@ -13,7 +13,7 @@ type Client struct {
 	bot      *tele.Bot
 	chatID   tele.ChatID
 	chat     *tele.Chat
-	handlers []BotUpdateHandler
+	handlers map[TelegramEndpoint][]BotUpdateHandler
 }
 
 func NewClient(token string, chatID tele.ChatID, pollerTimeoutSeconds int) (*Client, error) {
@@ -39,26 +39,38 @@ type BotUpdateHandler interface {
 	Handle(client *Client, c tele.Context) error
 }
 
-func (c *Client) RegisterHandler(handler BotUpdateHandler) {
-	c.handlers = append(c.handlers, handler)
+type TelegramEndpoint = string
+
+func (c *Client) RegisterHandler(handler BotUpdateHandler, endpoints ...TelegramEndpoint) {
+
+	if len(endpoints) == 0 {
+		endpoints = []TelegramEndpoint{tele.OnText}
+	}
+	for _, endpoint := range endpoints {
+		c.handlers[endpoint] = append(c.handlers[endpoint], handler)
+	}
+
 }
 func (c *Client) Start() {
-	handler := func(ctx tele.Context) error {
-		for _, handler := range c.handlers {
+	for endpoint, handlers := range c.handlers {
+		handler := func(ctx tele.Context) error {
+			for _, handler := range handlers {
 
-			if !handler.Match(ctx) {
-				continue
+				if !handler.Match(ctx) {
+					continue
+				}
+
+				err := handler.Handle(c, ctx)
+				if err != nil {
+					slog.Error("handle message", slog.Any("error", err))
+				}
+
 			}
-
-			err := handler.Handle(c, ctx)
-			if err != nil {
-				slog.Error("handle message", slog.Any("error", err))
-			}
-
+			return nil
 		}
-		return nil
+		c.bot.Handle(endpoint, handler)
 	}
-	c.bot.Handle(tele.OnText, handler)
+
 	go c.bot.Start()
 }
 
