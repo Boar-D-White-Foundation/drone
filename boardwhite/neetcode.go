@@ -2,7 +2,6 @@ package boardwhite
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"strings"
 	"time"
@@ -18,48 +17,35 @@ const (
 	keyNeetCodePinnedMessage = "boardwhite:neetcode:pinned_message"
 )
 
-type neetCodeCounter struct {
-	ctx      context.Context
-	database db.DB
-}
+func (s *Service) newNeetCodeCounter(ctx context.Context) tele.HandlerFunc {
 
-func newNeetCodeCounter(ctx context.Context, db db.DB) *neetCodeCounter {
-	return &neetCodeCounter{
-		ctx:      ctx,
-		database: db,
-	}
-}
-
-func (n neetCodeCounter) Match(c tele.Context) bool {
-
-	message := c.Message()
-
-	// not a reply
-	if message.ReplyTo == nil {
-		return false
-	}
-
-	err := n.database.Do(n.ctx, func(tx db.Tx) error {
-		pinnedMessageId, err := db.GetJson[int](tx, keyNeetCodePinnedMessage)
-
-		if err != nil {
-			return err
-		}
-
-		if message.ReplyTo.ID == pinnedMessageId {
+	return func(c tele.Context) error {
+		message := c.Message()
+		// ignore not replies or replies not to bot early
+		if message.ReplyTo == nil || message.ReplyTo.OriginalSender != c.Bot().Me {
 			return nil
 		}
+		err := s.database.Do(ctx, func(tx db.Tx) error {
+			pinnedMessageId, err := db.GetJson[int](tx, keyNeetCodePinnedMessage)
+			if err != nil {
+				return err
+			}
+			// not a reply to our current pin
+			if message.ReplyTo.ID != pinnedMessageId {
+				return nil
+			}
 
-		return errors.New("not a reply to the pinned message")
-
-	})
-
-	return err == nil
-}
-
-func (n neetCodeCounter) Handle(client *tg.Client, c tele.Context) error {
-	message := c.Message()
-	return client.SetMessageReaction(message, tg.ReactionThumbsUp, true)
+			correctFormat := true
+			if len(message.Text) > 0 {
+				correctFormat = strings.Contains(message.Text, "leetcode.com")
+			}
+			if correctFormat {
+				return s.telegram.SetMessageReaction(message, tg.ReactionThumbsUp, true)
+			}
+			return s.telegram.SetMessageReaction(message, tg.ReactionClown, true)
+		})
+		return err
+	}
 }
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {

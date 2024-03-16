@@ -13,7 +13,8 @@ type Client struct {
 	bot      *tele.Bot
 	chatID   tele.ChatID
 	chat     *tele.Chat
-	handlers map[TelegramEndpoint][]BotUpdateHandler
+	handlers map[string][]tele.HandlerFunc
+	started  bool
 }
 
 func NewClient(token string, chatID tele.ChatID, pollerTimeoutSeconds int) (*Client, error) {
@@ -41,30 +42,24 @@ type BotUpdateHandler interface {
 
 type TelegramEndpoint = string
 
-func (c *Client) RegisterHandler(handler BotUpdateHandler, endpoints ...TelegramEndpoint) {
+func (c *Client) RegisterHandler(endpoint string, handler tele.HandlerFunc) {
 
-	if len(endpoints) == 0 {
-		endpoints = []TelegramEndpoint{tele.OnText}
+	if c.started {
+		panic("Cannot register handlers after bot start")
 	}
-	for _, endpoint := range endpoints {
-		c.handlers[endpoint] = append(c.handlers[endpoint], handler)
-	}
+
+	c.handlers[endpoint] = append(c.handlers[endpoint], handler)
 
 }
 func (c *Client) Start() {
+	c.started = true
 	for endpoint, handlers := range c.handlers {
 		handler := func(ctx tele.Context) error {
 			for _, handler := range handlers {
-
-				if !handler.Match(ctx) {
-					continue
-				}
-
-				err := handler.Handle(c, ctx)
+				err := handler(ctx)
 				if err != nil {
 					slog.Error("handle message", slog.Any("error", err))
 				}
-
 			}
 			return nil
 		}
