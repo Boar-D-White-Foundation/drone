@@ -57,6 +57,7 @@ type handler struct {
 }
 
 func (s *Service) RegisterHandler(endpoint string, name string, f tele.HandlerFunc) {
+	slog.Info("Registered handler", slog.String("endpoint", endpoint), slog.String("handler", name))
 	s.handlers[endpoint] = append(s.handlers[endpoint], handler{
 		name: name,
 		f:    f,
