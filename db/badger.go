@@ -56,7 +56,7 @@ func (b *BadgerDB) Start(ctx context.Context) error {
 
 func (b *BadgerDB) Stop() {
 	if err := b.bdb.Close(); err != nil {
-		slog.Error("failed to badger", err)
+		slog.Error("failed to close badger", err)
 	}
 }
 

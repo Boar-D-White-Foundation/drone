@@ -8,7 +8,7 @@ import (
 )
 
 var (
-	ErrKeyNotFound = errors.New("db not found")
+	ErrKeyNotFound = errors.New("db: not found")
 )
 
 type DB interface {
