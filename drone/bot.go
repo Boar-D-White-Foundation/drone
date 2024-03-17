@@ -12,37 +12,52 @@ import (
 	"github.com/go-co-op/gocron/v2"
 )
 
-func NewBoarDWhiteService(cfg Config) (*boardwhite.Service, error) {
-	telegramClient, err := tg.NewClient(cfg.TgKey, cfg.BoarDWhiteChatID)
+func NewTgServiceFromConfig(cfg Config) (*tg.Service, error) {
+	tgService, err := tg.NewService(cfg.TgKey, cfg.BoarDWhiteChatID, cfg.TgLongPollerTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("new tg client: %w", err)
 	}
 
-	database := db.NewBadgerBD(cfg.BadgerPath)
-	bw, err := boardwhite.NewService(
-		cfg.BoarDWhiteLeetCodeThreadID,
-		cfg.DailyStickerIDs,
-		cfg.DPStickerID,
-		cfg.NCDailyStartDate,
-		telegramClient,
+	return tgService, nil
+}
+
+func NewDBFromConfig(cfg Config) db.DB {
+	return db.NewBadgerBD(cfg.BadgerPath)
+}
+
+func NewBoarDWhiteServiceFromConfig(
+	tgService *tg.Service,
+	database db.DB,
+	cfg boardwhite.ServiceConfig,
+) (*boardwhite.Service, error) {
+	return boardwhite.NewService(
+		cfg,
+		tgService,
 		database,
 	)
-	if err != nil {
-		return nil, err
-	}
-	return bw, nil
 }
 
 func StartDrone(ctx context.Context, cfg Config) error {
-	bw, err := NewBoarDWhiteService(cfg)
+	tgService, err := NewTgServiceFromConfig(cfg)
 	if err != nil {
 		return err
 	}
 
-	if err := bw.Start(ctx); err != nil {
+	database := NewDBFromConfig(cfg)
+	if err := database.Start(ctx); err != nil {
 		return err
 	}
-	defer bw.Stop()
+	defer database.Stop()
+
+	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, cfg.ServiceConfig())
+	if err != nil {
+		return err
+	}
+
+	bw.RegisterHandlers(ctx, tgService)
+	tgService.Start()
+	defer tgService.Stop()
+	slog.Info("started tg handlers")
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {
@@ -76,7 +91,6 @@ func StartDrone(ctx context.Context, cfg Config) error {
 			slog.String("next_run", t.String()),
 		)
 	}
-
 	<-ctx.Done()
 	return scheduler.Shutdown()
 }
@@ -113,16 +127,16 @@ func wrapErrors(name string, f func(context.Context) error) func(context.Context
 	return func(ctx context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error("panic in task", slog.String("name", name), slog.Any("err", err))
+				slog.Error("panic in cron task", slog.String("name", name), slog.Any("err", err))
 			}
 		}()
 
-		slog.Info("started task run", slog.String("name", name))
+		slog.Info("started cron task run", slog.String("name", name))
 		err := f(ctx)
 		if err != nil {
-			slog.Error("err in task", slog.String("name", name), slog.Any("err", err))
+			slog.Error("err in cron task", slog.String("name", name), slog.Any("err", err))
 			return
 		}
-		slog.Info("finished task run", slog.String("name", name))
+		slog.Info("finished cron task run", slog.String("name", name))
 	}
 }

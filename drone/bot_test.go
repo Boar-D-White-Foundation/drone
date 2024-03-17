@@ -7,20 +7,30 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSkipDrone(t *testing.T) {
+func TestSkipE2EDrone(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := LoadConfig()
 	require.NoError(t, err)
-	bw, err := NewBoarDWhiteService(cfg)
+
+	tgService, err := NewTgServiceFromConfig(cfg)
 	require.NoError(t, err)
 
-	err = bw.Start(ctx)
+	database := NewDBFromConfig(cfg)
+	err = database.Start(ctx)
 	require.NoError(t, err)
-	defer bw.Stop()
+	defer database.Stop()
+
+	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, cfg.ServiceConfig())
+	require.NoError(t, err)
 
 	err = bw.PublishLCDaily(ctx)
 	require.NoError(t, err)
 
 	err = bw.PublishNCDaily(ctx)
 	require.NoError(t, err)
+
+	bw.RegisterHandlers(ctx, tgService)
+	tgService.Start()
+	defer tgService.Stop()
+	<-ctx.Done()
 }
