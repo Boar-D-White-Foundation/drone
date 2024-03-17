@@ -1,7 +1,6 @@
 package boardwhite
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,6 +17,7 @@ const (
 	keyLCPinnedMessages = "boardwhite:leetcode:pinned_messages"
 
 	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
+	keyNCPinnedToDayIdx = "boardwhite:neetcode:pinned_to_day_idx"
 	keyNCStats          = "boardwhite:neetcode:stats"
 )
 
@@ -70,44 +70,42 @@ func NewService(
 }
 
 func (s *Service) publish(
-	ctx context.Context,
+	tx db.Tx,
 	header, text, stickerID string,
 	pinnedMsgsKey string,
-) error {
-	return s.database.Do(ctx, func(tx db.Tx) error {
-		pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMsgsKey, nil)
+) (int, error) {
+	pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMsgsKey, nil)
+	if err != nil {
+		return 0, fmt.Errorf("get key %s: %w", pinnedMsgsKey, err)
+	}
+	if len(pinnedIDs) > 0 {
+		// last is considered active
+		err = s.telegram.Unpin(pinnedIDs[len(pinnedIDs)-1])
 		if err != nil {
-			return fmt.Errorf("get key %s: %w", pinnedMsgsKey, err)
+			slog.Error("err unpin", slog.Any("err", err))
 		}
-		if len(pinnedIDs) > 0 {
-			// last is considered active
-			err = s.telegram.Unpin(pinnedIDs[len(pinnedIDs)-1])
-			if err != nil {
-				slog.Error("err unpin", slog.Any("err", err))
-			}
-		}
+	}
 
-		messageID, err := s.telegram.SendSpoilerLink(s.cfg.LeetcodeThreadID, header, text)
-		if err != nil {
-			return fmt.Errorf("send daily: %w", err)
-		}
+	messageID, err := s.telegram.SendSpoilerLink(s.cfg.LeetcodeThreadID, header, text)
+	if err != nil {
+		return 0, fmt.Errorf("send daily: %w", err)
+	}
 
-		_, err = s.telegram.SendSticker(s.cfg.LeetcodeThreadID, stickerID)
-		if err != nil {
-			return fmt.Errorf("send sticker: %w", err)
-		}
+	_, err = s.telegram.SendSticker(s.cfg.LeetcodeThreadID, stickerID)
+	if err != nil {
+		return 0, fmt.Errorf("send sticker: %w", err)
+	}
 
-		err = s.telegram.Pin(messageID)
-		if err != nil {
-			return fmt.Errorf("pin: %w", err)
-		}
+	err = s.telegram.Pin(messageID)
+	if err != nil {
+		return 0, fmt.Errorf("pin: %w", err)
+	}
 
-		pinnedIDs = append(pinnedIDs, messageID)
-		err = db.SetJson(tx, pinnedMsgsKey, pinnedIDs)
-		if err != nil {
-			return fmt.Errorf("set key %s: %w", pinnedMsgsKey, err)
-		}
+	pinnedIDs = append(pinnedIDs, messageID)
+	err = db.SetJson(tx, pinnedMsgsKey, pinnedIDs)
+	if err != nil {
+		return 0, fmt.Errorf("set key %s: %w", pinnedMsgsKey, err)
+	}
 
-		return nil
-	})
+	return messageID, nil
 }

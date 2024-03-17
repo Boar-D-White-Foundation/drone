@@ -16,12 +16,8 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-func (s *Service) getNCDayIdx() int {
-	return int(time.Since(s.cfg.DailyNCStartDate).Hours()/24) % neetcode.QuestionsTotalCount
-}
-
 func (s *Service) PublishNCDaily(ctx context.Context) error {
-	dayIndex := s.getNCDayIdx()
+	dayIndex := int(time.Since(s.cfg.DailyNCStartDate).Hours()/24) % neetcode.QuestionsTotalCount
 	groups, err := neetcode.Groups()
 	if err != nil {
 		return fmt.Errorf("read groups: %w", err)
@@ -58,7 +54,25 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 		}
 	}
 
-	return s.publish(ctx, header, link.String(), stickerID, keyNCPinnedMessages)
+	return s.database.Do(ctx, func(tx db.Tx) error {
+		messageID, err := s.publish(tx, header, link.String(), stickerID, keyNCPinnedMessages)
+		if err != nil {
+			return fmt.Errorf("publish: %w", err)
+		}
+
+		msgIDToDayIdx, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int))
+		if err != nil {
+			return fmt.Errorf("get msgIDToDayIdx: %w", err)
+		}
+
+		msgIDToDayIdx[messageID] = dayIndex
+		err = db.SetJson(tx, keyNCPinnedToDayIdx, msgIDToDayIdx)
+		if err != nil {
+			return fmt.Errorf("set msgIDToDayIdx: %w", err)
+		}
+
+		return nil
+	})
 }
 
 type ncSolutionKey struct {
@@ -66,7 +80,7 @@ type ncSolutionKey struct {
 	UserID int64 `json:"user_id"`
 }
 
-func (s *ncSolutionKey) UnmarshalText(data []byte) error {
+func (k *ncSolutionKey) UnmarshalText(data []byte) error {
 	parts := strings.Split(string(data), "|")
 	if len(parts) != 2 {
 		return errors.New("invalid parts")
@@ -79,13 +93,13 @@ func (s *ncSolutionKey) UnmarshalText(data []byte) error {
 	if err != nil {
 		return err
 	}
-	s.DayIdx = dayIdx
-	s.UserID = userID
+	k.DayIdx = dayIdx
+	k.UserID = userID
 	return nil
 }
 
-func (s ncSolutionKey) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%d|%d", s.DayIdx, s.UserID)), nil
+func (k ncSolutionKey) MarshalText() ([]byte, error) {
+	return []byte(fmt.Sprintf("%d|%d", k.DayIdx, k.UserID)), nil
 }
 
 type solution struct {
@@ -144,8 +158,13 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 			return fmt.Errorf("get solutions: %w", err)
 		}
 
-		currentDayIdx := s.getNCDayIdx() - 1
-		if currentDayIdx < 0 {
+		msgIDToDayIdx, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int))
+		if err != nil {
+			return fmt.Errorf("get msgIDToDayIdx: %w", err)
+		}
+
+		currentDayIdx, ok := msgIDToDayIdx[msg.ReplyTo.ID]
+		if !ok {
 			return setClown()
 		}
 		key := ncSolutionKey{

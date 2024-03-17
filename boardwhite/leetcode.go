@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 )
@@ -23,5 +24,8 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get sticker: %w", err)
 	}
 
-	return s.publish(ctx, defaultDailyHeader, link, stickerID, keyLCPinnedMessages)
+	return s.database.Do(ctx, func(tx db.Tx) error {
+		_, err := s.publish(tx, defaultDailyHeader, link, stickerID, keyLCPinnedMessages)
+		return err
+	})
 }
