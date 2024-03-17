@@ -26,13 +26,13 @@ func NewDBFromConfig(cfg Config) db.DB {
 }
 
 func NewBoarDWhiteServiceFromConfig(
-	tgService *tg.Service,
+	telegram tg.Client,
 	database db.DB,
 	cfg boardwhite.ServiceConfig,
 ) (*boardwhite.Service, error) {
 	return boardwhite.NewService(
 		cfg,
-		tgService,
+		telegram,
 		database,
 	)
 }
@@ -64,18 +64,10 @@ func StartDrone(ctx context.Context, cfg Config) error {
 		return err
 	}
 
-	jobs := make([]job, 0)
-	jb, err := registerJob(ctx, scheduler, "PublishLCDaily", cfg.LCDailyCron, bw.PublishLCDaily)
+	jobs, err := registerCronJobs(ctx, cfg, scheduler, bw)
 	if err != nil {
 		return err
 	}
-	jobs = append(jobs, jb)
-
-	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NCDailyCron, bw.PublishNCDaily)
-	if err != nil {
-		return err
-	}
-	jobs = append(jobs, jb)
 
 	scheduler.Start()
 	slog.Info("started scheduler")
@@ -100,6 +92,27 @@ type job struct {
 
 	name string
 	cron string
+}
+
+func registerCronJobs(
+	ctx context.Context,
+	cfg Config,
+	scheduler gocron.Scheduler,
+	bw *boardwhite.Service,
+) ([]job, error) {
+	jobs := make([]job, 0)
+	jb, err := registerJob(ctx, scheduler, "PublishLCDaily", cfg.LCDailyCron, bw.PublishLCDaily)
+	if err != nil {
+		return nil, err
+	}
+	jobs = append(jobs, jb)
+
+	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NCDailyCron, bw.PublishNCDaily)
+	if err != nil {
+		return nil, err
+	}
+	jobs = append(jobs, jb)
+	return jobs, nil
 }
 
 func registerJob(

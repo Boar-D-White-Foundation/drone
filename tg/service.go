@@ -171,14 +171,14 @@ type setMessageReactionReq struct {
 }
 
 func (s *Service) SetReaction(messageID int, reaction Reaction, isBig bool) error {
-	reactionOptions := setMessageReactionReq{
+	req := setMessageReactionReq{
 		ChatID:    s.chatID,
 		MessageID: messageID,
 		// currently, as non-premium users, bots can set up to one reaction per message
 		Reactions: []Reaction{reaction},
 		IsBig:     isBig,
 	}
-	_, err := s.bot.Raw("setMessageReaction", reactionOptions)
+	_, err := s.bot.Raw("setMessageReaction", req)
 	if err != nil {
 		return fmt.Errorf("set reaction: %w", err)
 	}
