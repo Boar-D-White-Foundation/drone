@@ -10,7 +10,9 @@ func TestGroups(t *testing.T) {
 	groups, err := Groups()
 	require.NoError(t, err)
 
+	totalCount := 0
 	for _, g := range groups {
+		totalCount += len(g.Questions)
 		require.NotEmpty(t, g.Name)
 		for _, q := range g.Questions {
 			require.NotEmpty(t, q.Name)
@@ -19,4 +21,5 @@ func TestGroups(t *testing.T) {
 			require.NotEqual(t, -1, DifficultyToSortOrder(q.Difficulty))
 		}
 	}
+	require.Equal(t, QuestionsTotalCount, totalCount)
 }

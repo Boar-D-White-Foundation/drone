@@ -16,12 +16,8 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-const (
-	ncTotalDays = 150
-)
-
 func (s *Service) getNCDayIdx() int {
-	return int(time.Since(s.cfg.DailyNCStartDate).Hours()/24) % ncTotalDays
+	return int(time.Since(s.cfg.DailyNCStartDate).Hours()/24) % neetcode.QuestionsTotalCount
 }
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {
@@ -43,7 +39,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 		idx -= len(g.Questions)
 	}
 
-	header := fmt.Sprintf("NeetCode: %s [%d / %d]", group.Name, dayIndex+1, ncTotalDays)
+	header := fmt.Sprintf("NeetCode: %s [%d / %d]", group.Name, dayIndex+1, neetcode.QuestionsTotalCount)
 
 	var link strings.Builder
 	link.WriteString(question.LCLink)
