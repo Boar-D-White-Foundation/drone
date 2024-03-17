@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/stretchr/testify/require"
@@ -81,6 +82,13 @@ func testDb(t *testing.T, name string, database db.DB) {
 			sliceRes, err := db.GetJson[[]int](tx, key)
 			require.NoError(t, err)
 			require.Equal(t, []int{4, 8, 9, 33}, sliceRes)
+
+			tm := time.Now()
+			err = db.SetJson(tx, key, tm)
+			require.NoError(t, err)
+			timeRes, err := db.GetJson[time.Time](tx, key)
+			require.NoError(t, err)
+			require.True(t, tm.Equal(timeRes))
 
 			type S1 struct {
 				A string `json:"a,omitempty"`

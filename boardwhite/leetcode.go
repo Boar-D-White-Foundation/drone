@@ -10,8 +10,6 @@ import (
 
 const (
 	defaultDailyHeader = "LeetCode Daily Question"
-
-	keyLeetCodePinnedMessage = "boardwhite:leetcode:pinned_message"
 )
 
 func (s *Service) PublishLCDaily(ctx context.Context) error {
@@ -20,10 +18,10 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get link: %w", err)
 	}
 
-	stickerID, err := iter.PickRandom(s.DailyStickersIDs)
+	stickerID, err := iter.PickRandom(s.cfg.DailyStickersIDs)
 	if err != nil {
 		return fmt.Errorf("get sticker: %w", err)
 	}
 
-	return s.publish(ctx, defaultDailyHeader, link, stickerID, keyLeetCodePinnedMessage)
+	return s.publish(ctx, defaultDailyHeader, link, stickerID, keyLCPinnedMessages)
 }

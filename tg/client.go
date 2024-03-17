@@ -9,74 +9,95 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-type Client struct {
+type Client interface {
+	SendSpoilerLink(threadID int, header, link string) (int, error)
+	SendSticker(threadID int, stickerID string) (int, error)
+	ReplyWithSticker(messageID int, stickerID string) (int, error)
+	Pin(id int) error
+	Unpin(id int) error
+	SetReaction(messageID int, reaction Reaction, isBig bool) error
+}
+
+type Service struct {
 	bot      *tele.Bot
 	chatID   tele.ChatID
 	chat     *tele.Chat
-	handlers map[string][]tele.HandlerFunc
-	started  bool
+	handlers map[string][]handler
 }
 
-func NewClient(token string, chatID tele.ChatID, pollerTimeoutSeconds int) (*Client, error) {
+var _ Client = (*Service)(nil)
+
+func NewService(token string, chatID tele.ChatID, longPollerTimeout time.Duration) (*Service, error) {
+	poller := tele.LongPoller{
+		Timeout: longPollerTimeout,
+	}
 	bot, err := tele.NewBot(tele.Settings{
-		Token:  token,
-		Poller: &tele.LongPoller{Timeout: time.Duration(pollerTimeoutSeconds) * time.Second},
+		Token:       token,
+		Poller:      &poller,
+		Synchronous: true, // to ease of debug and avoid race conditions on data dependent updates
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	return &Client{
-		bot:    bot,
-		chatID: chatID,
-		chat: &tele.Chat{
-			ID: int64(chatID),
-		},
+	chat := tele.Chat{
+		ID: int64(chatID),
+	}
+	return &Service{
+		bot:      bot,
+		chatID:   chatID,
+		chat:     &chat,
+		handlers: make(map[string][]handler),
 	}, nil
 }
 
-type BotUpdateHandler interface {
-	Match(c tele.Context) bool
-	Handle(client *Client, c tele.Context) error
+type handler struct {
+	name string
+	f    tele.HandlerFunc
 }
 
-type TelegramEndpoint = string
+func (s *Service) RegisterHandler(endpoint string, name string, f tele.HandlerFunc) {
+	s.handlers[endpoint] = append(s.handlers[endpoint], handler{
+		name: name,
+		f:    f,
+	})
+}
 
-func (c *Client) RegisterHandler(endpoint string, handler tele.HandlerFunc) {
-
-	if c.started {
-		panic("Cannot register handlers after bot start")
+func wrapErrors(h handler) func(tele.Context) {
+	return func(c tele.Context) {
+		defer func() {
+			if err := recover(); err != nil {
+				slog.Error("panic in tg handler", slog.String("name", h.name), slog.Any("err", err))
+			}
+		}()
+		err := h.f(c)
+		if err != nil {
+			slog.Error("err in tg handler", slog.String("name", h.name), slog.Any("err", err))
+		}
 	}
-
-	c.handlers[endpoint] = append(c.handlers[endpoint], handler)
-
 }
-func (c *Client) Start() {
-	c.started = true
-	for endpoint, handlers := range c.handlers {
-		handler := func(ctx tele.Context) error {
-			for _, handler := range handlers {
-				err := handler(ctx)
-				if err != nil {
-					slog.Error("handle message", slog.Any("error", err))
-				}
+
+func (s *Service) Start() {
+	for endpoint, handlers := range s.handlers {
+		h := func(tc tele.Context) error {
+			for _, h := range handlers {
+				wrapErrors(h)(tc)
 			}
 			return nil
 		}
-		c.bot.Handle(endpoint, handler)
+		s.bot.Handle(endpoint, h)
 	}
 
-	go c.bot.Start()
+	go s.bot.Start()
 }
 
-func (c *Client) Stop() {
-	c.bot.Stop()
+func (s *Service) Stop() {
+	s.bot.Stop()
 }
 
-func (c *Client) SendSpoilerLink(threadID int, header, link string) (int, error) {
+func (s *Service) SendSpoilerLink(threadID int, header, link string) (int, error) {
 	payload := fmt.Sprintf("%s\n%s", header, link)
-
-	message, err := c.bot.Send(c.chatID, payload, &tele.SendOptions{
+	message, err := s.bot.Send(s.chatID, payload, &tele.SendOptions{
 		ThreadID:              threadID,
 		DisableWebPagePreview: true,
 		Entities: []tele.MessageEntity{
@@ -94,13 +115,13 @@ func (c *Client) SendSpoilerLink(threadID int, header, link string) (int, error)
 	return message.ID, nil
 }
 
-func (c *Client) SendSticker(threadID int, stickerID string) (int, error) {
+func (s *Service) SendSticker(threadID int, stickerID string) (int, error) {
 	sticker := tele.Sticker{
 		File: tele.File{
 			FileID: stickerID,
 		},
 	}
-	message, err := c.bot.Send(c.chatID, &sticker, &tele.SendOptions{
+	message, err := s.bot.Send(s.chatID, &sticker, &tele.SendOptions{
 		ThreadID: threadID,
 	})
 	if err != nil {
@@ -110,14 +131,16 @@ func (c *Client) SendSticker(threadID int, stickerID string) (int, error) {
 	return message.ID, nil
 }
 
-func (c *Client) ReplyWithSticker(stickerID string, msg *tele.Message) (int, error) {
+func (s *Service) ReplyWithSticker(messageID int, stickerID string) (int, error) {
 	sticker := tele.Sticker{
 		File: tele.File{
 			FileID: stickerID,
 		},
 	}
-	message, err := c.bot.Send(c.chatID, &sticker, &tele.SendOptions{
-		ReplyTo: msg,
+	message, err := s.bot.Send(s.chatID, &sticker, &tele.SendOptions{
+		ReplyTo: &tele.Message{
+			ID: messageID,
+		},
 	})
 	if err != nil {
 		return 0, fmt.Errorf("send: %w", err)
@@ -126,30 +149,38 @@ func (c *Client) ReplyWithSticker(stickerID string, msg *tele.Message) (int, err
 	return message.ID, nil
 }
 
-func (c *Client) Pin(id int) error {
+func (s *Service) Pin(id int) error {
 	msg := tele.StoredMessage{
 		MessageID: strconv.Itoa(id),
-		ChatID:    c.chat.ID,
+		ChatID:    s.chat.ID,
 	}
 
-	return c.bot.Pin(msg, tele.Silent)
+	return s.bot.Pin(msg, tele.Silent)
 }
 
-func (c *Client) Unpin(id int) error {
-	return c.bot.Unpin(c.chat, id)
+func (s *Service) Unpin(id int) error {
+	return s.bot.Unpin(s.chat, id)
 }
 
-func (c *Client) SetMessageReaction(message *tele.Message, reaction *ReactionEmoji, isBig bool) error {
-	reactionOptions := &ReactionOptions{
-		MessageID: message.ID,
-		ChatID:    message.Chat.ID,
-		Reaction:  []*ReactionEmoji{reaction},
+type setMessageReactionReq struct {
+	ChatID    tele.ChatID `json:"chat_id"`
+	MessageID int         `json:"message_id"`
+	Reactions []Reaction  `json:"reaction"`
+	IsBig     bool        `json:"is_big,omitempty"`
+}
+
+func (s *Service) SetReaction(messageID int, reaction Reaction, isBig bool) error {
+	reactionOptions := setMessageReactionReq{
+		ChatID:    s.chatID,
+		MessageID: messageID,
+		// currently, as non-premium users, bots can set up to one reaction per message
+		Reactions: []Reaction{reaction},
 		IsBig:     isBig,
 	}
-	_, err := c.bot.Raw("setMessageReaction", reactionOptions)
+	_, err := s.bot.Raw("setMessageReaction", reactionOptions)
 	if err != nil {
-		slog.Error("err react", slog.Any("err", err))
-		return err
+		return fmt.Errorf("set reaction: %w", err)
 	}
+
 	return nil
 }

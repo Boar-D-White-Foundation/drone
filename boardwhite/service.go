@@ -9,8 +9,22 @@ import (
 
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/tg"
-	tele "gopkg.in/telebot.v3"
 )
+
+const (
+	keyLastByegorMockTime = "boardwhite:mock:byegor:last_mock"
+
+	keyLCPinnedMessages = "boardwhite:leetcode:pinned_messages"
+
+	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
+	keyNCStats          = "boardwhite:neetcode:stats"
+)
+
+type MockEgorConfig struct {
+	Enabled   bool
+	Period    time.Duration
+	StickerID string
+}
 
 type ServiceConfig struct {
 	LeetcodeThreadID int
@@ -29,14 +43,14 @@ func (cfg ServiceConfig) Validate() error {
 }
 
 type Service struct {
-	ServiceConfig
+	cfg      ServiceConfig
 	database db.DB
-	telegram *tg.Client
+	telegram tg.Client
 }
 
 func NewService(
 	cfg ServiceConfig,
-	telegram *tg.Client,
+	telegram tg.Client,
 	database db.DB,
 ) (*Service, error) {
 	if err := cfg.Validate(); err != nil {
@@ -44,45 +58,36 @@ func NewService(
 	}
 
 	return &Service{
-		ServiceConfig: cfg,
-		database:      database,
-		telegram:      telegram,
+		cfg:      cfg,
+		database: database,
+		telegram: telegram,
 	}, nil
 }
 
-func (s *Service) Start(ctx context.Context) error {
-	s.telegram.RegisterHandler(tele.OnText, s.newNeetCodeCounter(ctx))
-	if s.MockEgor.Enabled {
-		s.telegram.RegisterHandler(tele.OnText, s.newMockEgorHandler(ctx, s.MockEgor))
-	}
-	s.telegram.Start()
-	return s.database.Start(ctx)
-}
-
-func (s *Service) Stop() {
-	s.telegram.Stop()
-	s.database.Stop()
-}
-
-func (s *Service) publish(ctx context.Context, header, text, stickerID string, pinnedMsgIDKey string) error {
-	err := s.database.Do(ctx, func(tx db.Tx) error {
-		pinnedId, err := db.GetJsonDefault[int](tx, pinnedMsgIDKey, 0)
+func (s *Service) publish(
+	ctx context.Context,
+	header, text, stickerID string,
+	pinnedMsgsKey string,
+) error {
+	return s.database.Do(ctx, func(tx db.Tx) error {
+		pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMsgsKey, nil)
 		if err != nil {
-			return fmt.Errorf("get key %q: %w", pinnedMsgIDKey, err)
+			return fmt.Errorf("get key %s: %w", pinnedMsgsKey, err)
 		}
-		if pinnedId != 0 {
-			err = s.telegram.Unpin(pinnedId)
+		if len(pinnedIDs) > 0 {
+			// last is considered active
+			err = s.telegram.Unpin(pinnedIDs[len(pinnedIDs)-1])
 			if err != nil {
 				slog.Error("err unpin", slog.Any("err", err))
 			}
 		}
 
-		messageID, err := s.telegram.SendSpoilerLink(s.LeetcodeThreadID, header, text)
+		messageID, err := s.telegram.SendSpoilerLink(s.cfg.LeetcodeThreadID, header, text)
 		if err != nil {
 			return fmt.Errorf("send daily: %w", err)
 		}
 
-		_, err = s.telegram.SendSticker(s.LeetcodeThreadID, stickerID)
+		_, err = s.telegram.SendSticker(s.cfg.LeetcodeThreadID, stickerID)
 		if err != nil {
 			return fmt.Errorf("send sticker: %w", err)
 		}
@@ -92,16 +97,12 @@ func (s *Service) publish(ctx context.Context, header, text, stickerID string, p
 			return fmt.Errorf("pin: %w", err)
 		}
 
-		err = db.SetJson(tx, pinnedMsgIDKey, messageID)
+		pinnedIDs = append(pinnedIDs, messageID)
+		err = db.SetJson(tx, pinnedMsgsKey, pinnedIDs)
 		if err != nil {
-			return fmt.Errorf("set key %s: %w", pinnedMsgIDKey, err)
+			return fmt.Errorf("set key %s: %w", pinnedMsgsKey, err)
 		}
 
 		return nil
 	})
-	if err != nil {
-		return fmt.Errorf("db update: %w", err)
-	}
-
-	return nil
 }

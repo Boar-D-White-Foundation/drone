@@ -1,34 +1,33 @@
 package tg
 
-type ReactionTypeEmoji struct {
-	Emoji string `json:"emoji,omitempty"`
-}
+var (
+	ReactionClown    = NewReactionEmoji("🤡")
+	ReactionOk       = NewReactionEmoji("👌")
+	ReactionEgor     = NewReactionEmoji("🌚")
+	ReactionThumbsUp = NewReactionEmoji("👍")
+	ReactionHotDog   = NewReactionEmoji("🌭")
+)
 
-type ReactionTypeCustomEmoji struct {
+type Reaction struct {
+	Type    string `json:"type"`
+	Emoji   string `json:"emoji,omitempty"`
 	EmojiID string `json:"custom_emoji_id,omitempty"`
 }
 
-type Emoji struct {
-	Type string `json:"type"`
-	ReactionTypeEmoji
-	ReactionTypeCustomEmoji
+func NewReactionEmoji(emoji string) Reaction {
+	return Reaction{
+		Type:  "emoji",
+		Emoji: emoji,
+	}
 }
 
-type ReactionEmoji struct {
-	Type  string `json:"type"`
-	Emoji string `json:"emoji"`
+func NewReactionCustomEmoji(emojiID string) Reaction {
+	return Reaction{
+		Type:    "custom_emoji",
+		EmojiID: emojiID,
+	}
 }
 
-type ReactionOptions struct {
-	MessageID int              `json:"message_id"`
-	ChatID    int64            `json:"chat_id"`
-	Reaction  []*ReactionEmoji `json:"reaction"`
-	IsBig     bool             `json:"is_big"`
+func (e Reaction) IsCustom() bool {
+	return e.Type == "custom_emoji"
 }
-
-var (
-	ReactionClown    = &ReactionEmoji{Type: "emoji", Emoji: "🤡"}
-	ReactionEgor     = &ReactionEmoji{Type: "emoji", Emoji: "🌚"}
-	ReactionThumbsUp = &ReactionEmoji{Type: "emoji", Emoji: "👍"}
-	ReactionHotDog   = &ReactionEmoji{Type: "emoji", Emoji: "🌭"}
-)
