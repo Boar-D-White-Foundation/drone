@@ -96,6 +96,10 @@ func (s *Service) Stop() {
 	s.bot.Stop()
 }
 
+func (s *Service) NewUpdateContext(u tele.Update) tele.Context {
+	return s.bot.NewContext(u)
+}
+
 func (s *Service) SendSpoilerLink(threadID int, header, link string) (int, error) {
 	payload := fmt.Sprintf("%s\n%s", header, link)
 	message, err := s.bot.Send(s.chatID, payload, &tele.SendOptions{
