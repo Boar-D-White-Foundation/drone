@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSkipDrone(t *testing.T) {
+func TestSkipE2EDrone(t *testing.T) {
 	ctx := context.Background()
 	cfg, err := LoadConfig()
 	require.NoError(t, err)

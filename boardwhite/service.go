@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"regexp"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
@@ -18,6 +19,10 @@ const (
 
 	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
 	keyNCStats          = "boardwhite:neetcode:stats"
+)
+
+var (
+	lcSubmissionRe = regexp.MustCompile(`^https://leetcode.com/.+/submissions/[^/]+/?$`)
 )
 
 type MockEgorConfig struct {
