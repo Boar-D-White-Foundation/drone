@@ -12,8 +12,6 @@ import (
 )
 
 const (
-	keyLastByegorMockTime = "boardwhite:mock:byegor:last_mock"
-
 	keyLCPinnedMessages = "boardwhite:leetcode:pinned_messages"
 
 	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
@@ -25,8 +23,7 @@ var (
 	lcSubmissionRe = regexp.MustCompile(`^https://leetcode.com/.+/submissions/[^/]+/?$`)
 )
 
-type MockEgorConfig struct {
-	Enabled   bool
+type MockConfig struct {
 	Period    time.Duration
 	StickerID string
 }
@@ -36,7 +33,7 @@ type ServiceConfig struct {
 	DailyStickersIDs []string
 	DpStickerID      string
 	DailyNCStartDate time.Time
-	MockEgor         MockEgorConfig
+	Mocks            map[string]MockConfig
 }
 
 func (cfg ServiceConfig) Validate() error {

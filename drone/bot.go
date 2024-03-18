@@ -49,7 +49,11 @@ func StartDrone(ctx context.Context, cfg Config) error {
 	}
 	defer database.Stop()
 
-	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, cfg.ServiceConfig())
+	bwCfg, err := cfg.ServiceConfig()
+	if err != nil {
+		return fmt.Errorf("service config: %w", err)
+	}
+	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
 	if err != nil {
 		return err
 	}

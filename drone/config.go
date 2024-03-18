@@ -1,24 +1,16 @@
 package main
 
 import (
-	"errors"
-	"os"
-	"strconv"
+	"fmt"
 	"strings"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/boardwhite"
-	tele "gopkg.in/telebot.v3"
+	"github.com/kelseyhightower/envconfig"
 )
 
-const (
-	defaultDPStickerID = "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"
-
-	smithLoverStickerID = "CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE"
-)
-
-var (
-	defaultDailyStickersIDs = []string{
+func defaultDailyStickersIDs() []string {
+	return []string{
 		"CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA",
 		"CAACAgIAAxkBAAELqk5l72yJkbx4_vskG3n6zWoWaAnA3QACazYAArJX2UsY5inoNwaFoTQE",
 		"CAACAgIAAxkBAAELsFZl8hFWX-2VvyppubPYPnLFrVeLPgACZjEAAmSSoUrAsMs8kC1omDQE",
@@ -33,155 +25,100 @@ var (
 		"CAACAgIAAxkBAAELsERl8hD1xsuLUYRD9F4a8ekVAgg8VAACgDgAAsuH-UvwActGs5DfMzQE",
 		"CAACAgIAAxkBAAELsEJl8hDUc-b0jyDfeH6Ct2McMp4mlAACOzcAAquEmUsMP7ObsCcumTQE",
 	}
-)
-
-type Config struct {
-	TgKey                      string
-	LCDailyCron                string
-	NCDailyCron                string
-	NCDailyStartDate           time.Time
-	DailyStickerIDs            []string
-	DPStickerID                string
-	BoarDWhiteChatID           tele.ChatID
-	BoarDWhiteLeetCodeThreadID int
-	BadgerPath                 string
-	TgLongPollerTimeout        time.Duration
-	MockEgor                   MockEgorConfig
 }
 
-type MockEgorConfig struct {
-	Enabled   bool
-	Period    time.Duration
+type Config struct {
+	BadgerPath string `envconfig:"BADGER_PATH" default:"data/badger"`
+
+	TgKey               string        `envconfig:"TG_BOT_API_KEY"`
+	TgLongPollerTimeout time.Duration `envconfig:"TG_LONG_POLLER_TIMEOUT" default:"10s"`
+
+	BoarDWhiteChatID           int64 `envconfig:"BOAR_D_WHITE_CHAT_ID" default:"-1001640461540"`
+	BoarDWhiteLeetCodeThreadID int   `envconfig:"BOAR_D_WHITE_LEET_CODE_THREAD_ID" default:"10095"`
+
+	// every day at 01:00 UTC
+	LCDailyCron string `envconfig:"LC_DAILY_CRON" default:"0 1 * * *"`
+
+	// every day at 12:00 UTC
+	NCDailyCron      string `envconfig:"NC_DAILY_CRON" default:"0 12 * * *"`
+	NCDailyStartDate string `envconfig:"NC_DAILY_START_DATE" default:"2024-03-14"`
+	DailyStickerIDs  []string
+	DPStickerID      string `envconfig:"DP_STICKER_ID" default:"CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"`
+
+	Mocks MockConfigs `envconfig:"MOCKS"`
+}
+
+type MockConfig struct {
+	Username  string
+	Period    string
 	StickerID string
 }
 
-func (cfg Config) ServiceConfig() boardwhite.ServiceConfig {
+type MockConfigs []MockConfig
+
+func (cfg *MockConfigs) Decode(s string) error {
+	if s == "" {
+		return nil
+	}
+	s = strings.TrimLeft(s, "[")
+	s = strings.TrimRight(s, "]")
+	ss := strings.Split(s, ",")
+
+	cfgs := make([]MockConfig, 0, len(ss))
+	for _, v := range ss {
+		vv := strings.Split(v, ";")
+		if len(vv) != 3 {
+			continue
+		}
+		cfgs = append(cfgs, MockConfig{
+			Username:  vv[0],
+			Period:    vv[1],
+			StickerID: vv[2],
+		})
+	}
+
+	*cfg = cfgs
+	return nil
+}
+
+func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
+	ncDailyStartDate, err := time.Parse("2006-01-02", cfg.NCDailyStartDate)
+	if err != nil {
+		return boardwhite.ServiceConfig{}, fmt.Errorf("parse ncdailystartdate %q: %w", cfg.NCDailyStartDate, err)
+	}
+
+	mocks := make(map[string]boardwhite.MockConfig)
+	for _, v := range cfg.Mocks {
+		period, err := time.ParseDuration(v.Period)
+		if err != nil {
+			return boardwhite.ServiceConfig{}, fmt.Errorf("parse duration %q: %w", v.Period, err)
+		}
+		mocks[v.Username] = boardwhite.MockConfig{
+			Period:    period,
+			StickerID: v.StickerID,
+		}
+	}
+
 	return boardwhite.ServiceConfig{
 		LeetcodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
 		DailyStickersIDs: cfg.DailyStickerIDs,
 		DpStickerID:      cfg.DPStickerID,
-		DailyNCStartDate: cfg.NCDailyStartDate,
-		MockEgor: boardwhite.MockEgorConfig{
-			Enabled:   cfg.MockEgor.Enabled,
-			Period:    cfg.MockEgor.Period,
-			StickerID: cfg.MockEgor.StickerID,
-		},
-	}
-}
-
-func LoadConfig() (Config, error) {
-	boarDWhiteChatID, err := getEnvInt64Default("DRONE_BOAR_D_WHITE_CHAT_ID", -1001640461540)
-	if err != nil {
-		return Config{}, errors.New("chat id is incorrect")
-	}
-
-	boarDWhiteLeetCodeThreadID, err := getEnvIntDefault("DRONE_BOAR_D_WHITE_LEET_CODE_THREAD_ID", 10095)
-	if err != nil {
-		return Config{}, errors.New("thread id is incorrect")
-	}
-
-	ncDailyStartDate, err := getEnvTimeDefault(
-		"DRONE_NC_DAILY_START_DATE",
-		time.Date(2024, 3, 14, 0, 0, 0, 0, time.UTC),
-	)
-	if err != nil {
-		return Config{}, errors.New("nc daily start date is incorrect")
-	}
-
-	dailyStickerIDs, err := getEnvStringSliceDefault(",", "DRONE_DAILY_STICKER_IDS", defaultDailyStickersIDs)
-	if err != nil {
-		return Config{}, errors.New("daily sticker id's is incorrect")
-	}
-
-	tgLongPollerTimeout, err := getEnvDurationDefault("DRONE_TG_LONG_POLLER_TIMEOUT", 10*time.Second)
-	if err != nil {
-		return Config{}, errors.New("tg long poller timeout is incorrect")
-	}
-
-	mockEgor, err := getEnvBoolDefault("DRONE_MOCK_EGOR_ENABLED", false)
-	if err != nil {
-		return Config{}, errors.New("mock egor enabled is incorrect")
-	}
-
-	mockEgorPeriod, err := getEnvDurationDefault("DRONE_MOCK_EGOR_PERIOD", 71*time.Hour)
-	if err != nil {
-		return Config{}, errors.New("mock egor period is incorrect")
-	}
-
-	return Config{
-		TgKey: os.Getenv("DRONE_TG_BOT_API_KEY"),
-		// every day at 01:00 UTC
-		LCDailyCron: getEnvDefault("DRONE_LC_DAILY_CRON", "0 1 * * *"),
-		// every day at 12:00 UTC
-		NCDailyCron:                getEnvDefault("DRONE_NC_DAILY_CRON", "0 12 * * *"),
-		NCDailyStartDate:           ncDailyStartDate,
-		DailyStickerIDs:            dailyStickerIDs,
-		DPStickerID:                getEnvDefault("DRONE_DP_STICKER_ID", defaultDPStickerID),
-		BoarDWhiteChatID:           tele.ChatID(boarDWhiteChatID),
-		BoarDWhiteLeetCodeThreadID: boarDWhiteLeetCodeThreadID,
-		// default to relative path inside the working dir
-		BadgerPath:          getEnvDefault("DRONE_BADGER_PATH", "data/badger"),
-		TgLongPollerTimeout: tgLongPollerTimeout,
-		MockEgor: MockEgorConfig{
-			Enabled:   mockEgor,
-			Period:    mockEgorPeriod,
-			StickerID: getEnvDefault("DRONE_MOCK_EGOR_STICKER_ID", smithLoverStickerID),
-		},
+		DailyNCStartDate: ncDailyStartDate,
+		Mocks:            mocks,
 	}, nil
 }
 
-func getEnvDefault(key, value string) string {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value
-	}
-	return v
-}
+func LoadConfig() (Config, error) {
+	var cfg Config
 
-func getEnvBoolDefault(key string, value bool) (bool, error) {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value, nil
+	err := envconfig.Process("DRONE", &cfg)
+	if err != nil {
+		return Config{}, fmt.Errorf("process: %w", err)
 	}
-	return strconv.ParseBool(v)
-}
 
-func getEnvIntDefault(key string, value int) (int, error) {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value, nil
+	if len(cfg.DailyStickerIDs) == 0 {
+		cfg.DailyStickerIDs = defaultDailyStickersIDs()
 	}
-	return strconv.Atoi(v)
-}
 
-func getEnvInt64Default(key string, value int64) (int64, error) {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value, nil
-	}
-	return strconv.ParseInt(v, 10, 64)
-}
-
-func getEnvTimeDefault(key string, value time.Time) (time.Time, error) {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value, nil
-	}
-	return time.Parse("2006-01-02", v)
-}
-
-func getEnvDurationDefault(key string, value time.Duration) (time.Duration, error) {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value, nil
-	}
-	return time.ParseDuration(v)
-}
-
-func getEnvStringSliceDefault(sep, key string, value []string) ([]string, error) {
-	v := os.Getenv(key)
-	if len(v) == 0 {
-		return value, nil
-	}
-	return strings.Split(v, sep), nil
+	return cfg, nil
 }

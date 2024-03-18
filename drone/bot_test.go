@@ -20,7 +20,9 @@ func TestSkipE2EDrone(t *testing.T) {
 	require.NoError(t, err)
 	defer database.Stop()
 
-	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, cfg.ServiceConfig())
+	bwCfg, err := cfg.ServiceConfig()
+	require.NoError(t, err)
+	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
 	require.NoError(t, err)
 
 	err = bw.PublishLCDaily(ctx)

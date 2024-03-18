@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"time"
 
+	"gopkg.in/telebot.v3"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -27,7 +28,7 @@ type Service struct {
 
 var _ Client = (*Service)(nil)
 
-func NewService(token string, chatID tele.ChatID, longPollerTimeout time.Duration) (*Service, error) {
+func NewService(token string, chatID int64, longPollerTimeout time.Duration) (*Service, error) {
 	poller := tele.LongPoller{
 		Timeout: longPollerTimeout,
 	}
@@ -41,11 +42,11 @@ func NewService(token string, chatID tele.ChatID, longPollerTimeout time.Duratio
 	}
 
 	chat := tele.Chat{
-		ID: int64(chatID),
+		ID: chatID,
 	}
 	return &Service{
 		bot:      bot,
-		chatID:   chatID,
+		chatID:   telebot.ChatID(chatID),
 		chat:     &chat,
 		handlers: make(map[string][]handler),
 	}, nil

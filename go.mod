@@ -5,6 +5,7 @@ go 1.22.1
 require (
 	github.com/dgraph-io/badger/v4 v4.2.0
 	github.com/go-co-op/gocron/v2 v2.2.5
+	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/automaxprocs v1.5.3
 	gopkg.in/telebot.v3 v3.2.1
