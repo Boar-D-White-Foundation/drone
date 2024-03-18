@@ -68,7 +68,7 @@ func (cfg *MockConfigs) Decode(s string) error {
 	for _, v := range ss {
 		vv := strings.Split(v, ";")
 		if len(vv) != 3 {
-			continue
+			return fmt.Errorf("incorrect mock config value %q", v)
 		}
 		cfgs = append(cfgs, MockConfig{
 			Username:  vv[0],
