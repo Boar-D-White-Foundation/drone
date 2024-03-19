@@ -13,7 +13,7 @@ import (
 )
 
 func NewTgServiceFromConfig(cfg Config) (*tg.Service, error) {
-	tgService, err := tg.NewService(cfg.TgKey, cfg.BoarDWhiteChatID, cfg.TgLongPollerTimeout)
+	tgService, err := tg.NewService(cfg.Tg.Key, cfg.Boardwhite.ChatID, cfg.Tg.LongPollerTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("new tg client: %w", err)
 	}
@@ -105,13 +105,13 @@ func registerCronJobs(
 	bw *boardwhite.Service,
 ) ([]job, error) {
 	jobs := make([]job, 0)
-	jb, err := registerJob(ctx, scheduler, "PublishLCDaily", cfg.LCDailyCron, bw.PublishLCDaily)
+	jb, err := registerJob(ctx, scheduler, "PublishLCDaily", cfg.LeetcodeDaily.Cron, bw.PublishLCDaily)
 	if err != nil {
 		return nil, err
 	}
 	jobs = append(jobs, jb)
 
-	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NCDailyCron, bw.PublishNCDaily)
+	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NeetcodeDaily.Cron, bw.PublishNCDaily)
 	if err != nil {
 		return nil, err
 	}

@@ -6,6 +6,7 @@ services:
       context: .
     volumes:
       - data:/opt/drone/data
+      - ${PWD}/config.yaml:/opt/drone/config.yaml
     env_file: .env
 
 volumes:

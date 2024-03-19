@@ -9,7 +9,7 @@ import (
 
 func TestSkipE2EDrone(t *testing.T) {
 	ctx := context.Background()
-	cfg, err := LoadConfig()
+	cfg, err := DefaultConfig()
 	require.NoError(t, err)
 
 	tgService, err := NewTgServiceFromConfig(cfg)

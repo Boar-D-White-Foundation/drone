@@ -13,7 +13,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	cfg, err := LoadConfig()
+	cfg, err := LoadConfig(os.Getenv("CONFIG_FILENAME"))
 	if err != nil {
 		slog.Error("failed load config", slog.Any("err", err))
 		os.Exit(1)

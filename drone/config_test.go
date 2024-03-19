@@ -8,21 +8,24 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfig(t *testing.T) {
-	t.Setenv(
-		"DRONE_MOCKS",
-		`byegor;72h;CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE,lk4d4;72h;CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE,ollkostin;72h;CAACAgQAAxkBAAELvRpl-EweMqCeuggLoAo3ysvFmONONgACvRAAAqbxcR5BuzVAQyP23DQE'`,
-	)
+func TestConfigTgKey(t *testing.T) {
+	const tgKey = "SECRET KEY"
+	t.Setenv("DRONE_TG_BOT_API_KEY", tgKey)
 
-	cfg, err := LoadConfig()
+	cfg, err := DefaultConfig()
 	require.NoError(t, err)
 
-	assert.Len(t, cfg.Mocks, 3)
-	for _, v := range cfg.Mocks {
-		assert.NotEmpty(t, v.Username)
-		assert.NotEmpty(t, v.Period)
-		assert.NotEmpty(t, v.StickerID)
-	}
+	assert.Empty(t, cfg.Tg.Key)
+
+	cfg, err = LoadConfig("default_config.yaml")
+	require.NoError(t, err)
+
+	assert.Equal(t, tgKey, cfg.Tg.Key)
+}
+
+func TestConfigMocks(t *testing.T) {
+	cfg, err := DefaultConfig()
+	require.NoError(t, err)
 
 	bwCfg, err := cfg.ServiceConfig()
 	require.NoError(t, err)

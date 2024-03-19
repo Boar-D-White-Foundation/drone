@@ -2,89 +2,55 @@ package main
 
 import (
 	"fmt"
-	"strings"
+	"os"
 	"time"
+
+	_ "embed"
 
 	"github.com/boar-d-white-foundation/drone/boardwhite"
 	"github.com/kelseyhightower/envconfig"
+	"gopkg.in/yaml.v3"
 )
 
-func defaultDailyStickersIDs() []string {
-	return []string{
-		"CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA",
-		"CAACAgIAAxkBAAELqk5l72yJkbx4_vskG3n6zWoWaAnA3QACazYAArJX2UsY5inoNwaFoTQE",
-		"CAACAgIAAxkBAAELsFZl8hFWX-2VvyppubPYPnLFrVeLPgACZjEAAmSSoUrAsMs8kC1omDQE",
-		"CAACAgIAAxkBAAELsFRl8hE8RstoYI8E3RfKk2N1LRX-qQAC4TUAAhJs2ElFZyKM69wJfDQE",
-		"CAACAgIAAxkBAAELsFJl8hEuJlU_1RK4nbpq3_iuZYsAATAAAi01AALtZihJuuf3iNlNcbU0BA",
-		"CAACAgIAAxkBAAELsFBl8hEnQ9Ie_ANBN_TfzbDjvMck2wACVToAAhqdoEiRsQbJLo-jijQE",
-		"CAACAgIAAxkBAAELsE5l8hEfhr-0Dn7BfsI9sDWA3I0t0wACSzUAAtS3aUj_OJb99K6DkjQE",
-		"CAACAgIAAxkBAAELsExl8hEZTP0DFsf6hUDiZnx-i9I25wACpTEAAlp3YUhJNRORPRx_5DQE",
-		"CAACAgIAAxkBAAELsEpl8hERg5mpamVfTo_SCgZRatbi6wACCzcAAqVsKEjLAvd1EuqdLzQE",
-		"CAACAgIAAxkBAAELsEhl8hENAzygO8iFauBYZD0XPYqD3gACkTQAArnoCUjvaNgUd-BoHDQE",
-		"CAACAgIAAxkBAAELsEZl8hD-i6wYaeLUMtP8MWhZwZoy3gACAjMAAs0gAUjsT0apWa4cRTQE",
-		"CAACAgIAAxkBAAELsERl8hD1xsuLUYRD9F4a8ekVAgg8VAACgDgAAsuH-UvwActGs5DfMzQE",
-		"CAACAgIAAxkBAAELsEJl8hDUc-b0jyDfeH6Ct2McMp4mlAACOzcAAquEmUsMP7ObsCcumTQE",
-	}
-}
+//go:embed default_config.yaml
+var defaultConfigBytes []byte
 
 type Config struct {
-	BadgerPath string `envconfig:"BADGER_PATH" default:"data/badger"`
+	BadgerPath string `yaml:"badgerPath"`
 
-	TgKey               string        `envconfig:"TG_BOT_API_KEY"`
-	TgLongPollerTimeout time.Duration `envconfig:"TG_LONG_POLLER_TIMEOUT" default:"10s"`
+	Tg struct {
+		Key               string        `envconfig:"BOT_API_KEY" yaml:"-" json:"-"`
+		LongPollerTimeout time.Duration `envconfig:"-" yaml:"longPollerTimeout"`
+	} `envconfig:"TG" yaml:"tg"`
 
-	BoarDWhiteChatID           int64 `envconfig:"BOAR_D_WHITE_CHAT_ID" default:"-1001640461540"`
-	BoarDWhiteLeetCodeThreadID int   `envconfig:"BOAR_D_WHITE_LEET_CODE_THREAD_ID" default:"10095"`
+	Boardwhite struct {
+		ChatID           int64 `envconfig:"-" yaml:"chatId"`
+		LeetCodeThreadID int   `envconfig:"-" yaml:"leetcodeThreadId"`
+	} `envconfig:"-" yaml:"boardwhite"`
 
-	// every day at 01:00 UTC
-	LCDailyCron string `envconfig:"LC_DAILY_CRON" default:"0 1 * * *"`
+	LeetcodeDaily struct {
+		Cron string `envconfig:"-" yaml:"cron"`
+	} `envconfig:"-" yaml:"leetcodeDaily"`
 
-	// every day at 12:00 UTC
-	NCDailyCron      string `envconfig:"NC_DAILY_CRON" default:"0 12 * * *"`
-	NCDailyStartDate string `envconfig:"NC_DAILY_START_DATE" default:"2024-03-14"`
-	DailyStickerIDs  []string
-	DPStickerID      string `envconfig:"DP_STICKER_ID" default:"CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"`
+	NeetcodeDaily struct {
+		Cron      string `envconfig:"-" yaml:"cron"`
+		StartDate string `envconfig:"-" yaml:"startDate"`
+	} `envconfig:"-" yaml:"neetcodeDaily"`
 
-	Mocks MockConfigs `envconfig:"MOCKS"`
-}
+	DailyStickerIDs []string `envconfig:"-" yaml:"dailyStickerIds"`
+	DPStickerID     string   `envconfig:"-" yaml:"dpStickerId"`
 
-type MockConfig struct {
-	Username  string
-	Period    string
-	StickerID string
-}
-
-type MockConfigs []MockConfig
-
-func (cfg *MockConfigs) Decode(s string) error {
-	if s == "" {
-		return nil
-	}
-	s = strings.TrimLeft(s, "[")
-	s = strings.TrimRight(s, "]")
-	ss := strings.Split(s, ",")
-
-	cfgs := make([]MockConfig, 0, len(ss))
-	for _, v := range ss {
-		vv := strings.Split(v, ";")
-		if len(vv) != 3 {
-			return fmt.Errorf("incorrect mock config value %q", v)
-		}
-		cfgs = append(cfgs, MockConfig{
-			Username:  vv[0],
-			Period:    vv[1],
-			StickerID: vv[2],
-		})
-	}
-
-	*cfg = cfgs
-	return nil
+	Mocks []struct {
+		Username  string `envconfig:"-" yaml:"username"`
+		Period    string `envconfig:"-" yaml:"period"`
+		StickerID string `envconfig:"-" yaml:"stickerId"`
+	} `envconfig:"-" yaml:"mocks"`
 }
 
 func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
-	ncDailyStartDate, err := time.Parse("2006-01-02", cfg.NCDailyStartDate)
+	ncDailyStartDate, err := time.Parse("2006-01-02", cfg.NeetcodeDaily.StartDate)
 	if err != nil {
-		return boardwhite.ServiceConfig{}, fmt.Errorf("parse ncdailystartdate %q: %w", cfg.NCDailyStartDate, err)
+		return boardwhite.ServiceConfig{}, fmt.Errorf("parse ncdailystartdate %q: %w", cfg.NeetcodeDaily.StartDate, err)
 	}
 
 	mocks := make(map[string]boardwhite.MockConfig)
@@ -100,7 +66,7 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 	}
 
 	return boardwhite.ServiceConfig{
-		LeetcodeThreadID: cfg.BoarDWhiteLeetCodeThreadID,
+		LeetcodeThreadID: cfg.Boardwhite.LeetCodeThreadID,
 		DailyStickersIDs: cfg.DailyStickerIDs,
 		DpStickerID:      cfg.DPStickerID,
 		DailyNCStartDate: ncDailyStartDate,
@@ -108,16 +74,33 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 	}, nil
 }
 
-func LoadConfig() (Config, error) {
-	var cfg Config
-
-	err := envconfig.Process("DRONE", &cfg)
+func DefaultConfig() (cfg Config, err error) {
+	err = yaml.Unmarshal(defaultConfigBytes, &cfg)
 	if err != nil {
-		return Config{}, fmt.Errorf("process: %w", err)
+		return Config{}, fmt.Errorf("unmarshal default config: %w", err)
 	}
 
-	if len(cfg.DailyStickerIDs) == 0 {
-		cfg.DailyStickerIDs = defaultDailyStickersIDs()
+	return cfg, nil
+}
+
+func LoadConfig(filename string) (Config, error) {
+	cfg, err := DefaultConfig()
+	if err != nil {
+		return cfg, err
+	}
+
+	data, err := os.ReadFile(filename)
+	if err != nil {
+		return Config{}, fmt.Errorf("read config file %q: %w", filename, err)
+	}
+	err = yaml.Unmarshal(data, &cfg)
+	if err != nil {
+		return Config{}, fmt.Errorf("unmarshal config: %w", err)
+	}
+
+	err = envconfig.Process("DRONE", &cfg)
+	if err != nil {
+		return Config{}, fmt.Errorf("read envs: %w", err)
 	}
 
 	return cfg, nil
