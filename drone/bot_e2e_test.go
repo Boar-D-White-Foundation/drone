@@ -1,15 +1,18 @@
+//go:build e2e
+
 package main
 
 import (
 	"context"
 	"testing"
 
+	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSkipE2EDrone(t *testing.T) {
+func TestDrone(t *testing.T) {
 	ctx := context.Background()
-	cfg, err := LoadConfig()
+	cfg, err := config.Load(config.Path())
 	require.NoError(t, err)
 
 	tgService, err := NewTgServiceFromConfig(cfg)

@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/boar-d-white-foundation/drone/config"
 	_ "go.uber.org/automaxprocs"
 )
 
@@ -13,7 +14,7 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
 
-	cfg, err := LoadConfig()
+	cfg, err := config.Load(config.Path())
 	if err != nil {
 		slog.Error("failed load config", slog.Any("err", err))
 		os.Exit(1)

@@ -11,6 +11,8 @@ import (
 )
 
 func TestBadger(t *testing.T) {
+	t.Parallel()
+
 	bdb := db.NewBadgerBD(":memory:")
 	testDb(t, "badger", bdb)
 }

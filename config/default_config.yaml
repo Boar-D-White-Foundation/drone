@@ -1,0 +1,43 @@
+badgerPath: "data/badger"
+tg:
+  apiKey: "FILL ME!!!"
+  longPollerTimeout: "10s"
+boardwhite:
+  chatId: -1001640461540
+  leetcodeThreadId: 10095
+leetcodeDaily:
+  cron: "0 1 * * *" # every day at 01:00 UTC
+neetcodeDaily:
+  cron: "0 12 * * *" #  every day at 12:00 UTC
+  startDate: "2024-03-14"
+dailyStickerIds:
+  - "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
+  - "CAACAgIAAxkBAAELqk5l72yJkbx4_vskG3n6zWoWaAnA3QACazYAArJX2UsY5inoNwaFoTQE"
+  - "CAACAgIAAxkBAAELsFZl8hFWX-2VvyppubPYPnLFrVeLPgACZjEAAmSSoUrAsMs8kC1omDQE"
+  - "CAACAgIAAxkBAAELsFRl8hE8RstoYI8E3RfKk2N1LRX-qQAC4TUAAhJs2ElFZyKM69wJfDQE"
+  - "CAACAgIAAxkBAAELsFJl8hEuJlU_1RK4nbpq3_iuZYsAATAAAi01AALtZihJuuf3iNlNcbU0BA"
+  - "CAACAgIAAxkBAAELsFBl8hEnQ9Ie_ANBN_TfzbDjvMck2wACVToAAhqdoEiRsQbJLo-jijQE"
+  - "CAACAgIAAxkBAAELsE5l8hEfhr-0Dn7BfsI9sDWA3I0t0wACSzUAAtS3aUj_OJb99K6DkjQE"
+  - "CAACAgIAAxkBAAELsExl8hEZTP0DFsf6hUDiZnx-i9I25wACpTEAAlp3YUhJNRORPRx_5DQE"
+  - "CAACAgIAAxkBAAELsEpl8hERg5mpamVfTo_SCgZRatbi6wACCzcAAqVsKEjLAvd1EuqdLzQE"
+  - "CAACAgIAAxkBAAELsEhl8hENAzygO8iFauBYZD0XPYqD3gACkTQAArnoCUjvaNgUd-BoHDQE"
+  - "CAACAgIAAxkBAAELsEZl8hD-i6wYaeLUMtP8MWhZwZoy3gACAjMAAs0gAUjsT0apWa4cRTQE"
+  - "CAACAgIAAxkBAAELsERl8hD1xsuLUYRD9F4a8ekVAgg8VAACgDgAAsuH-UvwActGs5DfMzQE"
+  - "CAACAgIAAxkBAAELsEJl8hDUc-b0jyDfeH6Ct2McMp4mlAACOzcAAquEmUsMP7ObsCcumTQE"
+dpStickerId: "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"
+mocks:
+  - username: "byegor"
+    period: "72h"
+    stickerId: "CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE"
+  - username: "ollkostin"
+    period: "72h"
+    stickerId: "CAACAgQAAxkBAAELvRpl-EweMqCeuggLoAo3ysvFmONONgACvRAAAqbxcR5BuzVAQyP23DQE"		
+  - username: "lk4d4"
+    period: "72h"
+    stickerId: "CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE"
+  - username: "yukhyan"
+    period: "72h"
+    stickerId: "CAACAgIAAxkBAAELvu5l-WzyKAuVR_3-pN9OdwTbagyrlwACFB0AAp5nqUiXjlLZ3jpJ2jQE"
+  - username: "quazeeee"
+    period: "48h"
+    stickerId: "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"
