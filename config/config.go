@@ -1,12 +1,11 @@
 package config
 
 import (
+	_ "embed"
 	"encoding/json"
 	"fmt"
 	"os"
 	"time"
-
-	_ "embed"
 
 	"github.com/boar-d-white-foundation/drone/boardwhite"
 	"gopkg.in/yaml.v3"

@@ -12,7 +12,7 @@ import (
 
 func TestDrone(t *testing.T) {
 	ctx := context.Background()
-	cfg, err := config.Default()
+	cfg, err := config.Load(config.Path())
 	require.NoError(t, err)
 
 	tgService, err := NewTgServiceFromConfig(cfg)

@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestE2EGetDailyLink(t *testing.T) {
+func TestGetDailyLink(t *testing.T) {
 	ctx := context.Background()
 	link, err := leetcode.GetDailyLink(ctx)
 	require.NoError(t, err)
