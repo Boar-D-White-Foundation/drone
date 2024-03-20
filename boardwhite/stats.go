@@ -13,8 +13,8 @@ func (s *Service) statsKey(username string) string {
 	return "boardwhite:stats:" + username
 }
 
-type UserStats struct {
-	Messages int64 `json:"messsages"`
+type userStats struct {
+	MessagesCount int64 `json:"messsagesCount"`
 }
 
 func (s *Service) UserStatistics(ctx context.Context, c tele.Context) error {
@@ -30,20 +30,19 @@ func (s *Service) UserStatistics(ctx context.Context, c tele.Context) error {
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
 
-		newCounter := &UserStats{}
-		counter, err := db.GetJson[UserStats](tx, key)
+		counter, err := db.GetJsonDefault[userStats](tx, key, userStats{})
 		switch {
 		case err == nil:
-			newCounter.Messages = counter.Messages + 1
+			counter.MessagesCount++
 
 		case errors.Is(err, db.ErrKeyNotFound):
-			newCounter.Messages = 1
+			counter.MessagesCount = 1
 		default:
 			return fmt.Errorf("get %q: %w", key, err)
 
 		}
 
-		err = db.SetJson(tx, key, newCounter)
+		err = db.SetJson(tx, key, counter)
 		if err != nil {
 			return fmt.Errorf("set %q: %w", key, err)
 		}
