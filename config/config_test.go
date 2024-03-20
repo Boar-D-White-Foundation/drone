@@ -38,7 +38,7 @@ func TestConfigOverride(t *testing.T) {
 
 func TestConfigMocks(t *testing.T) {
 	t.Parallel()
-	
+
 	cfg, err := Default()
 	require.NoError(t, err)
 
