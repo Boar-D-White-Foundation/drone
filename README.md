@@ -26,8 +26,21 @@ $ uv pip sync requirements.txt
 # https://googlechromelabs.github.io/chrome-for-testing/
 ```
 
+## Tests
+
+# Unit tests
+```
+go test -race ./...
+```
+
+# E2E tests
+```
+go test --tags=e2e -race ./...
+```
+
 ## Run bot
 ```shell
-$ cp .env.example .env
+$ cp ./config/default_config.yaml config.yaml
+$ # set tg.apiKey in config.yaml 
 $ docker-compose up --build -d
 ```

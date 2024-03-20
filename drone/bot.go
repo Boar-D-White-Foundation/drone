@@ -7,12 +7,13 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/boardwhite"
+	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
 )
 
-func NewTgServiceFromConfig(cfg Config) (*tg.Service, error) {
+func NewTgServiceFromConfig(cfg config.Config) (*tg.Service, error) {
 	tgService, err := tg.NewService(cfg.Tg.Key, cfg.Boardwhite.ChatID, cfg.Tg.LongPollerTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("new tg client: %w", err)
@@ -21,7 +22,7 @@ func NewTgServiceFromConfig(cfg Config) (*tg.Service, error) {
 	return tgService, nil
 }
 
-func NewDBFromConfig(cfg Config) db.DB {
+func NewDBFromConfig(cfg config.Config) db.DB {
 	return db.NewBadgerBD(cfg.BadgerPath)
 }
 
@@ -37,7 +38,7 @@ func NewBoarDWhiteServiceFromConfig(
 	)
 }
 
-func StartDrone(ctx context.Context, cfg Config) error {
+func StartDrone(ctx context.Context, cfg config.Config) error {
 	tgService, err := NewTgServiceFromConfig(cfg)
 	if err != nil {
 		return err
@@ -100,7 +101,7 @@ type job struct {
 
 func registerCronJobs(
 	ctx context.Context,
-	cfg Config,
+	cfg config.Config,
 	scheduler gocron.Scheduler,
 	bw *boardwhite.Service,
 ) ([]job, error) {

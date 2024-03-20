@@ -1,6 +1,6 @@
 badgerPath: "data/badger"
 tg:
-  apiKey: "should not overwrite"
+  apiKey: "FILL ME!!!"
   longPollerTimeout: "10s"
 boardwhite:
   chatId: -1001640461540
@@ -35,3 +35,9 @@ mocks:
   - username: "lk4d4"
     period: "72h"
     stickerId: "CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE"
+  - username: "yukhyan"
+    period: "72h"
+    stickerId: "CAACAgIAAxkBAAELvu5l-WzyKAuVR_3-pN9OdwTbagyrlwACFB0AAp5nqUiXjlLZ3jpJ2jQE"
+  - username: "@quazeeee"
+    period: "48h"
+    stickerId: "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"

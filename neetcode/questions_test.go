@@ -7,6 +7,8 @@ import (
 )
 
 func TestGroups(t *testing.T) {
+	t.Parallel()
+
 	groups, err := Groups()
 	require.NoError(t, err)
 

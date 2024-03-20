@@ -1,3 +1,5 @@
+//go:build e2e
+
 package leetcode_test
 
 import (
@@ -8,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSkipE2EGetDailyLink(t *testing.T) {
+func TestE2EGetDailyLink(t *testing.T) {
 	ctx := context.Background()
 	link, err := leetcode.GetDailyLink(ctx)
 	require.NoError(t, err)

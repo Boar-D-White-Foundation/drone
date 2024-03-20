@@ -1,6 +1,7 @@
-package main
+package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -8,9 +9,17 @@ import (
 	_ "embed"
 
 	"github.com/boar-d-white-foundation/drone/boardwhite"
-	"github.com/kelseyhightower/envconfig"
 	"gopkg.in/yaml.v3"
 )
+
+func Path() string {
+	path, ok := os.LookupEnv("CONFIG_FILENAME")
+	if !ok {
+		return "config.yaml"
+	}
+
+	return path
+}
 
 //go:embed default_config.yaml
 var defaultConfigBytes []byte
@@ -19,32 +28,37 @@ type Config struct {
 	BadgerPath string `yaml:"badgerPath"`
 
 	Tg struct {
-		Key               string        `envconfig:"BOT_API_KEY" yaml:"-" json:"-"`
-		LongPollerTimeout time.Duration `envconfig:"-" yaml:"longPollerTimeout"`
-	} `envconfig:"TG" yaml:"tg"`
+		Key               string        `yaml:"apiKey" json:"-"` // intentionally hidden from logs
+		LongPollerTimeout time.Duration `yaml:"longPollerTimeout"`
+	} `yaml:"tg"`
 
 	Boardwhite struct {
-		ChatID           int64 `envconfig:"-" yaml:"chatId"`
-		LeetCodeThreadID int   `envconfig:"-" yaml:"leetcodeThreadId"`
-	} `envconfig:"-" yaml:"boardwhite"`
+		ChatID           int64 `yaml:"chatId"`
+		LeetCodeThreadID int   `yaml:"leetcodeThreadId"`
+	} `yaml:"boardwhite"`
 
 	LeetcodeDaily struct {
-		Cron string `envconfig:"-" yaml:"cron"`
-	} `envconfig:"-" yaml:"leetcodeDaily"`
+		Cron string `yaml:"cron"`
+	} `yaml:"leetcodeDaily"`
 
 	NeetcodeDaily struct {
-		Cron      string `envconfig:"-" yaml:"cron"`
-		StartDate string `envconfig:"-" yaml:"startDate"`
-	} `envconfig:"-" yaml:"neetcodeDaily"`
+		Cron      string `yaml:"cron"`
+		StartDate string `yaml:"startDate"`
+	} `yaml:"neetcodeDaily"`
 
-	DailyStickerIDs []string `envconfig:"-" yaml:"dailyStickerIds"`
-	DPStickerID     string   `envconfig:"-" yaml:"dpStickerId"`
+	DailyStickerIDs []string `yaml:"dailyStickerIds"`
+	DPStickerID     string   `yaml:"dpStickerId"`
 
 	Mocks []struct {
-		Username  string `envconfig:"-" yaml:"username"`
-		Period    string `envconfig:"-" yaml:"period"`
-		StickerID string `envconfig:"-" yaml:"stickerId"`
-	} `envconfig:"-" yaml:"mocks"`
+		Username  string `yaml:"username"`
+		Period    string `yaml:"period"`
+		StickerID string `yaml:"stickerId"`
+	} `yaml:"mocks"`
+}
+
+func (cfg Config) String() string {
+	b, _ := json.Marshal(&cfg) //nolint:errchkjson // intentionally omitting the error
+	return string(b)
 }
 
 func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
@@ -74,7 +88,7 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 	}, nil
 }
 
-func DefaultConfig() (cfg Config, err error) {
+func Default() (cfg Config, err error) {
 	err = yaml.Unmarshal(defaultConfigBytes, &cfg)
 	if err != nil {
 		return Config{}, fmt.Errorf("unmarshal default config: %w", err)
@@ -83,8 +97,8 @@ func DefaultConfig() (cfg Config, err error) {
 	return cfg, nil
 }
 
-func LoadConfig(filename string) (Config, error) {
-	cfg, err := DefaultConfig()
+func Load(filename string) (Config, error) {
+	cfg, err := Default()
 	if err != nil {
 		return cfg, err
 	}
@@ -96,11 +110,6 @@ func LoadConfig(filename string) (Config, error) {
 	err = yaml.Unmarshal(data, &cfg)
 	if err != nil {
 		return Config{}, fmt.Errorf("unmarshal config: %w", err)
-	}
-
-	err = envconfig.Process("DRONE", &cfg)
-	if err != nil {
-		return Config{}, fmt.Errorf("read envs: %w", err)
 	}
 
 	return cfg, nil
