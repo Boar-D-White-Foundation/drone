@@ -36,7 +36,7 @@ mocks:
     period: "72h"
     stickerId: "CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE"
   - username: "yukhyan"
-    period: "72h"
+    period: "24h"
     stickerId: "CAACAgIAAxkBAAELvu5l-WzyKAuVR_3-pN9OdwTbagyrlwACFB0AAp5nqUiXjlLZ3jpJ2jQE"
   - username: "quazeeee"
     period: "48h"
