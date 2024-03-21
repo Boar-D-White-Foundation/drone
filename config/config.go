@@ -49,9 +49,9 @@ type Config struct {
 	DPStickerID     string   `yaml:"dpStickerId"`
 
 	Mocks []struct {
-		Username  string `yaml:"username"`
-		Period    string `yaml:"period"`
-		StickerID string `yaml:"stickerId"`
+		Username   string   `yaml:"username"`
+		Period     string   `yaml:"period"`
+		StickerIDs []string `yaml:"stickerIds"`
 	} `yaml:"mocks"`
 }
 
@@ -73,8 +73,8 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 			return boardwhite.ServiceConfig{}, fmt.Errorf("parse duration %q: %w", v.Period, err)
 		}
 		mocks[v.Username] = boardwhite.MockConfig{
-			Period:    period,
-			StickerID: v.StickerID,
+			Period:     period,
+			StickerIDs: v.StickerIDs,
 		}
 	}
 

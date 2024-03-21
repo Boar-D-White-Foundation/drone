@@ -28,16 +28,26 @@ dpStickerId: "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPn
 mocks:
   - username: "byegor"
     period: "72h"
-    stickerId: "CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE"
+    stickerIds:
+      - "CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE"
   - username: "ollkostin"
     period: "72h"
-    stickerId: "CAACAgQAAxkBAAELvRpl-EweMqCeuggLoAo3ysvFmONONgACvRAAAqbxcR5BuzVAQyP23DQE"		
+    stickerIds:
+      - "CAACAgQAAxkBAAELvRpl-EweMqCeuggLoAo3ysvFmONONgACvRAAAqbxcR5BuzVAQyP23DQE"
   - username: "lk4d4"
     period: "72h"
-    stickerId: "CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE"
+    stickerIds:
+      - "CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE"
   - username: "yukhyan"
     period: "24h"
-    stickerId: "CAACAgIAAxkBAAELvu5l-WzyKAuVR_3-pN9OdwTbagyrlwACFB0AAp5nqUiXjlLZ3jpJ2jQE"
+    stickerIds:
+      - "CAACAgIAAxkBAAELvu5l-WzyKAuVR_3-pN9OdwTbagyrlwACFB0AAp5nqUiXjlLZ3jpJ2jQE"
+      - "CAACAgIAAxkBAAELwmll_BDVE3wVFL6g8bDSd2EDPuXCBgACzhMAAkFImEhIWZNDtbMOAAE0BA"
+      - "CAACAgIAAxkBAAELwmtl_BDaSFwk3r60go2hFLaKPhmzBAACFRgAAihmmEjcTuRs6Dq3HzQE"
+      - "CAACAgIAAxkBAAELwm1l_BDecsQYMErbNHagr0j9fnXloQAC1BQAAvItmUhRwI4aaOsy5zQE"
+      - "CAACAgIAAxkBAAELwm9l_BDw33MnhX3Mq0AJs0j7TqdMiwACjxkAAgznKEqMNBWL6wyaLjQE"
+      - "CAACAgIAAxkBAAELwnFl_BEBRVEvPVbD3NgXoaQspYBmmwACYxYAAuxPmEi5ByG8q9K_xjQE"
   - username: "quazeeee"
     period: "48h"
-    stickerId: "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"
+    stickerIds:
+      - "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"

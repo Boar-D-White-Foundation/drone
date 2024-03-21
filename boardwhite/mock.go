@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/iter"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -43,7 +44,12 @@ func (s *Service) OnMock(ctx context.Context, c tele.Context) error {
 			return fmt.Errorf("get %q: %w", key, err)
 		}
 
-		_, err = s.telegram.ReplyWithSticker(msg.ID, cfg.StickerID)
+		stickerID, err := iter.PickRandom(cfg.StickerIDs)
+		if err != nil {
+			return fmt.Errorf("pick random sticker: %w", err)
+		}
+
+		_, err = s.telegram.ReplyWithSticker(msg.ID, stickerID)
 		if err != nil {
 			return fmt.Errorf("reply with sticker: %w", err)
 		}

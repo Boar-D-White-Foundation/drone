@@ -20,12 +20,12 @@ const (
 )
 
 var (
-	lcSubmissionRe = regexp.MustCompile(`https://leetcode.com/.+/submissions/[^/]+/?`)
+	lcSubmissionRe = regexp.MustCompile(`https://leetcode.com/[^/]+/submissions/[^/]+/?`)
 )
 
 type MockConfig struct {
-	Period    time.Duration
-	StickerID string
+	Period     time.Duration
+	StickerIDs []string
 }
 
 type ServiceConfig struct {

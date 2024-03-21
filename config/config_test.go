@@ -49,6 +49,9 @@ func TestConfigMocks(t *testing.T) {
 	for username, v := range bwCfg.Mocks {
 		assert.NotEmpty(t, username)
 		assert.NotEmpty(t, v.Period)
-		assert.NotEmpty(t, v.StickerID)
+		assert.NotEmpty(t, v.StickerIDs)
+		for _, id := range v.StickerIDs {
+			assert.NotEmpty(t, id)
+		}
 	}
 }
