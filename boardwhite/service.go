@@ -29,19 +29,31 @@ type MockConfig struct {
 }
 
 type ServiceConfig struct {
-	LeetcodeThreadID int
-	DailyStickersIDs []string
-	DpStickerID      string
-	DailyNCStartDate time.Time
-	Mocks            map[string]MockConfig
+	leetcodeThreadID int
+	dailyStickersIDs []string
+	dpStickerID      string
+	dailyNCStartDate time.Time
+	mocks            map[string]MockConfig
 }
 
-func (cfg ServiceConfig) Validate() error {
-	if cfg.DailyNCStartDate.After(time.Now()) {
-		return errors.New("dailyNCStartDate should be in past")
+func NewServiceConfig(
+	leetcodeThreadID int,
+	dailyStickersIDs []string,
+	dpStickerID string,
+	dailyNCStartDate time.Time,
+	mocks map[string]MockConfig,
+) (ServiceConfig, error) {
+	if dailyNCStartDate.After(time.Now()) {
+		return ServiceConfig{}, errors.New("dailyNCStartDate should be in past")
 	}
 
-	return nil
+	return ServiceConfig{
+		leetcodeThreadID: leetcodeThreadID,
+		dailyStickersIDs: dailyStickersIDs,
+		dpStickerID:      dpStickerID,
+		dailyNCStartDate: dailyNCStartDate,
+		mocks:            mocks,
+	}, nil
 }
 
 type Service struct {
@@ -54,16 +66,12 @@ func NewService(
 	cfg ServiceConfig,
 	telegram tg.Client,
 	database db.DB,
-) (*Service, error) {
-	if err := cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-
+) *Service {
 	return &Service{
 		cfg:      cfg,
 		database: database,
 		telegram: telegram,
-	}, nil
+	}
 }
 
 func (s *Service) publish(
@@ -83,12 +91,12 @@ func (s *Service) publish(
 		}
 	}
 
-	messageID, err := s.telegram.SendSpoilerLink(s.cfg.LeetcodeThreadID, header, text)
+	messageID, err := s.telegram.SendSpoilerLink(s.cfg.leetcodeThreadID, header, text)
 	if err != nil {
 		return 0, fmt.Errorf("send daily: %w", err)
 	}
 
-	_, err = s.telegram.SendSticker(s.cfg.LeetcodeThreadID, stickerID)
+	_, err = s.telegram.SendSticker(s.cfg.leetcodeThreadID, stickerID)
 	if err != nil {
 		return 0, fmt.Errorf("send sticker: %w", err)
 	}

@@ -24,7 +24,7 @@ func (s *Service) OnMock(ctx context.Context, c tele.Context) error {
 	}
 
 	username := sender.Username
-	cfg, ok := s.cfg.Mocks[username]
+	cfg, ok := s.cfg.mocks[username]
 	if !ok {
 		return nil
 	}

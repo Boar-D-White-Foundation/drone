@@ -30,7 +30,7 @@ func NewBoarDWhiteServiceFromConfig(
 	telegram tg.Client,
 	database db.DB,
 	cfg boardwhite.ServiceConfig,
-) (*boardwhite.Service, error) {
+) *boardwhite.Service {
 	return boardwhite.NewService(
 		cfg,
 		telegram,
@@ -54,10 +54,8 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 	if err != nil {
 		return fmt.Errorf("service config: %w", err)
 	}
-	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
-	if err != nil {
-		return err
-	}
+
+	bw := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
 
 	bw.RegisterHandlers(ctx, tgService)
 	tgService.Start()

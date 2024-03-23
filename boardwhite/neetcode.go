@@ -17,7 +17,7 @@ import (
 )
 
 func (s *Service) PublishNCDaily(ctx context.Context) error {
-	dayIndex := int(time.Since(s.cfg.DailyNCStartDate).Hours()/24) % neetcode.QuestionsTotalCount
+	dayIndex := int(time.Since(s.cfg.dailyNCStartDate).Hours()/24) % neetcode.QuestionsTotalCount
 	groups, err := neetcode.Groups()
 	if err != nil {
 		return fmt.Errorf("read groups: %w", err)
@@ -46,9 +46,9 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 
 	var stickerID string
 	if group.Name == "1-D DP" || group.Name == "2-D DP" {
-		stickerID = s.cfg.DpStickerID
+		stickerID = s.cfg.dpStickerID
 	} else {
-		stickerID, err = iter.PickRandom(s.cfg.DailyStickersIDs)
+		stickerID, err = iter.PickRandom(s.cfg.dailyStickersIDs)
 		if err != nil {
 			return fmt.Errorf("get sticker: %w", err)
 		}

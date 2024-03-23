@@ -42,16 +42,16 @@ func TestConfigMocks(t *testing.T) {
 	cfg, err := Default()
 	require.NoError(t, err)
 
-	bwCfg, err := cfg.ServiceConfig()
-	require.NoError(t, err)
-
-	assert.NotEmpty(t, bwCfg.Mocks)
-	for username, v := range bwCfg.Mocks {
-		assert.NotEmpty(t, username)
+	assert.NotEmpty(t, cfg.Mocks)
+	for _, v := range cfg.Mocks {
+		assert.NotEmpty(t, v.Username)
 		assert.NotEmpty(t, v.Period)
 		assert.NotEmpty(t, v.StickerIDs)
 		for _, id := range v.StickerIDs {
 			assert.NotEmpty(t, id)
 		}
 	}
+
+	_, err = cfg.ServiceConfig()
+	require.NoError(t, err)
 }

@@ -25,8 +25,8 @@ func TestDrone(t *testing.T) {
 
 	bwCfg, err := cfg.ServiceConfig()
 	require.NoError(t, err)
-	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
-	require.NoError(t, err)
+
+	bw := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
 
 	err = bw.PublishLCDaily(ctx)
 	require.NoError(t, err)

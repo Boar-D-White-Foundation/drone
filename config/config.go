@@ -78,13 +78,13 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 		}
 	}
 
-	return boardwhite.ServiceConfig{
-		LeetcodeThreadID: cfg.Boardwhite.LeetCodeThreadID,
-		DailyStickersIDs: cfg.DailyStickerIDs,
-		DpStickerID:      cfg.DPStickerID,
-		DailyNCStartDate: ncDailyStartDate,
-		Mocks:            mocks,
-	}, nil
+	return boardwhite.NewServiceConfig(
+		cfg.Boardwhite.LeetCodeThreadID,
+		cfg.DailyStickerIDs,
+		cfg.DPStickerID,
+		ncDailyStartDate,
+		mocks,
+	)
 }
 
 func Default() (cfg Config, err error) {
