@@ -86,6 +86,9 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 	setClown := func() error {
 		return s.telegram.SetReaction(msg.ID, tg.ReactionClown, false)
 	}
+	setOk := func() error {
+		return s.telegram.SetReaction(msg.ID, tg.ReactionOk, false)
+	}
 	return s.database.Do(ctx, func(tx db.Tx) error {
 		pinnedIDs, err := db.GetJsonDefault[[]int](tx, keyNCPinnedMessages, nil)
 		if err != nil {
@@ -125,17 +128,22 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 		if !ok {
 			return setClown()
 		}
+
 		key := solutionKey{
 			DayIdx: currentDayIdx,
 			UserID: sender.ID,
 		}
+		if _, ok := stats.Solutions[key]; ok {
+			return setOk() // keep only first solution to not ruin solve time stats
+		}
+
 		stats.Solutions[key] = solution{Update: update}
 		err = db.SetJson(tx, keyNCStats, stats)
 		if err != nil {
 			return fmt.Errorf("set solutions: %w", err)
 		}
 
-		return s.telegram.SetReaction(msg.ID, tg.ReactionOk, false)
+		return setOk()
 	})
 }
 
