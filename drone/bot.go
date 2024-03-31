@@ -117,6 +117,13 @@ func registerCronJobs(
 		return nil, err
 	}
 	jobs = append(jobs, jb)
+
+	jb, err = registerJob(ctx, scheduler, "PublishNCRating", cfg.NeetcodeDaily.RatingCron, bw.PublishNCRating)
+	if err != nil {
+		return nil, err
+	}
+	jobs = append(jobs, jb)
+
 	return jobs, nil
 }
 

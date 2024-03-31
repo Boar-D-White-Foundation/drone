@@ -3,7 +3,9 @@ package tg
 import (
 	"fmt"
 	"log/slog"
+	"slices"
 	"strconv"
+	"strings"
 	"time"
 
 	"gopkg.in/telebot.v3"
@@ -11,6 +13,7 @@ import (
 )
 
 type Client interface {
+	SendMarkdownV2(threadID int, text string) (int, error)
 	SendSpoilerLink(threadID int, header, link string) (int, error)
 	SendSticker(threadID int, stickerID string) (int, error)
 	ReplyWithSticker(messageID int, stickerID string) (int, error)
@@ -101,6 +104,58 @@ func (s *Service) NewUpdateContext(u tele.Update) tele.Context {
 	return s.bot.NewContext(u)
 }
 
+var (
+	mdSpecialChars = []rune{'_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'}
+)
+
+func EscapeMD(text string) string {
+	var result strings.Builder
+	result.Grow(len(text))
+	for _, char := range text {
+		if slices.Contains(mdSpecialChars, char) {
+			result.WriteRune('\\')
+		}
+		result.WriteRune(char)
+	}
+	return result.String()
+}
+
+// SendMarkdownV2 sends a message according to a markdownV2 formatting style
+// https://core.telegram.org/bots/api#markdownv2-style
+//
+// *bold \*text*
+// _italic \*text_
+// __underline__
+// ~strikethrough~
+// ||spoiler||
+// *bold _italic bold ~italic bold strikethrough ||italic bold strikethrough spoiler||~ __underline italic bold___ bold*
+// [inline URL](http://www.example.com/)
+// [inline mention of a user](tg://user?id=123456789)
+// ![👍](tg://emoji?id=5368324170671202286)
+// `inline fixed-width code`
+// ```
+// pre-formatted fixed-width code block
+// ```
+// ```python
+// pre-formatted fixed-width code block written in the Python programming language
+// ```
+// >Block quotation started
+// >Block quotation continued
+// >The last line of the block quotation**
+// >The second block quotation started right after the previous\r
+// >The third block quotation started right after the previous
+func (s *Service) SendMarkdownV2(threadID int, text string) (int, error) {
+	message, err := s.bot.Send(s.chatID, text, &tele.SendOptions{
+		ThreadID:  threadID,
+		ParseMode: tele.ModeMarkdownV2,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("send markdownV2 %q: %w", text, err)
+	}
+
+	return message.ID, nil
+}
+
 func (s *Service) SendSpoilerLink(threadID int, header, link string) (int, error) {
 	payload := fmt.Sprintf("%s\n%s", header, link)
 	message, err := s.bot.Send(s.chatID, payload, &tele.SendOptions{
@@ -109,13 +164,13 @@ func (s *Service) SendSpoilerLink(threadID int, header, link string) (int, error
 		Entities: []tele.MessageEntity{
 			{
 				Type:   tele.EntitySpoiler,
-				Offset: len(header) + 1,
+				Offset: len(header) + 1, // TODO: this technically should be in utf-16 code points
 				Length: len(link),
 			},
 		},
 	})
 	if err != nil {
-		return 0, err
+		return 0, fmt.Errorf("send spoiler link %q %q: %w", header, link, err)
 	}
 
 	return message.ID, nil
@@ -131,7 +186,7 @@ func (s *Service) SendSticker(threadID int, stickerID string) (int, error) {
 		ThreadID: threadID,
 	})
 	if err != nil {
-		return 0, fmt.Errorf("send: %w", err)
+		return 0, fmt.Errorf("send sticker %q: %w", stickerID, err)
 	}
 
 	return message.ID, nil
@@ -149,7 +204,7 @@ func (s *Service) ReplyWithSticker(messageID int, stickerID string) (int, error)
 		},
 	})
 	if err != nil {
-		return 0, fmt.Errorf("send: %w", err)
+		return 0, fmt.Errorf("reply with ticker %q: %w", stickerID, err)
 	}
 
 	return message.ID, nil
@@ -185,7 +240,7 @@ func (s *Service) SetReaction(messageID int, reaction Reaction, isBig bool) erro
 	}
 	_, err := s.bot.Raw("setMessageReaction", req)
 	if err != nil {
-		return fmt.Errorf("set reaction: %w", err)
+		return fmt.Errorf("set reaction %v: %w", reaction, err)
 	}
 
 	return nil

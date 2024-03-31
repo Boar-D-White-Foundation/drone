@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"slices"
-	"strconv"
 	"strings"
 	"time"
 
@@ -60,12 +59,12 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 			return fmt.Errorf("publish: %w", err)
 		}
 
-		msgIDToDayIdx, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int))
+		msgIDToDayIdx, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
 		if err != nil {
 			return fmt.Errorf("get msgIDToDayIdx: %w", err)
 		}
 
-		msgIDToDayIdx[messageID] = dayIndex
+		msgIDToDayIdx[messageID] = int64(dayIndex)
 		err = db.SetJson(tx, keyNCPinnedToDayIdx, msgIDToDayIdx)
 		if err != nil {
 			return fmt.Errorf("set msgIDToDayIdx: %w", err)
@@ -73,47 +72,6 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 
 		return nil
 	})
-}
-
-type ncSolutionKey struct {
-	DayIdx int   `json:"day_idx"`
-	UserID int64 `json:"user_id"`
-}
-
-func (k *ncSolutionKey) UnmarshalText(data []byte) error {
-	parts := strings.Split(string(data), "|")
-	if len(parts) != 2 {
-		return errors.New("invalid parts")
-	}
-	dayIdx, err := strconv.Atoi(parts[0])
-	if err != nil {
-		return err
-	}
-	userID, err := strconv.ParseInt(parts[1], 10, 64)
-	if err != nil {
-		return err
-	}
-	k.DayIdx = dayIdx
-	k.UserID = userID
-	return nil
-}
-
-func (k ncSolutionKey) MarshalText() ([]byte, error) {
-	return []byte(fmt.Sprintf("%d|%d", k.DayIdx, k.UserID)), nil
-}
-
-type solution struct {
-	Update tele.Update `json:"update"`
-}
-
-type ncStats struct {
-	Solutions map[ncSolutionKey]solution `json:"solutions,omitempty"`
-}
-
-func newNCStats() ncStats {
-	return ncStats{
-		Solutions: make(map[ncSolutionKey]solution),
-	}
 }
 
 func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
@@ -153,12 +111,12 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 			return setClown()
 		}
 
-		stats, err := db.GetJsonDefault[ncStats](tx, keyNCStats, newNCStats())
+		stats, err := db.GetJsonDefault[stats](tx, keyNCStats, newStats())
 		if err != nil {
-			return fmt.Errorf("get solutions: %w", err)
+			return fmt.Errorf("get nc stats: %w", err)
 		}
 
-		msgIDToDayIdx, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int))
+		msgIDToDayIdx, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
 		if err != nil {
 			return fmt.Errorf("get msgIDToDayIdx: %w", err)
 		}
@@ -167,7 +125,7 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 		if !ok {
 			return setClown()
 		}
-		key := ncSolutionKey{
+		key := solutionKey{
 			DayIdx: currentDayIdx,
 			UserID: sender.ID,
 		}
@@ -178,5 +136,26 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 		}
 
 		return s.telegram.SetReaction(msg.ID, tg.ReactionOk, false)
+	})
+}
+
+func (s *Service) PublishNCRating(ctx context.Context) error {
+	return s.database.Do(ctx, func(tx db.Tx) error {
+		stats, err := db.GetJson[stats](tx, keyNCStats)
+		switch {
+		case err == nil:
+		case errors.Is(err, db.ErrKeyNotFound):
+			return nil
+		default:
+			return fmt.Errorf("get nc stats: %w", err)
+		}
+
+		report := buildRating(stats).toMarkdownV2("Neetcode leaderboard:")
+		_, err = s.telegram.SendMarkdownV2(s.cfg.LeetcodeThreadID, report)
+		if err != nil {
+			return fmt.Errorf("send report: %w", err)
+		}
+
+		return nil
 	})
 }
