@@ -34,6 +34,9 @@ func TestDrone(t *testing.T) {
 	err = bw.PublishNCDaily(ctx)
 	require.NoError(t, err)
 
+	err = bw.PublishNCRating(ctx)
+	require.NoError(t, err)
+
 	bw.RegisterHandlers(ctx, tgService)
 	tgService.Start()
 	defer tgService.Stop()

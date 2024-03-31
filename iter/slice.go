@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"fmt"
 	"math/big"
+	"strings"
 )
 
 func PickRandom[T any](xs []T) (T, error) {
@@ -12,4 +13,14 @@ func PickRandom[T any](xs []T) (T, error) {
 		return *new(T), fmt.Errorf("generate random: %w", err)
 	}
 	return xs[idx.Int64()], nil
+}
+
+func JoinNonEmpty(sep string, xs ...string) string {
+	nonEmpty := make([]string, 0, len(xs))
+	for _, s := range xs {
+		if len(s) > 0 {
+			nonEmpty = append(nonEmpty, s)
+		}
+	}
+	return strings.Join(nonEmpty, sep)
 }

@@ -41,8 +41,9 @@ type Config struct {
 	} `yaml:"leetcodeDaily"`
 
 	NeetcodeDaily struct {
-		Cron      string `yaml:"cron"`
-		StartDate string `yaml:"startDate"`
+		Cron       string `yaml:"cron"`
+		RatingCron string `yaml:"ratingCron"`
+		StartDate  string `yaml:"startDate"`
 	} `yaml:"neetcodeDaily"`
 
 	DailyStickerIDs []string `yaml:"dailyStickerIds"`
