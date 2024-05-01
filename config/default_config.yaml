@@ -47,6 +47,9 @@ mocks:
       - "CAACAgIAAxkBAAELwm1l_BDecsQYMErbNHagr0j9fnXloQAC1BQAAvItmUhRwI4aaOsy5zQE"
       - "CAACAgIAAxkBAAELwm9l_BDw33MnhX3Mq0AJs0j7TqdMiwACjxkAAgznKEqMNBWL6wyaLjQE"
       - "CAACAgIAAxkBAAELwnFl_BEBRVEvPVbD3NgXoaQspYBmmwACYxYAAuxPmEi5ByG8q9K_xjQE"
+      - "CAACAgUAAxkBAAEMB_NmMerYwbz4ODbApU8awHbBWCumugAC-QoAArgSIFb48XmSdN7rNDQE"
+      - "CAACAgIAAxkBAAEMB_VmMerijbjCENY3kaRgiHE-LshhlwAC0R4AAj_ugEovh_CLELqXmjQE"
+      - "CAACAgIAAxkBAAEMB_dmMerpS84bH3HXofwIqGllmUo57AACbRoAAu57mUhsViRGOLqifjQE"
   - username: "quazeeee"
     period: "48h"
     stickerIds:
