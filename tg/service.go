@@ -13,6 +13,7 @@ import (
 )
 
 type Client interface {
+	BotID() int64
 	SendMarkdownV2(threadID int, text string) (int, error)
 	SendSpoilerLink(threadID int, header, link string) (int, error)
 	SendSticker(threadID int, stickerID string) (int, error)
@@ -20,6 +21,7 @@ type Client interface {
 	Pin(id int) error
 	Unpin(id int) error
 	SetReaction(messageID int, reaction Reaction, isBig bool) error
+	Delete(id int) error
 }
 
 type Service struct {
@@ -118,6 +120,10 @@ func EscapeMD(text string) string {
 		result.WriteRune(char)
 	}
 	return result.String()
+}
+
+func (s *Service) BotID() int64 {
+	return s.bot.Me.ID
 }
 
 // SendMarkdownV2 sends a message according to a markdownV2 formatting style
@@ -241,6 +247,19 @@ func (s *Service) SetReaction(messageID int, reaction Reaction, isBig bool) erro
 	_, err := s.bot.Raw("setMessageReaction", req)
 	if err != nil {
 		return fmt.Errorf("set reaction %v: %w", reaction, err)
+	}
+
+	return nil
+}
+
+func (s *Service) Delete(id int) error {
+	msg := tele.StoredMessage{
+		MessageID: strconv.Itoa(id),
+		ChatID:    s.chat.ID,
+	}
+	err := s.bot.Delete(msg)
+	if err != nil {
+		return fmt.Errorf("delete msg %v: %w", id, err)
 	}
 
 	return nil
