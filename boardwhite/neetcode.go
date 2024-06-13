@@ -54,7 +54,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 	}
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
-		messageID, err := s.publish(tx, header, link.String(), stickerID, keyNCPinnedMessages)
+		messageID, err := s.publish(tx, s.cfg.LeetcodeThreadID, header, link.String(), stickerID, keyNCPinnedMessages)
 		if err != nil {
 			return fmt.Errorf("publish: %w", err)
 		}

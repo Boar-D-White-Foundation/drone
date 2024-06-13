@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	keyLCPinnedMessages = "boardwhite:leetcode:pinned_messages"
+	keyLCPinnedMessages         = "boardwhite:leetcode:pinned_messages"
+	keyLCChickensPinnedMessages = "boardwhite:leetcode_chickens:pinned_messages"
 
 	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
 	keyNCPinnedToDayIdx = "boardwhite:neetcode:pinned_to_day_idx"
@@ -29,11 +30,13 @@ type MockConfig struct {
 }
 
 type ServiceConfig struct {
-	LeetcodeThreadID int
-	DailyStickersIDs []string
-	DpStickerID      string
-	DailyNCStartDate time.Time
-	Mocks            map[string]MockConfig
+	LeetcodeThreadID         int
+	LeetcodeChickensThreadID int
+	DailyStickersIDs         []string
+	DailyChickensStickerIDs  []string
+	DpStickerID              string
+	DailyNCStartDate         time.Time
+	Mocks                    map[string]MockConfig
 }
 
 func (cfg ServiceConfig) Validate() error {
@@ -68,6 +71,7 @@ func NewService(
 
 func (s *Service) publish(
 	tx db.Tx,
+	threadID int,
 	header, text, stickerID string,
 	pinnedMsgsKey string,
 ) (int, error) {
@@ -83,12 +87,12 @@ func (s *Service) publish(
 		}
 	}
 
-	messageID, err := s.telegram.SendSpoilerLink(s.cfg.LeetcodeThreadID, header, text)
+	messageID, err := s.telegram.SendSpoilerLink(threadID, header, text)
 	if err != nil {
 		return 0, fmt.Errorf("send daily: %w", err)
 	}
 
-	_, err = s.telegram.SendSticker(s.cfg.LeetcodeThreadID, stickerID)
+	_, err = s.telegram.SendSticker(threadID, stickerID)
 	if err != nil {
 		return 0, fmt.Errorf("send sticker: %w", err)
 	}

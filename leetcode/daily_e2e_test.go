@@ -12,7 +12,7 @@ import (
 
 func TestGetDailyLink(t *testing.T) {
 	ctx := context.Background()
-	link, err := leetcode.GetDailyLink(ctx)
+	dailyInfo, err := leetcode.GetDailyInfo(ctx)
 	require.NoError(t, err)
-	require.NotEmpty(t, link)
+	require.NotEmpty(t, dailyInfo.Link)
 }

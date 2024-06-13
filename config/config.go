@@ -32,8 +32,9 @@ type Config struct {
 	} `yaml:"tg"`
 
 	Boardwhite struct {
-		ChatID           int64 `yaml:"chatId"`
-		LeetCodeThreadID int   `yaml:"leetcodeThreadId"`
+		ChatID                   int64 `yaml:"chatId"`
+		LeetCodeThreadID         int   `yaml:"leetcodeThreadId"`
+		LeetcodeChickensThreadID int   `yaml:"leetcodeChickensThreadId"`
 	} `yaml:"boardwhite"`
 
 	LeetcodeDaily struct {
@@ -46,8 +47,9 @@ type Config struct {
 		StartDate  string `yaml:"startDate"`
 	} `yaml:"neetcodeDaily"`
 
-	DailyStickerIDs []string `yaml:"dailyStickerIds"`
-	DPStickerID     string   `yaml:"dpStickerId"`
+	DailyStickerIDs         []string `yaml:"dailyStickerIds"`
+	DailyChickensStickerIDs []string `yaml:"dailyChickensStickerIds"`
+	DPStickerID             string   `yaml:"dpStickerId"`
 
 	Mocks []struct {
 		Username   string   `yaml:"username"`
@@ -80,11 +82,13 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 	}
 
 	return boardwhite.ServiceConfig{
-		LeetcodeThreadID: cfg.Boardwhite.LeetCodeThreadID,
-		DailyStickersIDs: cfg.DailyStickerIDs,
-		DpStickerID:      cfg.DPStickerID,
-		DailyNCStartDate: ncDailyStartDate,
-		Mocks:            mocks,
+		LeetcodeThreadID:         cfg.Boardwhite.LeetCodeThreadID,
+		LeetcodeChickensThreadID: cfg.Boardwhite.LeetcodeChickensThreadID,
+		DailyStickersIDs:         cfg.DailyStickerIDs,
+		DailyChickensStickerIDs:  cfg.DailyChickensStickerIDs,
+		DpStickerID:              cfg.DPStickerID,
+		DailyNCStartDate:         ncDailyStartDate,
+		Mocks:                    mocks,
 	}, nil
 }
 
