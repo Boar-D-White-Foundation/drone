@@ -12,6 +12,28 @@ import (
 	"github.com/boar-d-white-foundation/drone/retry"
 )
 
+type Difficulty int
+
+const (
+	DifficultyUnknown Difficulty = iota
+	DifficultyEasy
+	DifficultyMedium
+	DifficultyHard
+)
+
+func NewDifficulty(raw string) Difficulty {
+	switch {
+	case raw == "Easy":
+		return DifficultyEasy
+	case raw == "Medium":
+		return DifficultyMedium
+	case raw == "Hard":
+		return DifficultyHard
+	default:
+		return DifficultyUnknown
+	}
+}
+
 var (
 	ErrEmptyLink = errors.New("got empty link")
 )
@@ -26,24 +48,32 @@ const (
 		` -H 'Content-type: application/json'` +
 		` -H 'Origin: leetcode.com'` +
 		` -H 'User-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36'` +
-		` --data-raw '{"query":"query questionOfToday {activeDailyCodingChallengeQuestion {date link}}","variables":{},"operationName":"questionOfToday"}'`
+		` --data-raw '{"query":"query questionOfToday {activeDailyCodingChallengeQuestion {date link question {difficulty}}}","variables":{},"operationName":"questionOfToday"}'`
 )
 
 type dailyQuestionResp struct {
 	Data struct {
 		ActiveDailyCodingChallengeQuestion struct {
-			Date string `json:"date"`
-			Link string `json:"link"`
+			Date     string `json:"date"`
+			Link     string `json:"link"`
+			Question struct {
+				Difficulty string `json:"difficulty"`
+			} `json:"question"`
 		} `json:"activeDailyCodingChallengeQuestion"`
 	} `json:"data"`
 }
 
-func GetDailyLink(ctx context.Context) (string, error) {
+type DailyInfo struct {
+	Link       string
+	Difficulty Difficulty
+}
+
+func GetDailyInfo(ctx context.Context) (DailyInfo, error) {
 	backoff := retry.LinearBackoff{
 		Delay:       time.Second * 5,
 		MaxAttempts: 10,
 	}
-	link, err := retry.Do(ctx, "lc daily fetch", backoff, func() (string, error) {
+	resp, err := retry.Do(ctx, "lc daily fetch", backoff, func() (dailyQuestionResp, error) {
 		var outBuf, errBuf bytes.Buffer
 		cmd := exec.Command("bash", "-c", dailyQuestionCurlQuery)
 		cmd.Stdout = &outBuf
@@ -51,24 +81,28 @@ func GetDailyLink(ctx context.Context) (string, error) {
 		err := cmd.Run()
 		if err != nil {
 			slog.Error("failed to run curl", slog.String("stderr", errBuf.String()))
-			return "", err
+			return dailyQuestionResp{}, err
 		}
 
 		resp := dailyQuestionResp{}
 		if err := json.Unmarshal(outBuf.Bytes(), &resp); err != nil {
-			return "", err
+			return dailyQuestionResp{}, err
 		}
 
 		link := resp.Data.ActiveDailyCodingChallengeQuestion.Link
 		if len(link) == 0 {
-			return "", ErrEmptyLink
+			return dailyQuestionResp{}, ErrEmptyLink
 		}
-		return link, nil
+		return resp, nil
 	})
 	if err != nil {
-		return "", err
+		return DailyInfo{}, err
 	}
-	slog.Info("fetched lc daily", slog.String("link", link))
+	slog.Info("fetched lc daily", slog.Any("resp", resp))
 
-	return leetCodeUrl + link, nil
+	result := DailyInfo{
+		Link:       leetCodeUrl + resp.Data.ActiveDailyCodingChallengeQuestion.Link,
+		Difficulty: NewDifficulty(resp.Data.ActiveDailyCodingChallengeQuestion.Question.Difficulty),
+	}
+	return result, nil
 }

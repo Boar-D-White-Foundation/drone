@@ -4,10 +4,12 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/stretchr/testify/require"
+	tele "gopkg.in/telebot.v3"
 )
 
 func TestDrone(t *testing.T) {
@@ -31,6 +33,9 @@ func TestDrone(t *testing.T) {
 	err = bw.PublishLCDaily(ctx)
 	require.NoError(t, err)
 
+	err = bw.PublishLCChickensDaily(ctx)
+	require.NoError(t, err)
+
 	err = bw.PublishNCDaily(ctx)
 	require.NoError(t, err)
 
@@ -38,6 +43,10 @@ func TestDrone(t *testing.T) {
 	require.NoError(t, err)
 
 	bw.RegisterHandlers(ctx, tgService)
+	tgService.RegisterHandler(tele.OnText, "OnDummy", func(c tele.Context) error {
+		slog.Info("got update", slog.Any("ctx", c))
+		return nil
+	})
 	tgService.Start()
 	defer tgService.Stop()
 	<-ctx.Done()

@@ -5,6 +5,7 @@ tg:
 boardwhite:
   chatId: -1001640461540
   leetcodeThreadId: 10095
+  leetcodeChickensThreadId: 372377
 leetcodeDaily:
   cron: "0 1 * * *" # every day at 01:00 UTC
 neetcodeDaily:
@@ -25,6 +26,12 @@ dailyStickerIds:
   - "CAACAgIAAxkBAAELsEZl8hD-i6wYaeLUMtP8MWhZwZoy3gACAjMAAs0gAUjsT0apWa4cRTQE"
   - "CAACAgIAAxkBAAELsERl8hD1xsuLUYRD9F4a8ekVAgg8VAACgDgAAsuH-UvwActGs5DfMzQE"
   - "CAACAgIAAxkBAAELsEJl8hDUc-b0jyDfeH6Ct2McMp4mlAACOzcAAquEmUsMP7ObsCcumTQE"
+dailyChickensStickerIds:
+  - "CAACAgIAAxkBAAEMTMpmantz_jdQCBVWX7lGvMFzY3yJ2gACMgADWQxTEhiWxOGOtE5QNQQ"
+  - "CAACAgIAAxkBAAEMTMxmant7DMxWMkuJlukfW18he0bWxwACxxIAAvx1yUuVMRcMrNODDzUE"
+  - "CAACAgIAAxkBAAEMTM5manuKl9lgOtH4liLjJVwS9mShGAACbT4AAryw4Ej5B_iT5iPh-jUE"
+  - "CAACAgIAAxkBAAEMTNBmanuS_8JnswE5SvXFNt-VLcJsLQACMToAAmoBEUg-bDbJH06o1jUE"
+  - "CAACAgIAAxkBAAEMTNJmanuc6iTT_Yl4-8TRRwcQZEr4KgACFxYAApiMIUqmIBkkbPJysTUE"
 dpStickerId: "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"
 mocks:
   - username: "byegor"

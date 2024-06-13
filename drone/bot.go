@@ -112,6 +112,12 @@ func registerCronJobs(
 	}
 	jobs = append(jobs, jb)
 
+	jb, err = registerJob(ctx, scheduler, "PublishLCChickensDaily", cfg.LeetcodeDaily.Cron, bw.PublishLCChickensDaily)
+	if err != nil {
+		return nil, err
+	}
+	jobs = append(jobs, jb)
+
 	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NeetcodeDaily.Cron, bw.PublishNCDaily)
 	if err != nil {
 		return nil, err
