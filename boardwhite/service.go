@@ -12,8 +12,9 @@ import (
 )
 
 const (
-	keyLCPinnedMessages         = "boardwhite:leetcode:pinned_messages"
-	keyLCChickensPinnedMessages = "boardwhite:leetcode_chickens:pinned_messages"
+	keyLCPinnedMessages              = "boardwhite:leetcode:pinned_messages"
+	keyLCChickensPinnedMessages      = "boardwhite:leetcode_chickens:pinned_messages"
+	keyLCChickensFallbackQuestionIdx = "boardwhite:leetcode_chickens:fallback_question_idx"
 
 	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
 	keyNCPinnedToDayIdx = "boardwhite:neetcode:pinned_to_day_idx"
@@ -48,9 +49,10 @@ func (cfg ServiceConfig) Validate() error {
 }
 
 type Service struct {
-	cfg      ServiceConfig
-	database db.DB
-	telegram tg.Client
+	cfg                ServiceConfig
+	database           db.DB
+	telegram           tg.Client
+	lcChickenQuestions lcChickenQuestions
 }
 
 func NewService(
@@ -62,10 +64,16 @@ func NewService(
 		return nil, fmt.Errorf("invalid config: %w", err)
 	}
 
+	questions, err := newLCChickenQuestions()
+	if err != nil {
+		return nil, fmt.Errorf("load lcChickenQuestions: %w", err)
+	}
+
 	return &Service{
-		cfg:      cfg,
-		database: database,
-		telegram: telegram,
+		cfg:                cfg,
+		database:           database,
+		telegram:           telegram,
+		lcChickenQuestions: questions,
 	}, nil
 }
 
@@ -103,8 +111,7 @@ func (s *Service) publish(
 	}
 
 	pinnedIDs = append(pinnedIDs, messageID)
-	err = db.SetJson(tx, pinnedMsgsKey, pinnedIDs)
-	if err != nil {
+	if err := db.SetJson(tx, pinnedMsgsKey, pinnedIDs); err != nil {
 		return 0, fmt.Errorf("set key %s: %w", pinnedMsgsKey, err)
 	}
 

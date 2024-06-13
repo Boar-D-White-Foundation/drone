@@ -63,8 +63,7 @@ func (s *Service) OnMock(ctx context.Context, c tele.Context) error {
 		next := time.Duration(int64(from)+offset.Int64()) * time.Second
 		nextMock := time.Now().Add(next)
 
-		err = db.SetJson(tx, key, nextMock)
-		if err != nil {
+		if err := db.SetJson(tx, key, nextMock); err != nil {
 			return fmt.Errorf("set %q: %w", key, err)
 		}
 

@@ -40,9 +40,9 @@ def main():
             port=8787,
         ),
     )
-    driver.get(_ROADMAP_URL)
     driver.implicitly_wait(0.5)
 
+    driver.get(_ROADMAP_URL)
     result = []
     groups = driver.find_elements(By.CSS_SELECTOR, ".node-group label")
     print("loaded groups", [group.text for group in groups], file=sys.stderr)
