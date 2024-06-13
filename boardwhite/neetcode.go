@@ -65,8 +65,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 		}
 
 		msgIDToDayIdx[messageID] = int64(dayIndex)
-		err = db.SetJson(tx, keyNCPinnedToDayIdx, msgIDToDayIdx)
-		if err != nil {
+		if err := db.SetJson(tx, keyNCPinnedToDayIdx, msgIDToDayIdx); err != nil {
 			return fmt.Errorf("set msgIDToDayIdx: %w", err)
 		}
 
@@ -138,8 +137,7 @@ func (s *Service) OnNeetCodeUpdate(ctx context.Context, c tele.Context) error {
 		}
 
 		stats.Solutions[key] = solution{Update: update}
-		err = db.SetJson(tx, keyNCStats, stats)
-		if err != nil {
+		if err := db.SetJson(tx, keyNCStats, stats); err != nil {
 			return fmt.Errorf("set solutions: %w", err)
 		}
 

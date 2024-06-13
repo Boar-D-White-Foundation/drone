@@ -34,6 +34,11 @@ func NewDifficulty(raw string) Difficulty {
 	}
 }
 
+func (d *Difficulty) UnmarshalText(data []byte) error {
+	*d = NewDifficulty(string(data))
+	return nil
+}
+
 var (
 	ErrEmptyLink = errors.New("got empty link")
 )
@@ -78,8 +83,7 @@ func GetDailyInfo(ctx context.Context) (DailyInfo, error) {
 		cmd := exec.Command("bash", "-c", dailyQuestionCurlQuery)
 		cmd.Stdout = &outBuf
 		cmd.Stderr = &errBuf
-		err := cmd.Run()
-		if err != nil {
+		if err := cmd.Run(); err != nil {
 			slog.Error("failed to run curl", slog.String("stderr", errBuf.String()))
 			return dailyQuestionResp{}, err
 		}
