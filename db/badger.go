@@ -23,7 +23,7 @@ type BadgerTx struct {
 var _ DB = (*BadgerDB)(nil)
 var _ Tx = (*BadgerTx)(nil)
 
-func NewBadgerBD(path string) *BadgerDB {
+func NewBadgerDB(path string) *BadgerDB {
 	badgerOpts := buildDBOpts(path)
 	return &BadgerDB{
 		badgerOpts: badgerOpts,
