@@ -13,11 +13,11 @@ import (
 func TestBadger(t *testing.T) {
 	t.Parallel()
 
-	bdb := db.NewBadgerBD(":memory:")
-	testDb(t, "badger", bdb)
+	bdb := db.NewBadgerDB(":memory:")
+	testDB(t, "badger", bdb)
 }
 
-func testDb(t *testing.T, name string, database db.DB) {
+func testDB(t *testing.T, name string, database db.DB) {
 	ctx := context.Background()
 	err := database.Start(ctx)
 	require.NoError(t, err)

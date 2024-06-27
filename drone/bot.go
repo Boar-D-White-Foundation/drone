@@ -23,7 +23,7 @@ func NewTgServiceFromConfig(cfg config.Config) (*tg.Service, error) {
 }
 
 func NewDBFromConfig(cfg config.Config) db.DB {
-	return db.NewBadgerBD(cfg.BadgerPath)
+	return db.NewBadgerDB(cfg.BadgerPath)
 }
 
 func NewBoarDWhiteServiceFromConfig(
