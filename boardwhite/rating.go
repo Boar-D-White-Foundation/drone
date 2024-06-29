@@ -1,20 +1,24 @@
 package boardwhite
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/tg"
+	"golang.org/x/exp/slog"
 	tele "gopkg.in/telebot.v3"
 )
 
 type solutionKey struct {
-	DayIdx int64 `json:"day_idx"`
+	DayIdx int64 `json:"day_idx"` // subsequent days must have values v, v+1
 	UserID int64 `json:"user_id"`
 }
 
@@ -44,14 +48,174 @@ type solution struct {
 	Update tele.Update `json:"update"`
 }
 
-type stats struct {
-	Solutions map[solutionKey]solution `json:"solutions,omitempty"`
+type statsDayInfo struct {
+	DayIdx      int64     `json:"day_idx"`
+	PublishedAt time.Time `json:"published_at"`
 }
 
-func newStats() stats {
-	return stats{
-		Solutions: make(map[solutionKey]solution),
+type stats struct {
+	Solutions map[solutionKey]solution `json:"solutions"`
+	DaysInfo  map[int64]statsDayInfo   `json:"days_info"`
+}
+
+func (s *Service) getLastPublishedQuestionDayInfo(tx db.Tx, msgToDayInfoKey string) (statsDayInfo, error) {
+	result := statsDayInfo{DayIdx: -1}
+	msgToDayInfo, err := db.GetJsonDefault(tx, msgToDayInfoKey, make(map[int]statsDayInfo))
+	if err != nil {
+		return statsDayInfo{}, fmt.Errorf("get msgToDayInfo: %w", err)
 	}
+
+	for _, dayInfo := range msgToDayInfo {
+		if dayInfo.DayIdx > result.DayIdx {
+			result = dayInfo
+		}
+	}
+	// TODO remove with next release
+	if msgToDayInfoKey == keyNCPinnedToStatsDayInfo {
+		m, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
+		if err != nil {
+			return statsDayInfo{}, fmt.Errorf("get msgToDayIdx: %w", err)
+		}
+
+		for _, dayIdx := range m {
+			if dayIdx > result.DayIdx {
+				result = statsDayInfo{DayIdx: dayIdx}
+			}
+		}
+	}
+
+	return result, nil
+}
+
+func (s *Service) makeStatsHandler(
+	deadlineMissReaction tg.Reaction,
+	pinnedMessagesKey string,
+	msgToDayInfoKey string,
+	statsKey string,
+) func(context.Context, tele.Context) error {
+	return func(ctx context.Context, c tele.Context) error {
+		update, msg, sender := c.Update(), c.Message(), c.Sender()
+		if msg == nil || sender == nil {
+			return nil
+		}
+		if msg.ReplyTo == nil || msg.ReplyTo.Sender.ID != c.Bot().Me.ID {
+			return nil
+		}
+
+		setClown := func() error {
+			return s.telegram.SetReaction(msg.ID, tg.ReactionClown, false)
+		}
+		setOk := func() error {
+			return s.telegram.SetReaction(msg.ID, tg.ReactionOk, false)
+		}
+		return s.database.Do(ctx, func(tx db.Tx) error {
+			pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMessagesKey, nil)
+			if err != nil {
+				return fmt.Errorf("get pinnedIDs: %w", err)
+			}
+			if !slices.Contains(pinnedIDs, msg.ReplyTo.ID) {
+				return nil
+			}
+
+			switch {
+			case len(msg.Text) > 0:
+				if !lcSubmissionRe.MatchString(msg.Text) {
+					return setClown()
+				}
+			case msg.Photo != nil:
+				if !msg.HasMediaSpoiler {
+					return setClown()
+				}
+			default:
+				return setClown()
+			}
+
+			if msg.ReplyTo.ID != pinnedIDs[len(pinnedIDs)-1] {
+				return s.telegram.SetReaction(msg.ID, deadlineMissReaction, false)
+			}
+
+			stats, err := db.GetJsonDefault[stats](tx, statsKey, stats{})
+			if err != nil {
+				return fmt.Errorf("get nc stats: %w", err)
+			}
+			if stats.Solutions == nil {
+				stats.Solutions = make(map[solutionKey]solution)
+			}
+			if stats.DaysInfo == nil {
+				stats.DaysInfo = make(map[int64]statsDayInfo)
+			}
+
+			msgToDayIdx, err := db.GetJsonDefault(tx, msgToDayInfoKey, make(map[int]statsDayInfo))
+			if err != nil {
+				return fmt.Errorf("get msgToDayIdx: %w", err)
+			}
+
+			dayInfo, ok := msgToDayIdx[msg.ReplyTo.ID]
+			if !ok {
+				// TODO remove with next release
+				if msgToDayInfoKey != keyNCPinnedToStatsDayInfo {
+					return setClown()
+				}
+
+				m, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
+				if err != nil {
+					return fmt.Errorf("get msgToDayIdx: %w", err)
+				}
+
+				idx, ok := m[msg.ReplyTo.ID]
+				if !ok {
+					return setClown()
+				}
+
+				dayInfo = statsDayInfo{DayIdx: idx}
+			}
+
+			key := solutionKey{
+				DayIdx: dayInfo.DayIdx,
+				UserID: sender.ID,
+			}
+			if _, ok := stats.Solutions[key]; ok {
+				return setOk() // keep only first solution to not ruin solve time stats
+			}
+
+			stats.Solutions[key] = solution{Update: update}
+			// TODO remove if with next release
+			if !dayInfo.PublishedAt.IsZero() {
+				stats.DaysInfo[dayInfo.DayIdx] = dayInfo
+			}
+			if err := db.SetJson(tx, statsKey, stats); err != nil {
+				return fmt.Errorf("set stats: %w", err)
+			}
+
+			return setOk()
+		})
+	}
+}
+
+func (s *Service) publishRating(ctx context.Context, header string, threadID int, statsKey string) error {
+	return s.database.Do(ctx, func(tx db.Tx) error {
+		stats, err := db.GetJson[stats](tx, statsKey)
+		switch {
+		case err == nil:
+		case errors.Is(err, db.ErrKeyNotFound):
+			return nil
+		default:
+			return fmt.Errorf("get stats: %w", err)
+		}
+
+		rating := buildRating(stats, 30)
+		if len(rating) == 0 {
+			slog.Info("rating is empty skipping posting", slog.String("header", header))
+			return nil
+		}
+
+		_, err = s.telegram.SendMarkdownV2(threadID, rating.toMarkdownV2(header))
+		if err != nil {
+			return fmt.Errorf("send rating: %w", err)
+		}
+
+		return nil
+	})
 }
 
 type ratingRow struct {
@@ -79,7 +243,7 @@ func (r ratingRow) less(other ratingRow) bool {
 
 type rating []ratingRow
 
-func buildRating(stats stats) rating {
+func buildRating(stats stats, limit int) rating {
 	type userSolution struct {
 		solutionKey
 		solution
@@ -104,6 +268,13 @@ func buildRating(stats stats) rating {
 		sort.Slice(solutions, func(i, j int) bool {
 			return solutions[i].DayIdx < solutions[j].DayIdx
 		})
+		if limit > 0 && len(solutions) > limit {
+			solutions = solutions[len(solutions)-limit:]
+		}
+		if len(solutions) == 0 {
+			continue
+		}
+
 		row := ratingRow{}
 		currIdx, currStreak, maxStreak := int64(0), 0, 0
 		for _, sol := range solutions {

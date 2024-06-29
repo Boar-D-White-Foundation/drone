@@ -28,16 +28,30 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 	}
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
-		_, err := s.publish(
-			tx,
-			s.cfg.LeetcodeThreadID,
-			defaultDailyHeader,
-			dailyInfo.Link,
-			stickerID,
-			keyLCPinnedMessages,
-		)
-		return err
+		lastDayInfo, err := s.getLastPublishedQuestionDayInfo(tx, keyLCPinnedToStatsDayInfo)
+		if err != nil {
+			return fmt.Errorf("get last published lc question: %w", err)
+		}
+
+		_, err = s.publishDaily(tx, publishDailyReq{
+			dayIdx:          lastDayInfo.DayIdx + 1,
+			threadID:        s.cfg.LeetcodeThreadID,
+			header:          defaultDailyHeader,
+			text:            dailyInfo.Link,
+			stickerID:       stickerID,
+			pinnedMsgsKey:   keyLCPinnedMessages,
+			msgToDayInfoKey: keyLCPinnedToStatsDayInfo,
+		})
+		if err != nil {
+			return fmt.Errorf("publish lc daily: %w", err)
+		}
+
+		return nil
 	})
+}
+
+func (s *Service) PublishLCRating(ctx context.Context) error {
+	return s.publishRating(ctx, "Leetcode leaderboard (last 30 questions):", s.cfg.LeetcodeThreadID, keyLCStats)
 }
 
 type lcChickenQuestions struct {
@@ -103,20 +117,30 @@ func (s *Service) PublishLCChickensDaily(ctx context.Context) error {
 	}
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
+		lastDayInfo, err := s.getLastPublishedQuestionDayInfo(tx, keyLCChickensPinnedToStatsDayInfo)
+		if err != nil {
+			return fmt.Errorf("get last published lc question: %w", err)
+		}
+
 		link, err := s.selectLCChickensDailyLink(tx, dailyInfo)
 		if err != nil {
 			return fmt.Errorf("select link: %w", err)
 		}
 
-		_, err = s.publish(
-			tx,
-			s.cfg.LeetcodeChickensThreadID,
-			defaultDailyChickenHeader,
-			link,
-			stickerID,
-			keyLCChickensPinnedMessages,
-		)
-		return err
+		_, err = s.publishDaily(tx, publishDailyReq{
+			dayIdx:          lastDayInfo.DayIdx + 1,
+			threadID:        s.cfg.LeetcodeChickensThreadID,
+			header:          defaultDailyChickenHeader,
+			text:            link,
+			stickerID:       stickerID,
+			pinnedMsgsKey:   keyLCChickensPinnedMessages,
+			msgToDayInfoKey: keyLCChickensPinnedToStatsDayInfo,
+		})
+		if err != nil {
+			return fmt.Errorf("publish lc checkens daily: %w", err)
+		}
+
+		return nil
 	})
 }
 
@@ -136,4 +160,13 @@ func (s *Service) selectLCChickensDailyLink(
 	}
 
 	return question.Link, nil
+}
+
+func (s *Service) PublishLCChickensRating(ctx context.Context) error {
+	return s.publishRating(
+		ctx,
+		"Leetcode easy leaderboard (last 30 questions):",
+		s.cfg.LeetcodeChickensThreadID,
+		keyLCChickensStats,
+	)
 }

@@ -18,7 +18,7 @@ func TestBuildRating(t *testing.T) {
 	err := json.Unmarshal(rawNCStats, &stats)
 	require.NoError(t, err)
 
-	rating := buildRating(stats)
+	rating := buildRating(stats, 0)
 	require.Len(t, rating, 12)
 	require.Equal(t, "faucct", rating[0].Username)
 	require.Equal(t, 5, rating[0].Solved)

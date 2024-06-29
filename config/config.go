@@ -12,7 +12,7 @@ import (
 )
 
 func Path() string {
-	path, ok := os.LookupEnv("CONFIG_FILENAME")
+	path, ok := os.LookupEnv("DRONE_CONFIG_FILENAME")
 	if !ok {
 		return "config.yaml"
 	}
@@ -38,13 +38,13 @@ type Config struct {
 	} `yaml:"boardwhite"`
 
 	LeetcodeDaily struct {
-		Cron string `yaml:"cron"`
+		Cron       string `yaml:"cron"`
+		RatingCron string `yaml:"ratingCron"`
 	} `yaml:"leetcodeDaily"`
 
 	NeetcodeDaily struct {
 		Cron       string `yaml:"cron"`
 		RatingCron string `yaml:"ratingCron"`
-		StartDate  string `yaml:"startDate"`
 	} `yaml:"neetcodeDaily"`
 
 	DailyStickerIDs         []string `yaml:"dailyStickerIds"`
@@ -64,11 +64,6 @@ func (cfg Config) String() string {
 }
 
 func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
-	ncDailyStartDate, err := time.Parse("2006-01-02", cfg.NeetcodeDaily.StartDate)
-	if err != nil {
-		return boardwhite.ServiceConfig{}, fmt.Errorf("parse ncdailystartdate %q: %w", cfg.NeetcodeDaily.StartDate, err)
-	}
-
 	mocks := make(map[string]boardwhite.MockConfig)
 	for _, v := range cfg.Mocks {
 		period, err := time.ParseDuration(v.Period)
@@ -87,7 +82,6 @@ func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
 		DailyStickersIDs:         cfg.DailyStickerIDs,
 		DailyChickensStickerIDs:  cfg.DailyChickensStickerIDs,
 		DpStickerID:              cfg.DPStickerID,
-		DailyNCStartDate:         ncDailyStartDate,
 		Mocks:                    mocks,
 	}, nil
 }

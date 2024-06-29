@@ -24,6 +24,10 @@ type Client interface {
 	Delete(id int) error
 }
 
+type HandlerRegistry interface {
+	RegisterHandler(endpoint string, name string, f tele.HandlerFunc)
+}
+
 type Service struct {
 	bot      *tele.Bot
 	chatID   tele.ChatID
@@ -32,6 +36,7 @@ type Service struct {
 }
 
 var _ Client = (*Service)(nil)
+var _ HandlerRegistry = (*Service)(nil)
 
 func NewService(token string, chatID int64, longPollerTimeout time.Duration) (*Service, error) {
 	poller := tele.LongPoller{
