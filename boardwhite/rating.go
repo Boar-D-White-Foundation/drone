@@ -192,8 +192,20 @@ func (s *Service) makeStatsHandler(
 	}
 }
 
-func (s *Service) publishRating(ctx context.Context, header string, threadID int, statsKey string) error {
+func (s *Service) publishRating(
+	ctx context.Context,
+	questionsToInclude int,
+	header string,
+	threadID int,
+	msgToDayInfoKey string,
+	statsKey string,
+) error {
 	return s.database.Do(ctx, func(tx db.Tx) error {
+		lastDayInfo, err := s.getLastPublishedQuestionDayInfo(tx, msgToDayInfoKey)
+		if err != nil {
+			return fmt.Errorf("get last published question: %w", err)
+		}
+
 		stats, err := db.GetJson[stats](tx, statsKey)
 		switch {
 		case err == nil:
@@ -203,7 +215,7 @@ func (s *Service) publishRating(ctx context.Context, header string, threadID int
 			return fmt.Errorf("get stats: %w", err)
 		}
 
-		rating := buildRating(stats, 30)
+		rating := buildRating(stats, lastDayInfo.DayIdx-int64(questionsToInclude)+1, lastDayInfo.DayIdx)
 		if len(rating) == 0 {
 			slog.Info("rating is empty skipping posting", slog.String("header", header))
 			return nil
@@ -243,7 +255,7 @@ func (r ratingRow) less(other ratingRow) bool {
 
 type rating []ratingRow
 
-func buildRating(stats stats, limit int) rating {
+func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 	type userSolution struct {
 		solutionKey
 		solution
@@ -265,12 +277,12 @@ func buildRating(stats stats, limit int) rating {
 		}
 	}
 	for _, solutions := range userSolutions {
+		solutions = iter.FilterMut(solutions, func(s userSolution) bool {
+			return s.DayIdx >= dayIdxFrom && s.DayIdx <= dayIdxTo
+		})
 		sort.Slice(solutions, func(i, j int) bool {
 			return solutions[i].DayIdx < solutions[j].DayIdx
 		})
-		if limit > 0 && len(solutions) > limit {
-			solutions = solutions[len(solutions)-limit:]
-		}
 		if len(solutions) == 0 {
 			continue
 		}

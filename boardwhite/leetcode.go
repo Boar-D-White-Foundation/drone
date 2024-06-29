@@ -51,7 +51,14 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 }
 
 func (s *Service) PublishLCRating(ctx context.Context) error {
-	return s.publishRating(ctx, "Leetcode leaderboard (last 30 questions):", s.cfg.LeetcodeThreadID, keyLCStats)
+	return s.publishRating(
+		ctx,
+		30,
+		"Leetcode leaderboard (last 30 questions):",
+		s.cfg.LeetcodeThreadID,
+		keyLCPinnedToStatsDayInfo,
+		keyLCStats,
+	)
 }
 
 type lcChickenQuestions struct {
@@ -165,8 +172,10 @@ func (s *Service) selectLCChickensDailyLink(
 func (s *Service) PublishLCChickensRating(ctx context.Context) error {
 	return s.publishRating(
 		ctx,
+		30,
 		"Leetcode easy leaderboard (last 30 questions):",
 		s.cfg.LeetcodeChickensThreadID,
+		keyLCChickensPinnedToStatsDayInfo,
 		keyLCChickensStats,
 	)
 }
