@@ -1,7 +1,6 @@
 package boardwhite
 
 import (
-	"errors"
 	"fmt"
 	"log/slog"
 	"regexp"
@@ -12,13 +11,19 @@ import (
 )
 
 const (
-	keyLCPinnedMessages              = "boardwhite:leetcode:pinned_messages"
-	keyLCChickensPinnedMessages      = "boardwhite:leetcode_chickens:pinned_messages"
-	keyLCChickensFallbackQuestionIdx = "boardwhite:leetcode_chickens:fallback_question_idx"
+	keyLCPinnedMessages       = "boardwhite:leetcode:pinned_messages"
+	keyLCPinnedToStatsDayInfo = "boardwhite:leetcode:pinned_to_stats_day_info"
+	keyLCStats                = "boardwhite:leetcode:stats"
 
-	keyNCPinnedMessages = "boardwhite:neetcode:pinned_messages"
-	keyNCPinnedToDayIdx = "boardwhite:neetcode:pinned_to_day_idx"
-	keyNCStats          = "boardwhite:neetcode:stats"
+	keyLCChickensPinnedMessages       = "boardwhite:leetcode_chickens:pinned_messages"
+	keyLCChickensPinnedToStatsDayInfo = "boardwhite:leetcode_chickens:pinned_to_stats_day_info"
+	keyLCChickensStats                = "boardwhite:leetcode_chickens:stats"
+	keyLCChickensFallbackQuestionIdx  = "boardwhite:leetcode_chickens:fallback_question_idx"
+
+	keyNCPinnedMessages       = "boardwhite:neetcode:pinned_messages"
+	keyNCPinnedToStatsDayInfo = "boardwhite:neetcode:pinned_to_stats_day_info"
+	keyNCPinnedToDayIdx       = "boardwhite:neetcode:pinned_to_day_idx" // TODO remove with next release
+	keyNCStats                = "boardwhite:neetcode:stats"
 )
 
 var (
@@ -36,16 +41,7 @@ type ServiceConfig struct {
 	DailyStickersIDs         []string
 	DailyChickensStickerIDs  []string
 	DpStickerID              string
-	DailyNCStartDate         time.Time
 	Mocks                    map[string]MockConfig
-}
-
-func (cfg ServiceConfig) Validate() error {
-	if cfg.DailyNCStartDate.After(time.Now()) {
-		return errors.New("dailyNCStartDate should be in past")
-	}
-
-	return nil
 }
 
 type Service struct {
@@ -60,10 +56,6 @@ func NewService(
 	telegram tg.Client,
 	database db.DB,
 ) (*Service, error) {
-	if err := cfg.Validate(); err != nil {
-		return nil, fmt.Errorf("invalid config: %w", err)
-	}
-
 	questions, err := newLCChickenQuestions()
 	if err != nil {
 		return nil, fmt.Errorf("load lcChickenQuestions: %w", err)
@@ -77,15 +69,20 @@ func NewService(
 	}, nil
 }
 
-func (s *Service) publish(
-	tx db.Tx,
-	threadID int,
-	header, text, stickerID string,
-	pinnedMsgsKey string,
-) (int, error) {
-	pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMsgsKey, nil)
+type publishDailyReq struct {
+	dayIdx          int64
+	threadID        int
+	header          string
+	text            string
+	stickerID       string
+	pinnedMsgsKey   string
+	msgToDayInfoKey string
+}
+
+func (s *Service) publishDaily(tx db.Tx, req publishDailyReq) (int, error) {
+	pinnedIDs, err := db.GetJsonDefault[[]int](tx, req.pinnedMsgsKey, nil)
 	if err != nil {
-		return 0, fmt.Errorf("get key %s: %w", pinnedMsgsKey, err)
+		return 0, fmt.Errorf("get key %s: %w", req.pinnedMsgsKey, err)
 	}
 	if len(pinnedIDs) > 0 {
 		// last is considered active
@@ -95,12 +92,12 @@ func (s *Service) publish(
 		}
 	}
 
-	messageID, err := s.telegram.SendSpoilerLink(threadID, header, text)
+	messageID, err := s.telegram.SendSpoilerLink(req.threadID, req.header, req.text)
 	if err != nil {
 		return 0, fmt.Errorf("send daily: %w", err)
 	}
 
-	_, err = s.telegram.SendSticker(threadID, stickerID)
+	_, err = s.telegram.SendSticker(req.threadID, req.stickerID)
 	if err != nil {
 		return 0, fmt.Errorf("send sticker: %w", err)
 	}
@@ -111,8 +108,21 @@ func (s *Service) publish(
 	}
 
 	pinnedIDs = append(pinnedIDs, messageID)
-	if err := db.SetJson(tx, pinnedMsgsKey, pinnedIDs); err != nil {
-		return 0, fmt.Errorf("set key %s: %w", pinnedMsgsKey, err)
+	if err := db.SetJson(tx, req.pinnedMsgsKey, pinnedIDs); err != nil {
+		return 0, fmt.Errorf("set key %s: %w", req.pinnedMsgsKey, err)
+	}
+
+	msgToDayInfo, err := db.GetJsonDefault(tx, req.msgToDayInfoKey, make(map[int]statsDayInfo))
+	if err != nil {
+		return 0, fmt.Errorf("get msgToDayInfo: %w", err)
+	}
+
+	msgToDayInfo[messageID] = statsDayInfo{
+		DayIdx:      req.dayIdx,
+		PublishedAt: time.Now(),
+	}
+	if err := db.SetJson(tx, req.msgToDayInfoKey, msgToDayInfo); err != nil {
+		return 0, fmt.Errorf("set msgToDayInfo: %w", err)
 	}
 
 	return messageID, nil

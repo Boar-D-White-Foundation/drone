@@ -3,6 +3,7 @@ package tg
 var (
 	ReactionClown    = NewReactionEmoji("🤡")
 	ReactionOk       = NewReactionEmoji("👌")
+	ReactionMoai     = NewReactionEmoji("🗿")
 	ReactionEgor     = NewReactionEmoji("🌚")
 	ReactionThumbsUp = NewReactionEmoji("👍")
 	ReactionHotDog   = NewReactionEmoji("🌭")

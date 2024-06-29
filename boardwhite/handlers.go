@@ -8,11 +8,34 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-func (s *Service) RegisterHandlers(ctx context.Context, tgService *tg.Service) {
-	tgService.RegisterHandler(tele.OnText, "OnNeetCodeUpdateText", withContext(ctx, s.OnNeetCodeUpdate))
-	tgService.RegisterHandler(tele.OnPhoto, "OnNeetCodeUpdatePhoto", withContext(ctx, s.OnNeetCodeUpdate))
-	tgService.RegisterHandler(tele.OnText, "OnMock", withContext(ctx, s.OnMock))
-	tgService.RegisterHandler(tele.OnPinned, "OnBotPinned", withContext(ctx, s.OnBotPinned))
+func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegistry) {
+	lcStatsHandler := s.makeStatsHandler(
+		tg.ReactionClown,
+		keyLCPinnedMessages,
+		keyLCPinnedToStatsDayInfo,
+		keyLCStats,
+	)
+	lcChickensStatsHandler := s.makeStatsHandler(
+		tg.ReactionMoai,
+		keyLCChickensPinnedMessages,
+		keyLCChickensPinnedToStatsDayInfo,
+		keyLCChickensStats,
+	)
+	ncStatsHandler := s.makeStatsHandler(
+		tg.ReactionClown,
+		keyNCPinnedMessages,
+		keyNCPinnedToStatsDayInfo,
+		keyNCStats,
+	)
+
+	registry.RegisterHandler(tele.OnText, "OnLeetCodeUpdateText", withContext(ctx, lcStatsHandler))
+	registry.RegisterHandler(tele.OnPhoto, "OnLeetCodeUpdatePhoto", withContext(ctx, lcStatsHandler))
+	registry.RegisterHandler(tele.OnText, "OnLeetCodeChickensUpdateText", withContext(ctx, lcChickensStatsHandler))
+	registry.RegisterHandler(tele.OnPhoto, "OnLeetCodeChickensUpdatePhoto", withContext(ctx, lcChickensStatsHandler))
+	registry.RegisterHandler(tele.OnText, "OnNeetCodeUpdateText", withContext(ctx, ncStatsHandler))
+	registry.RegisterHandler(tele.OnPhoto, "OnNeetCodeUpdatePhoto", withContext(ctx, ncStatsHandler))
+	registry.RegisterHandler(tele.OnText, "OnMock", withContext(ctx, s.OnMock))
+	registry.RegisterHandler(tele.OnPinned, "OnBotPinned", withContext(ctx, s.OnBotPinned))
 }
 
 func withContext(ctx context.Context, f func(context.Context, tele.Context) error) tele.HandlerFunc {

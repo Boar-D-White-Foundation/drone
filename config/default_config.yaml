@@ -8,10 +8,10 @@ boardwhite:
   leetcodeChickensThreadId: 372377
 leetcodeDaily:
   cron: "0 1 * * *" # every day at 01:00 UTC
+  ratingCron: "0 6 1 * *" # every month at 06:00 UTC
 neetcodeDaily:
   cron: "0 12 * * *" #  every day at 12:00 UTC
-  ratingCron: "0 6 1 * *" # every month at 06:00 UTC
-  startDate: "2024-03-14"
+  ratingCron: "1 6 1 * *" # every month at 06:01 UTC
 dailyStickerIds:
   - "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
   - "CAACAgIAAxkBAAELqk5l72yJkbx4_vskG3n6zWoWaAnA3QACazYAArJX2UsY5inoNwaFoTQE"

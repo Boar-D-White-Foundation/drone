@@ -2,11 +2,13 @@ package db_test
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/lang"
 	"github.com/stretchr/testify/require"
 )
 
@@ -48,6 +50,12 @@ func testDB(t *testing.T, name string, database db.DB) {
 			intPtrRes, err := db.GetJson[*int](tx, key)
 			require.NoError(t, err)
 			require.Equal(t, (*int)(nil), intPtrRes)
+
+			err = db.SetJson(tx, key, lang.NewPtr(2))
+			require.NoError(t, err)
+			intPtrRes, err = db.GetJson[*int](tx, key)
+			require.NoError(t, err)
+			require.Equal(t, lang.NewPtr(2), intPtrRes)
 
 			err = db.SetJson(tx, key, 1)
 			require.NoError(t, err)
@@ -131,8 +139,33 @@ func testDB(t *testing.T, name string, database db.DB) {
 		require.NoError(t, err)
 	})
 
-	t.Run(name+" concurrent transactions", func(t *testing.T) {
+	t.Run(name+" transaction", func(t *testing.T) {
 		key := "key3"
+		err := database.Do(ctx, func(tx db.Tx) error {
+			err = db.SetJson(tx, key, 80)
+			require.NoError(t, err)
+			return nil
+		})
+		require.NoError(t, err)
+
+		err = database.Do(ctx, func(tx db.Tx) error {
+			err = db.SetJson(tx, key, 90)
+			require.NoError(t, err)
+			return errors.New("err after set")
+		})
+		require.Error(t, err)
+
+		err = database.Do(ctx, func(tx db.Tx) error {
+			val, err := db.GetJson[int](tx, key)
+			require.NoError(t, err)
+			require.Equal(t, 80, val)
+			return nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run(name+" concurrent transactions", func(t *testing.T) {
+		key := "key4"
 
 		var wg sync.WaitGroup
 		wg.Add(10000)

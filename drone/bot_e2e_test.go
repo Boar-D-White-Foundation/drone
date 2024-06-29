@@ -4,12 +4,10 @@ package main
 
 import (
 	"context"
-	"log/slog"
 	"testing"
 
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/stretchr/testify/require"
-	tele "gopkg.in/telebot.v3"
 )
 
 func TestDrone(t *testing.T) {
@@ -37,6 +35,12 @@ func TestDrone(t *testing.T) {
 	require.NoError(t, err)
 
 	err = bw.PublishNCDaily(ctx)
+	require.NoError(t, err)
+
+	err = bw.PublishLCRating(ctx)
+	require.NoError(t, err)
+
+	err = bw.PublishLCChickensRating(ctx)
 	require.NoError(t, err)
 
 	err = bw.PublishNCRating(ctx)
