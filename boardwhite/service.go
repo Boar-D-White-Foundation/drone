@@ -27,7 +27,7 @@ const (
 )
 
 var (
-	lcSubmissionRe = regexp.MustCompile(`https://leetcode.com/.+/submissions/[^/]+/?`)
+	lcSubmissionRe = regexp.MustCompile(`https://leetcode.com.*/submissions/.+`)
 )
 
 type MockConfig struct {
