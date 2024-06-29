@@ -72,5 +72,12 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 }
 
 func (s *Service) PublishNCRating(ctx context.Context) error {
-	return s.publishRating(ctx, "Neetcode leaderboard (last 30 questions):", s.cfg.LeetcodeThreadID, keyNCStats)
+	return s.publishRating(
+		ctx,
+		30,
+		"Neetcode leaderboard (last 30 questions):",
+		s.cfg.LeetcodeThreadID,
+		keyNCPinnedToStatsDayInfo,
+		keyNCStats,
+	)
 }

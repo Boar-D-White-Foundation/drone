@@ -15,6 +15,17 @@ func PickRandom[T any](xs []T) (T, error) {
 	return xs[idx.Int64()], nil
 }
 
+func FilterMut[T any](xs []T, f func(T) bool) []T {
+	insertIdx := 0
+	for _, x := range xs {
+		if f(x) {
+			xs[insertIdx] = x
+			insertIdx++
+		}
+	}
+	return xs[:insertIdx]
+}
+
 func JoinNonEmpty(sep string, xs ...string) string {
 	nonEmpty := make([]string, 0, len(xs))
 	for _, s := range xs {
