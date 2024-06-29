@@ -263,6 +263,9 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 
 	userSolutions := make(map[int64][]userSolution)
 	for key, solution := range stats.Solutions {
+		if !(key.DayIdx >= dayIdxFrom && key.DayIdx <= dayIdxTo) {
+			continue
+		}
 		userSolutions[key.UserID] = append(userSolutions[key.UserID], userSolution{
 			solutionKey: key,
 			solution:    solution,
@@ -270,22 +273,10 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 	}
 
 	result := make(rating, 0, len(userSolutions))
-	currentDayIdx := int64(0)
 	for _, solutions := range userSolutions {
-		for _, sol := range solutions {
-			currentDayIdx = max(currentDayIdx, sol.DayIdx)
-		}
-	}
-	for _, solutions := range userSolutions {
-		solutions = iter.FilterMut(solutions, func(s userSolution) bool {
-			return s.DayIdx >= dayIdxFrom && s.DayIdx <= dayIdxTo
-		})
 		sort.Slice(solutions, func(i, j int) bool {
 			return solutions[i].DayIdx < solutions[j].DayIdx
 		})
-		if len(solutions) == 0 {
-			continue
-		}
 
 		row := ratingRow{}
 		currIdx, currStreak, maxStreak := int64(0), 0, 0
@@ -307,7 +298,7 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 			currStreak++
 			currIdx = sol.DayIdx
 		}
-		if currentDayIdx-currIdx > 1 {
+		if dayIdxTo-currIdx > 1 { // we allow gap of one because there's time after rating post and before next daily
 			maxStreak = max(maxStreak, currStreak)
 			currStreak = 0
 		}
