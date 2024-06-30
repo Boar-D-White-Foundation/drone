@@ -154,7 +154,7 @@ func (s *Service) makeStatsHandler(
 			if !ok {
 				// TODO remove with next release
 				if msgToDayInfoKey != keyNCPinnedToStatsDayInfo {
-					return setClown()
+					return nil
 				}
 
 				m, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
