@@ -24,37 +24,37 @@ func Path() string {
 var defaultConfigBytes []byte
 
 type Config struct {
-	BadgerPath string `yaml:"badgerPath"`
+	BadgerPath string `yaml:"badger_path"`
 
 	Tg struct {
-		Key               string        `yaml:"apiKey" json:"-"` // intentionally hidden from logs
-		LongPollerTimeout time.Duration `yaml:"longPollerTimeout"`
+		Key               string        `yaml:"api_key" json:"-"` // intentionally hidden from logs
+		LongPollerTimeout time.Duration `yaml:"long_poller_timeout"`
 	} `yaml:"tg"`
 
 	Boardwhite struct {
-		ChatID                   int64 `yaml:"chatId"`
-		LeetCodeThreadID         int   `yaml:"leetcodeThreadId"`
-		LeetcodeChickensThreadID int   `yaml:"leetcodeChickensThreadId"`
+		ChatID                   int64 `yaml:"chat_id"`
+		LeetCodeThreadID         int   `yaml:"leetcode_thread_id"`
+		LeetcodeChickensThreadID int   `yaml:"leetcode_chickens_thread_id"`
 	} `yaml:"boardwhite"`
 
 	LeetcodeDaily struct {
 		Cron       string `yaml:"cron"`
-		RatingCron string `yaml:"ratingCron"`
-	} `yaml:"leetcodeDaily"`
+		RatingCron string `yaml:"rating_cron"`
+	} `yaml:"leetcode_daily"`
 
 	NeetcodeDaily struct {
 		Cron       string `yaml:"cron"`
-		RatingCron string `yaml:"ratingCron"`
-	} `yaml:"neetcodeDaily"`
+		RatingCron string `yaml:"rating_cron"`
+	} `yaml:"neetcode_daily"`
 
-	DailyStickerIDs         []string `yaml:"dailyStickerIds"`
-	DailyChickensStickerIDs []string `yaml:"dailyChickensStickerIds"`
-	DPStickerID             string   `yaml:"dpStickerId"`
+	DailyStickerIDs         []string `yaml:"daily_sticker_ids"`
+	DailyChickensStickerIDs []string `yaml:"daily_chickens_sticker_ids"`
+	DPStickerID             string   `yaml:"dp_sticker_id"`
 
 	Mocks []struct {
 		Username   string   `yaml:"username"`
 		Period     string   `yaml:"period"`
-		StickerIDs []string `yaml:"stickerIds"`
+		StickerIDs []string `yaml:"sticker_ids"`
 	} `yaml:"mocks"`
 }
 

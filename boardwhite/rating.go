@@ -70,19 +70,6 @@ func (s *Service) getLastPublishedQuestionDayInfo(tx db.Tx, msgToDayInfoKey stri
 			result = dayInfo
 		}
 	}
-	// TODO remove with next release
-	if msgToDayInfoKey == keyNCPinnedToStatsDayInfo {
-		m, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
-		if err != nil {
-			return statsDayInfo{}, fmt.Errorf("get msgToDayIdx: %w", err)
-		}
-
-		for _, dayIdx := range m {
-			if dayIdx > result.DayIdx {
-				result = statsDayInfo{DayIdx: dayIdx}
-			}
-		}
-	}
 
 	return result, nil
 }
@@ -152,22 +139,7 @@ func (s *Service) makeStatsHandler(
 
 			dayInfo, ok := msgToDayIdx[msg.ReplyTo.ID]
 			if !ok {
-				// TODO remove with next release
-				if msgToDayInfoKey != keyNCPinnedToStatsDayInfo {
-					return nil
-				}
-
-				m, err := db.GetJsonDefault(tx, keyNCPinnedToDayIdx, make(map[int]int64))
-				if err != nil {
-					return fmt.Errorf("get msgToDayIdx: %w", err)
-				}
-
-				idx, ok := m[msg.ReplyTo.ID]
-				if !ok {
-					return setClown()
-				}
-
-				dayInfo = statsDayInfo{DayIdx: idx}
+				return nil
 			}
 
 			key := solutionKey{
@@ -179,10 +151,7 @@ func (s *Service) makeStatsHandler(
 			}
 
 			stats.Solutions[key] = solution{Update: update}
-			// TODO remove if with next release
-			if !dayInfo.PublishedAt.IsZero() {
-				stats.DaysInfo[dayInfo.DayIdx] = dayInfo
-			}
+			stats.DaysInfo[dayInfo.DayIdx] = dayInfo
 			if err := db.SetJson(tx, statsKey, stats); err != nil {
 				return fmt.Errorf("set stats: %w", err)
 			}

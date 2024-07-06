@@ -22,7 +22,6 @@ const (
 
 	keyNCPinnedMessages       = "boardwhite:neetcode:pinned_messages"
 	keyNCPinnedToStatsDayInfo = "boardwhite:neetcode:pinned_to_stats_day_info"
-	keyNCPinnedToDayIdx       = "boardwhite:neetcode:pinned_to_day_idx" // TODO remove with next release
 	keyNCStats                = "boardwhite:neetcode:stats"
 )
 

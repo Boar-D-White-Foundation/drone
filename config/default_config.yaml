@@ -1,18 +1,18 @@
-badgerPath: "data/badger"
+badger_path: "data/badger"
 tg:
-  apiKey: "FILL ME!!!"
-  longPollerTimeout: "10s"
+  api_key: "FILL ME!!!"
+  long_poller_timeout: "10s"
 boardwhite:
-  chatId: -1001640461540
-  leetcodeThreadId: 10095
-  leetcodeChickensThreadId: 372377
-leetcodeDaily:
+  chat_id: -1001640461540
+  leetcode_thread_id: 10095
+  leetcode_chickens_thread_id: 372377
+leetcode_daily:
   cron: "0 1 * * *" # every day at 01:00 UTC
-  ratingCron: "0 6 1 * *" # every month at 06:00 UTC
-neetcodeDaily:
+  rating_cron: "0 6 1 * *" # every month at 06:00 UTC
+neetcode_daily:
   cron: "0 12 * * *" #  every day at 12:00 UTC
-  ratingCron: "1 6 1 * *" # every month at 06:01 UTC
-dailyStickerIds:
+  rating_cron: "1 6 1 * *" # every month at 06:01 UTC
+daily_sticker_ids:
   - "CAACAgIAAxkBAAELpiFl7G4Rn8WQBK3AaDiAMn6ixTUR7gACzzkAAr-TAAFK91qMnVpp9TQ0BA"
   - "CAACAgIAAxkBAAELqk5l72yJkbx4_vskG3n6zWoWaAnA3QACazYAArJX2UsY5inoNwaFoTQE"
   - "CAACAgIAAxkBAAELsFZl8hFWX-2VvyppubPYPnLFrVeLPgACZjEAAmSSoUrAsMs8kC1omDQE"
@@ -41,7 +41,7 @@ dailyStickerIds:
   - "CAACAgIAAxkBAAEMTP5maqA87gNxFLfOIVnVKQb9p87FwAACAQADWQxTEoGwOR2Ph1igNQQ"
   - "CAACAgIAAxkBAAEMTQABZmqgV7BhQEcw5KIbsNts8sHOJgYAAikAA1kMUxKOy898mJBVazUE"
   - "CAACAgIAAxkBAAEMTQJmaqB9_d9Ciu3HY3KXTrTa-QljMwACLgADWQxTEhJbEPYsQmF0NQQ"
-dailyChickensStickerIds:
+daily_chickens_sticker_ids:
   - "CAACAgIAAxkBAAEMTMpmantz_jdQCBVWX7lGvMFzY3yJ2gACMgADWQxTEhiWxOGOtE5QNQQ"
   - "CAACAgIAAxkBAAEMTMxmant7DMxWMkuJlukfW18he0bWxwACxxIAAvx1yUuVMRcMrNODDzUE"
   - "CAACAgIAAxkBAAEMTM5manuKl9lgOtH4liLjJVwS9mShGAACbT4AAryw4Ej5B_iT5iPh-jUE"
@@ -50,23 +50,23 @@ dailyChickensStickerIds:
   - "CAACAgEAAxkBAAEMTOBmapvVsK0DFbqBvHwUrfXWTokrYQACKQMAAsVP4EbOiBk_jpk-BzUE"
   - "CAACAgIAAxkBAAEMTOpmapxklEGyu66gmaPDmCLdyY8D9QACChYAAkipqUuWfRES_-NFMjUE"
   - "CAACAgIAAxkBAAEMTPBmapyacjjNLqzeo2HEBZGicpBrhwACAgADODo9EQYD6r0KZsLbNQQ"
-dpStickerId: "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"
+dp_sticker_id: "CAACAgIAAxkBAAELsFhl8hGciGxpkKi4-jhou97SOqwkvwACpT0AAkV6sEpqc1XNPnvOIDQE"
 mocks:
   - username: "byegor"
     period: "72h"
-    stickerIds:
+    sticker_ids:
       - "CAACAgIAAxkBAAELtUJl9FKjhIGnyaUwO_IXh_SepPBgSAACzzwAAiTYUEn0kbWw7nXa1zQE"
   - username: "ollkostin"
     period: "72h"
-    stickerIds:
+    sticker_ids:
       - "CAACAgQAAxkBAAELvRpl-EweMqCeuggLoAo3ysvFmONONgACvRAAAqbxcR5BuzVAQyP23DQE"
   - username: "lk4d4"
     period: "72h"
-    stickerIds:
+    sticker_ids:
       - "CAACAgQAAxkBAAELu8Rl90uOqEMPwdCvcFIm8nBMpVNyoAACBwIAAnBt9gd0v3XadwsPfzQE"
   - username: "yukhyan"
     period: "24h"
-    stickerIds:
+    sticker_ids:
       - "CAACAgIAAxkBAAELvu5l-WzyKAuVR_3-pN9OdwTbagyrlwACFB0AAp5nqUiXjlLZ3jpJ2jQE"
       - "CAACAgIAAxkBAAELwmll_BDVE3wVFL6g8bDSd2EDPuXCBgACzhMAAkFImEhIWZNDtbMOAAE0BA"
       - "CAACAgIAAxkBAAELwmtl_BDaSFwk3r60go2hFLaKPhmzBAACFRgAAihmmEjcTuRs6Dq3HzQE"
@@ -78,5 +78,5 @@ mocks:
       - "CAACAgIAAxkBAAEMB_dmMerpS84bH3HXofwIqGllmUo57AACbRoAAu57mUhsViRGOLqifjQE"
   - username: "quazeeee"
     period: "48h"
-    stickerIds:
+    sticker_ids:
       - "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"
