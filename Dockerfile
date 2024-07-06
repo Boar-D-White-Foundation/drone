@@ -1,4 +1,4 @@
-FROM golang:1.22.1-alpine as builder
+FROM golang:1.22.1-alpine AS builder
 
 WORKDIR /opt/drone
 
@@ -9,7 +9,7 @@ COPY . .
 RUN go build -v -o ./bin/drone ./drone
 
 
-FROM golang:1.22.1-alpine
+FROM alpine:3.20.1
 
 WORKDIR /opt/drone
 

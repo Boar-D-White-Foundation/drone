@@ -1,6 +1,7 @@
 .env
 .venv
-data
 bin
 chromedriver
 config.yaml
+data/*
+!data/.gitkeep

@@ -5,8 +5,5 @@ services:
     build:
       context: .
     volumes:
-      - data:/opt/drone/data
-      - ${PWD}/config.yaml:/opt/drone/config.yaml
-
-volumes:
-  data:
+      - ${PWD}/data:/opt/drone/data
+      - ${PWD}/config.yaml:/opt/drone/config.yaml:ro
