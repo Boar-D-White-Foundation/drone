@@ -40,7 +40,10 @@ go test --tags=e2e -race ./...
 
 ## Run bot
 ```shell
+# set up backup cron
+(crontab -l 2>/dev/null; echo "0 0 * * * /home/fh/dev/drone/backup.sh 2>&1 | logger -t drone_backup") | crontab -
+
 cp ./config/default_config.yaml ./config.yaml
-# set tg.apiKey in config.yaml 
+# set tg.api_key in config.yaml 
 docker-compose up --build -d
 ```

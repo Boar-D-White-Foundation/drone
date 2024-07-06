@@ -15,6 +15,16 @@ func PickRandom[T any](xs []T) (T, error) {
 	return xs[idx.Int64()], nil
 }
 
+func Filter[T any](xs []T, f func(T) bool) []T {
+	result := make([]T, 0)
+	for _, x := range xs {
+		if f(x) {
+			result = append(result, x)
+		}
+	}
+	return result
+}
+
 func FilterMut[T any](xs []T, f func(T) bool) []T {
 	insertIdx := 0
 	for _, x := range xs {
