@@ -112,9 +112,9 @@ func (s *Service) makeStatsHandler(
 				if len(match) < 2 {
 					return setClown()
 				}
-				if err := s.postCodeSnippet(ctx, msg.ID, match[1]); err != nil {
-					s.alerts.Errorxf(err, "err post code snippet: %v", msg.Text)
-				}
+				//if err := s.postCodeSnippet(ctx, msg.ID, match[1]); err != nil {
+				//	s.alerts.Errorxf(err, "err post code snippet: %v", msg.Text)
+				//}
 			case msg.Photo != nil:
 				if !msg.HasMediaSpoiler {
 					return setClown()

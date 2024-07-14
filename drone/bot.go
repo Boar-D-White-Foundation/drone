@@ -7,7 +7,6 @@ import (
 
 	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/boardwhite"
-	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/leetcode"
@@ -21,11 +20,11 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 		return err
 	}
 
-	browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
-	if err != nil {
-		return err
-	}
-	defer cleanup()
+	//browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
+	//if err != nil {
+	//	return err
+	//}
+	//defer cleanup()
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
 
@@ -40,7 +39,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 	}
 	defer database.Stop()
 
-	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, nil, lcClient)
 	if err != nil {
 		return err
 	}
