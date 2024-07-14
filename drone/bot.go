@@ -2,59 +2,45 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/boardwhite"
+	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
 )
 
-func NewTgServiceFromConfig(cfg config.Config) (*tg.Service, error) {
-	tgService, err := tg.NewService(cfg.Tg.Key, cfg.Boardwhite.ChatID, cfg.Tg.LongPollerTimeout)
-	if err != nil {
-		return nil, fmt.Errorf("new tg client: %w", err)
-	}
-
-	return tgService, nil
-}
-
-func NewDBFromConfig(cfg config.Config) db.DB {
-	return db.NewBadgerDB(cfg.BadgerPath)
-}
-
-func NewBoarDWhiteServiceFromConfig(
-	telegram tg.Client,
-	database db.DB,
-	cfg boardwhite.ServiceConfig,
-) (*boardwhite.Service, error) {
-	return boardwhite.NewService(
-		cfg,
-		telegram,
-		database,
-	)
-}
-
 func StartDrone(ctx context.Context, cfg config.Config) error {
-	tgService, err := NewTgServiceFromConfig(cfg)
+	alerts, err := alert.NewManagerFromConfig(cfg)
 	if err != nil {
 		return err
 	}
 
-	database := NewDBFromConfig(cfg)
+	browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
+	if err != nil {
+		return err
+	}
+	defer cleanup()
+
+	lcClient := leetcode.NewClientFromConfig(cfg)
+
+	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg)
+	if err != nil {
+		return err
+	}
+
+	database := db.NewBadgerDBFromConfig(cfg)
 	if err := database.Start(ctx); err != nil {
 		return err
 	}
 	defer database.Stop()
 
-	bwCfg, err := cfg.ServiceConfig()
-	if err != nil {
-		return fmt.Errorf("service config: %w", err)
-	}
-	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
 	if err != nil {
 		return err
 	}

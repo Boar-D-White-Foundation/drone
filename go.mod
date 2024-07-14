@@ -10,7 +10,7 @@ require (
 	github.com/stretchr/testify v1.8.4
 	go.uber.org/automaxprocs v1.5.3
 	golang.org/x/exp v0.0.0-20231219180239-dc181d75b848
-	gopkg.in/telebot.v3 v3.2.1
+	gopkg.in/telebot.v3 v3.3.6
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -40,3 +40,5 @@ require (
 	golang.org/x/sys v0.5.0 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 )
+
+replace gopkg.in/telebot.v3 => gopkg.in/frosthamster/telebot.v3 v3.3.7

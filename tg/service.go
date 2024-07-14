@@ -2,22 +2,26 @@ package tg
 
 import (
 	"fmt"
+	"io"
 	"log/slog"
 	"slices"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/config"
 	"gopkg.in/telebot.v3"
 	tele "gopkg.in/telebot.v3"
 )
 
 type Client interface {
 	BotID() int64
+	SendMonospace(threadID int, text string) (int, error)
 	SendMarkdownV2(threadID int, text string) (int, error)
 	SendSpoilerLink(threadID int, header, link string) (int, error)
 	SendSticker(threadID int, stickerID string) (int, error)
 	ReplyWithSticker(messageID int, stickerID string) (int, error)
+	ReplyWithSpoilerPhoto(messageID int, name, mime string, reader io.ReadSeeker) (int, error)
 	Pin(id int) error
 	Unpin(id int) error
 	SetReaction(messageID int, reaction Reaction, isBig bool) error
@@ -60,6 +64,24 @@ func NewService(token string, chatID int64, longPollerTimeout time.Duration) (*S
 		chat:     &chat,
 		handlers: make(map[string][]handler),
 	}, nil
+}
+
+func NewBoardwhiteServiceFromConfig(cfg config.Config) (*Service, error) {
+	tgService, err := NewService(cfg.Tg.Key, cfg.Boardwhite.ChatID, cfg.Tg.LongPollerTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("new tg client: %w", err)
+	}
+
+	return tgService, nil
+}
+
+func NewAdminClientFromConfig(cfg config.Config) (Client, error) {
+	tgService, err := NewService(cfg.Tg.Key, cfg.Tg.AdminChatID, cfg.Tg.LongPollerTimeout)
+	if err != nil {
+		return nil, fmt.Errorf("new tg client: %w", err)
+	}
+
+	return tgService, nil
 }
 
 type handler struct {
@@ -129,6 +151,24 @@ func EscapeMD(text string) string {
 
 func (s *Service) BotID() int64 {
 	return s.bot.Me.ID
+}
+
+func (s *Service) SendMonospace(threadID int, text string) (int, error) {
+	message, err := s.bot.Send(s.chatID, text, &tele.SendOptions{
+		ThreadID: threadID,
+		Entities: []tele.MessageEntity{
+			{
+				Type:   tele.EntityCode,
+				Offset: 0, // TODO: this technically should be in utf-16 code points
+				Length: len(text),
+			},
+		},
+	})
+	if err != nil {
+		return 0, fmt.Errorf("send text %q: %w", text, err)
+	}
+
+	return message.ID, nil
 }
 
 // SendMarkdownV2 sends a message according to a markdownV2 formatting style
@@ -215,7 +255,37 @@ func (s *Service) ReplyWithSticker(messageID int, stickerID string) (int, error)
 		},
 	})
 	if err != nil {
-		return 0, fmt.Errorf("reply with ticker %q: %w", stickerID, err)
+		return 0, fmt.Errorf("reply with sticker %q: %w", stickerID, err)
+	}
+
+	return message.ID, nil
+}
+
+func (s *Service) ReplyWithSpoilerPhoto(messageID int, name, mime string, reader io.ReadSeeker) (int, error) {
+	var message *tele.Message
+	var err error
+
+	photo := tele.Photo{File: tele.FromReader(reader)}
+	opts := tele.SendOptions{
+		ReplyTo: &tele.Message{
+			ID: messageID,
+		},
+		HasSpoiler: true,
+	}
+	message, err = s.bot.Send(s.chatID, &photo, &opts)
+	if err != nil && strings.Contains(err.Error(), "PHOTO_INVALID_DIMENSIONS") {
+		if _, err := reader.Seek(0, io.SeekStart); err != nil {
+			return 0, fmt.Errorf("err seek at start: %w", err)
+		}
+		doc := tele.Document{
+			File:     tele.FromReader(reader),
+			FileName: name,
+			MIME:     mime,
+		}
+		message, err = s.bot.Send(s.chatID, &doc, &opts)
+	}
+	if err != nil {
+		return 0, fmt.Errorf("reply with spoiler photo: %w", err)
 	}
 
 	return message.ID, nil

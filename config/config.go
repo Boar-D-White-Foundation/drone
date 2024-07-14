@@ -7,7 +7,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/boar-d-white-foundation/drone/boardwhite"
 	"gopkg.in/yaml.v3"
 )
 
@@ -29,7 +28,15 @@ type Config struct {
 	Tg struct {
 		Key               string        `yaml:"api_key" json:"-"` // intentionally hidden from logs
 		LongPollerTimeout time.Duration `yaml:"long_poller_timeout"`
+		AdminChatID       int64         `yaml:"admin_chat_id"`
+		Session           string        `yaml:"session" json:"-"` // intentionally hidden from logs
+		CSRF              string        `yaml:"csrf" json:"-"`    // intentionally hidden from logs
 	} `yaml:"tg"`
+
+	Rod struct {
+		Host string `yaml:"host"`
+		Port int    `yaml:"port"`
+	} `yaml:"rod"`
 
 	Boardwhite struct {
 		ChatID                   int64 `yaml:"chat_id"`
@@ -61,29 +68,6 @@ type Config struct {
 func (cfg Config) String() string {
 	b, _ := json.Marshal(&cfg) //nolint:errchkjson // intentionally omitting the error
 	return string(b)
-}
-
-func (cfg Config) ServiceConfig() (boardwhite.ServiceConfig, error) {
-	mocks := make(map[string]boardwhite.MockConfig)
-	for _, v := range cfg.Mocks {
-		period, err := time.ParseDuration(v.Period)
-		if err != nil {
-			return boardwhite.ServiceConfig{}, fmt.Errorf("parse duration %q: %w", v.Period, err)
-		}
-		mocks[v.Username] = boardwhite.MockConfig{
-			Period:     period,
-			StickerIDs: v.StickerIDs,
-		}
-	}
-
-	return boardwhite.ServiceConfig{
-		LeetcodeThreadID:         cfg.Boardwhite.LeetCodeThreadID,
-		LeetcodeChickensThreadID: cfg.Boardwhite.LeetcodeChickensThreadID,
-		DailyStickersIDs:         cfg.DailyStickerIDs,
-		DailyChickensStickerIDs:  cfg.DailyChickensStickerIDs,
-		DpStickerID:              cfg.DPStickerID,
-		Mocks:                    mocks,
-	}, nil
 }
 
 func Default() (cfg Config, err error) {

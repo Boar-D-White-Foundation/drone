@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/dgraph-io/badger/v4"
 )
 
@@ -28,6 +29,10 @@ func NewBadgerDB(path string) *BadgerDB {
 	return &BadgerDB{
 		badgerOpts: badgerOpts,
 	}
+}
+
+func NewBadgerDBFromConfig(cfg config.Config) DB {
+	return NewBadgerDB(cfg.BadgerPath)
 }
 
 func buildDBOpts(path string) badger.Options {

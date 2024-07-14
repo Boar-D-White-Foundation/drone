@@ -6,8 +6,12 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/alert"
+	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
+	"github.com/go-rod/rod"
 )
 
 const (
@@ -26,7 +30,7 @@ const (
 )
 
 var (
-	lcSubmissionRe = regexp.MustCompile(`https://leetcode\.com.*/submissions/.+`)
+	lcSubmissionRe = regexp.MustCompile(`https://leetcode\.com.*/submissions/(?P<submissionID>\d+)`)
 )
 
 type MockConfig struct {
@@ -48,12 +52,18 @@ type Service struct {
 	database           db.DB
 	telegram           tg.Client
 	lcChickenQuestions lcChickenQuestions
+	alerts             *alert.Manager
+	browser            *rod.Browser
+	lcClient           *leetcode.Client
 }
 
 func NewService(
 	cfg ServiceConfig,
 	telegram tg.Client,
 	database db.DB,
+	alerts *alert.Manager,
+	browser *rod.Browser,
+	lcClient *leetcode.Client,
 ) (*Service, error) {
 	questions, err := newLCChickenQuestions()
 	if err != nil {
@@ -65,7 +75,41 @@ func NewService(
 		database:           database,
 		telegram:           telegram,
 		lcChickenQuestions: questions,
+		alerts:             alerts,
+		browser:            browser,
+		lcClient:           lcClient,
 	}, nil
+}
+
+func NewServiceFromConfig(
+	cfg config.Config,
+	telegram tg.Client,
+	database db.DB,
+	alerts *alert.Manager,
+	browser *rod.Browser,
+	lcClient *leetcode.Client,
+) (*Service, error) {
+	mocks := make(map[string]MockConfig)
+	for _, v := range cfg.Mocks {
+		period, err := time.ParseDuration(v.Period)
+		if err != nil {
+			return nil, fmt.Errorf("parse duration %q: %w", v.Period, err)
+		}
+		mocks[v.Username] = MockConfig{
+			Period:     period,
+			StickerIDs: v.StickerIDs,
+		}
+	}
+
+	serviceCfg := ServiceConfig{
+		LeetcodeThreadID:         cfg.Boardwhite.LeetCodeThreadID,
+		LeetcodeChickensThreadID: cfg.Boardwhite.LeetcodeChickensThreadID,
+		DailyStickersIDs:         cfg.DailyStickerIDs,
+		DailyChickensStickerIDs:  cfg.DailyChickensStickerIDs,
+		DpStickerID:              cfg.DPStickerID,
+		Mocks:                    mocks,
+	}
+	return NewService(serviceCfg, telegram, database, alerts, browser, lcClient)
 }
 
 type publishDailyReq struct {

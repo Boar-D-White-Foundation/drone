@@ -1,2 +1,4 @@
 tg:
   api_key: "overriden key"
+  session: "overriden session"
+  csrf: "overriden csrf"
