@@ -4,10 +4,18 @@ package main
 
 import (
 	"context"
+	"log/slog"
 	"testing"
 
+	"github.com/boar-d-white-foundation/drone/alert"
+	"github.com/boar-d-white-foundation/drone/boardwhite"
+	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
+	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/leetcode"
+	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/stretchr/testify/require"
+	tele "gopkg.in/telebot.v3"
 )
 
 func TestDrone(t *testing.T) {
@@ -15,17 +23,24 @@ func TestDrone(t *testing.T) {
 	cfg, err := config.Load(config.Path())
 	require.NoError(t, err)
 
-	tgService, err := NewTgServiceFromConfig(cfg)
+	alerts, err := alert.NewManagerFromConfig(cfg)
 	require.NoError(t, err)
 
-	database := NewDBFromConfig(cfg)
+	browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
+	require.NoError(t, err)
+	defer cleanup()
+
+	lcClient := leetcode.NewClientFromConfig(cfg)
+
+	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg)
+	require.NoError(t, err)
+
+	database := db.NewBadgerDBFromConfig(cfg)
 	err = database.Start(ctx)
 	require.NoError(t, err)
 	defer database.Stop()
 
-	bwCfg, err := cfg.ServiceConfig()
-	require.NoError(t, err)
-	bw, err := NewBoarDWhiteServiceFromConfig(tgService, database, bwCfg)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
 	require.NoError(t, err)
 
 	err = bw.PublishLCDaily(ctx)

@@ -1,7 +1,13 @@
 badger_path: "data/badger"
 tg:
-  api_key: "FILL ME!!!"
+  api_key: ""
   long_poller_timeout: "10s"
+  admin_chat_id: 230400818
+  session: ""
+  csrf: ""
+rod:
+  host: "rod" # inside docker, for local use "docker run --rm -p 7317:7317 ghcr.io/go-rod/rod:v0.116.1" and 127.0.0.1 as host
+  port: 7317
 boardwhite:
   chat_id: -1001640461540
   leetcode_thread_id: 10095

@@ -11,17 +11,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestT(t *testing.T) {
-	// docker run --rm -p 7317:7317 ghcr.io/go-rod/rod:v0.116.1
+func TestCarbon(t *testing.T) {
 	ctx := context.Background()
-	d, err := chrome.NewDriver(chrome.DriverConfig{
-		Host: "127.0.0.1",
-		Port: 7317,
-	})
+	browser, cleanup, err := chrome.NewRemote("127.0.0.1", 7317)
 	require.NoError(t, err)
-	defer d.Close()
+	defer cleanup()
 
-	buf, err := chrome.GenerateCodeSnippet(ctx, d.Browser(), "# some code\ndef f():\n    print('hello world')")
+	code, err := os.ReadFile("./carbon_e2e_test.go")
+	require.NoError(t, err)
+
+	buf, err := chrome.GenerateCodeSnippet(ctx, browser, string(code))
 	require.NoError(t, err)
 
 	err = os.WriteFile("code_snippet.png", buf, 0644)

@@ -27,31 +27,15 @@ func TestConfigOverride(t *testing.T) {
 	require.NoError(t, err)
 
 	tgKey := cfg.Tg.Key
+	tgSession := cfg.Tg.Session
+	tgCSRF := cfg.Tg.CSRF
 	assert.NotEmpty(t, cfg.Tg.LongPollerTimeout)
 
 	cfg, err = Load("testdata/override.yaml")
 	require.NoError(t, err)
 
 	assert.NotEqual(t, tgKey, cfg.Tg.Key)
+	assert.NotEqual(t, tgSession, cfg.Tg.Session)
+	assert.NotEqual(t, tgCSRF, cfg.Tg.CSRF)
 	assert.NotEmpty(t, cfg.Tg.LongPollerTimeout)
-}
-
-func TestConfigMocks(t *testing.T) {
-	t.Parallel()
-
-	cfg, err := Default()
-	require.NoError(t, err)
-
-	bwCfg, err := cfg.ServiceConfig()
-	require.NoError(t, err)
-
-	assert.NotEmpty(t, bwCfg.Mocks)
-	for username, v := range bwCfg.Mocks {
-		assert.NotEmpty(t, username)
-		assert.NotEmpty(t, v.Period)
-		assert.NotEmpty(t, v.StickerIDs)
-		for _, id := range v.StickerIDs {
-			assert.NotEmpty(t, id)
-		}
-	}
 }
