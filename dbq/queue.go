@@ -19,7 +19,7 @@ func queueDLXKey(name string) string {
 }
 
 type handler interface {
-	do(ctx context.Context, task any) (int, any, error)
+	do(ctx context.Context, tx db.Tx, task any) (int, any, error)
 	getQueue(tx db.Tx, key string) ([]any, error)
 	setQueue(tx db.Tx, key string, queue []any) error
 }
@@ -95,7 +95,7 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 					return err
 				}
 
-				if ttl, task, err := handler.do(ctx, task); err != nil {
+				if ttl, task, err := handler.do(ctx, tx, task); err != nil {
 					// move task to dlx to deal with it later
 					logCtx := []any{slog.Any("err", err), slog.String("key", key), slog.Any("task", task)}
 					if ttl < 1 {
@@ -131,16 +131,16 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 	}
 }
 
-type Handler[T any] func(context.Context, T) error
+type Handler[T any] func(context.Context, db.Tx, T) error
 
-func (h Handler[T]) do(ctx context.Context, task any) (int, any, error) {
+func (h Handler[T]) do(ctx context.Context, tx db.Tx, task any) (int, any, error) {
 	casted, ok := task.(dbTask[T])
 	if !ok {
 		return 0, nil, fmt.Errorf("invalid task type %T: %+v", task, task)
 	}
 
 	casted.TTL--
-	return casted.TTL, casted, h(ctx, casted.Args)
+	return casted.TTL, casted, h(ctx, tx, casted.Args)
 }
 
 func (h Handler[T]) getQueue(tx db.Tx, key string) ([]any, error) {

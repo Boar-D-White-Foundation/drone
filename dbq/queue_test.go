@@ -23,7 +23,7 @@ func TestQueue(t *testing.T) {
 	registry := dbq.NewRegistry()
 	result := make(chan int)
 	shouldRetry := true
-	task, err := dbq.RegisterHandler(registry, "task", func(ctx context.Context, i int) error {
+	task, err := dbq.RegisterHandler(registry, "task", func(ctx context.Context, tx db.Tx, i int) error {
 		if shouldRetry {
 			shouldRetry = false
 			return errors.New("retry")
