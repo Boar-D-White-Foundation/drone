@@ -1,7 +1,6 @@
 package boardwhite
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,7 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/tg"
@@ -112,9 +110,15 @@ func (s *Service) makeStatsHandler(
 				if len(match) < 2 {
 					return setClown()
 				}
-				//if err := s.postCodeSnippet(ctx, msg.ID, match[1]); err != nil {
-				//	s.alerts.Errorxf(err, "err post code snippet: %v", msg.Text)
-				//}
+				if s.cfg.SnippetsGenerationEnabled {
+					err := s.tasks.postCodeSnippet.Schedule(ctx, 2, postCodeSnippetArgs{
+						MessageID:    msg.ID,
+						SubmissionID: match[1],
+					})
+					if err != nil {
+						s.alerts.Errorxf(err, "err schedule post code snippet: %v", msg.Text)
+					}
+				}
 			case msg.Photo != nil:
 				if !msg.HasMediaSpoiler {
 					return setClown()
@@ -165,26 +169,6 @@ func (s *Service) makeStatsHandler(
 			return setOk()
 		})
 	}
-}
-
-func (s *Service) postCodeSnippet(ctx context.Context, messageID int, submissionID string) error {
-	sub, err := s.lcClient.GetSubmission(ctx, submissionID)
-	if err != nil {
-		return fmt.Errorf("get submission: %w", err)
-	}
-
-	snippet, err := chrome.GenerateCodeSnippet(ctx, s.browser, sub.Code)
-	if err != nil {
-		return fmt.Errorf("generate snippet: %w", err)
-	}
-
-	_, err = s.telegram.ReplyWithSpoilerPhoto(
-		messageID,
-		fmt.Sprintf("submission_%s.png", submissionID),
-		"image/png",
-		bytes.NewReader(snippet),
-	)
-	return err
 }
 
 func (s *Service) publishRating(

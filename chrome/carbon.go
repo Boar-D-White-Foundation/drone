@@ -3,6 +3,7 @@ package chrome
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/url"
 	"time"
 
@@ -16,19 +17,22 @@ import (
 func GenerateCodeSnippet(
 	ctx context.Context,
 	browser *rod.Browser,
+	submissionID string,
 	code string,
 ) ([]byte, error) {
 	backoff := retry.LinearBackoff{
 		Delay:       time.Second,
 		MaxAttempts: 5,
 	}
-	return retry.Do(ctx, "generate code snippet", backoff, func() ([]byte, error) {
+	return retry.Do(ctx, "generate code snippet "+submissionID, backoff, func() ([]byte, error) {
+		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
 		page, err := browser.Page(proto.TargetCreateTarget{
 			URL: "https://carbon.now.sh/?t=seti&es=4x&l=auto&code=" + url.QueryEscape(code),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("fecth carbon page: %w", err)
 		}
+		slog.Info("fetched page", slog.String("submissionID", submissionID))
 
 		codeContainer, err := page.Element(".CodeMirror__container")
 		if err != nil {
@@ -37,6 +41,7 @@ func GenerateCodeSnippet(
 		if err := codeContainer.WaitStable(500 * time.Millisecond); err != nil {
 			return nil, fmt.Errorf("wait code container stabilization: %w", err)
 		}
+		slog.Info("selected code container", slog.String("submissionID", submissionID))
 
 		exportMenu, err := page.Element(`#export-menu`)
 		if err != nil {
@@ -48,6 +53,7 @@ func GenerateCodeSnippet(
 		if err := exportMenu.Click(proto.InputMouseButtonLeft, 1); err != nil {
 			return nil, fmt.Errorf("click export menu: %w", err)
 		}
+		slog.Info("opened export menu", slog.String("submissionID", submissionID))
 
 		exportBtns, err := page.Elements(".export-menu-container button")
 		if err != nil {
@@ -62,6 +68,7 @@ func GenerateCodeSnippet(
 		if err := exportBtns[0].Click(proto.InputMouseButtonLeft, 1); err != nil {
 			return nil, fmt.Errorf("click export button: %w", err)
 		}
+		slog.Info("started exporting", slog.String("submissionID", submissionID))
 
 		img, err := page.Element("body > img")
 		if err != nil {
@@ -71,11 +78,13 @@ func GenerateCodeSnippet(
 		if err != nil || src == nil {
 			return nil, fmt.Errorf("get src: %w", err)
 		}
+		slog.Info("located image", slog.String("submissionID", submissionID))
 
 		buf, err := page.GetResource(*src)
 		if err != nil || len(buf) == 0 {
 			return nil, fmt.Errorf("get img data: %w", err)
 		}
+		slog.Info("got image data", slog.String("submissionID", submissionID))
 
 		return buf, nil
 	})

@@ -20,7 +20,7 @@ func TestCarbon(t *testing.T) {
 	code, err := os.ReadFile("./carbon_e2e_test.go")
 	require.NoError(t, err)
 
-	buf, err := chrome.GenerateCodeSnippet(ctx, browser, string(code))
+	buf, err := chrome.GenerateCodeSnippet(ctx, browser, "1", string(code))
 	require.NoError(t, err)
 
 	err = os.WriteFile("code_snippet.png", buf, 0644)

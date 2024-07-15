@@ -1,4 +1,6 @@
 badger_path: "data/badger"
+features:
+  snippets_generation_enabled: false
 tg:
   api_key: ""
   long_poller_timeout: "10s"

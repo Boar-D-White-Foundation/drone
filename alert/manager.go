@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/tg"
 )
 
@@ -18,15 +17,6 @@ func NewManager(
 	return &Manager{
 		telegram: telegram,
 	}
-}
-
-func NewManagerFromConfig(cfg config.Config) (*Manager, error) {
-	telegram, err := tg.NewAdminClientFromConfig(cfg)
-	if err != nil {
-		return nil, fmt.Errorf("create tg admin client: %w", err)
-	}
-
-	return NewManager(telegram), nil
 }
 
 func (m *Manager) Errorxf(err error, msg string, args ...any) {
