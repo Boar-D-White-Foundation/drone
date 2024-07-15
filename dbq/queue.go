@@ -108,8 +108,10 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 					if err := handler.setQueue(tx, dlxKey, dlx); err != nil {
 						return err
 					}
+					break
 				}
 
+				slog.Info("finished executing task", slog.Any("task", task))
 				break
 			}
 
@@ -191,11 +193,12 @@ func (t Task[T]) Schedule(ctx context.Context, retries int, args T) error {
 			return fmt.Errorf("get queue %q: %w", key, err)
 		}
 
-		queue = append(queue, dbTask[T]{
+		dbt := dbTask[T]{
 			Name: t.name,
 			TTL:  retries + 1,
 			Args: args,
-		})
+		}
+		queue = append(queue, dbt)
 		if err := db.SetJson(tx, key, queue); err != nil {
 			return fmt.Errorf("set queue %q: %w", key, err)
 		}
@@ -203,9 +206,10 @@ func (t Task[T]) Schedule(ctx context.Context, retries int, args T) error {
 		select {
 		case t.registry.queue.taskEnqueued <- struct{}{}:
 		default:
-			slog.Info("miss notifying task scheduling", slog.String("name", t.name), slog.Any("args", args))
+			slog.Info("miss notifying task scheduling", slog.Any("task", dbt))
 		}
 
+		slog.Info("scheduled task", slog.Any("task", dbt))
 		return nil
 	})
 }
