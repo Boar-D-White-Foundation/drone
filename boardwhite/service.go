@@ -9,6 +9,7 @@ import (
 	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/dbq"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-rod/rod"
@@ -38,17 +39,23 @@ type MockConfig struct {
 	StickerIDs []string
 }
 
-type ServiceConfig struct {
-	LeetcodeThreadID         int
-	LeetcodeChickensThreadID int
-	DailyStickersIDs         []string
-	DailyChickensStickerIDs  []string
-	DpStickerID              string
-	Mocks                    map[string]MockConfig
+type Config struct {
+	LeetcodeThreadID          int
+	LeetcodeChickensThreadID  int
+	DailyStickersIDs          []string
+	DailyChickensStickerIDs   []string
+	DpStickerID               string
+	SnippetsGenerationEnabled bool
+	Mocks                     map[string]MockConfig
+}
+
+type tasks struct {
+	postCodeSnippet dbq.Task[postCodeSnippetArgs]
 }
 
 type Service struct {
-	cfg                ServiceConfig
+	cfg                Config
+	tasks              tasks
 	database           db.DB
 	telegram           tg.Client
 	lcChickenQuestions lcChickenQuestions
@@ -58,7 +65,7 @@ type Service struct {
 }
 
 func NewService(
-	cfg ServiceConfig,
+	cfg Config,
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
@@ -101,13 +108,14 @@ func NewServiceFromConfig(
 		}
 	}
 
-	serviceCfg := ServiceConfig{
-		LeetcodeThreadID:         cfg.Boardwhite.LeetCodeThreadID,
-		LeetcodeChickensThreadID: cfg.Boardwhite.LeetcodeChickensThreadID,
-		DailyStickersIDs:         cfg.DailyStickerIDs,
-		DailyChickensStickerIDs:  cfg.DailyChickensStickerIDs,
-		DpStickerID:              cfg.DPStickerID,
-		Mocks:                    mocks,
+	serviceCfg := Config{
+		LeetcodeThreadID:          cfg.Boardwhite.LeetCodeThreadID,
+		LeetcodeChickensThreadID:  cfg.Boardwhite.LeetcodeChickensThreadID,
+		DailyStickersIDs:          cfg.DailyStickerIDs,
+		DailyChickensStickerIDs:   cfg.DailyChickensStickerIDs,
+		DpStickerID:               cfg.DPStickerID,
+		SnippetsGenerationEnabled: cfg.Features.SnippetsGenerationEnabled,
+		Mocks:                     mocks,
 	}
 	return NewService(serviceCfg, telegram, database, alerts, browser, lcClient)
 }

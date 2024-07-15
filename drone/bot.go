@@ -7,24 +7,33 @@ import (
 
 	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/boardwhite"
+	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/dbq"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
+	"github.com/go-rod/rod"
 )
 
 func StartDrone(ctx context.Context, cfg config.Config) error {
-	alerts, err := alert.NewManagerFromConfig(cfg)
+	adminTGClient, err := tg.NewAdminClientFromConfig(cfg)
 	if err != nil {
 		return err
 	}
 
-	//browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
-	//if err != nil {
-	//	return err
-	//}
-	//defer cleanup()
+	alerts := alert.NewManager(adminTGClient)
+
+	var browser *rod.Browser
+	var cleanup func()
+	if cfg.Features.SnippetsGenerationEnabled {
+		browser, cleanup, err = chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
+		if err != nil {
+			return err
+		}
+		defer cleanup()
+	}
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
 
@@ -39,7 +48,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 	}
 	defer database.Stop()
 
-	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, nil, lcClient)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
 	if err != nil {
 		return err
 	}
@@ -48,6 +57,22 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 	tgService.Start()
 	defer tgService.Stop()
 	slog.Info("started tg handlers")
+
+	dbqRegistry := dbq.NewRegistry()
+	if err := bw.RegisterTasks(dbqRegistry); err != nil {
+		return err
+	}
+
+	queue, err := dbq.NewQueue(dbqRegistry, database)
+	if err != nil {
+		return err
+	}
+
+	dbqDone := make(chan struct{})
+	go func() {
+		queue.StartHandlers(ctx, time.Second)
+		dbqDone <- struct{}{}
+	}()
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {
@@ -74,6 +99,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 		)
 	}
 	<-ctx.Done()
+	<-dbqDone
 	return scheduler.Shutdown()
 }
 

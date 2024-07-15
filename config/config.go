@@ -25,6 +25,10 @@ var defaultConfigBytes []byte
 type Config struct {
 	BadgerPath string `yaml:"badger_path"`
 
+	Features struct {
+		SnippetsGenerationEnabled bool `yaml:"snippets_generation_enabled"`
+	} `yaml:"features"`
+
 	Tg struct {
 		Key               string        `yaml:"api_key" json:"-"` // intentionally hidden from logs
 		LongPollerTimeout time.Duration `yaml:"long_poller_timeout"`

@@ -5,13 +5,17 @@ package main
 import (
 	"context"
 	"log/slog"
+	"os"
+	"os/signal"
 	"testing"
+	"time"
 
 	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/boardwhite"
 	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/dbq"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/stretchr/testify/require"
@@ -19,14 +23,19 @@ import (
 )
 
 func TestDrone(t *testing.T) {
-	ctx := context.Background()
+	// arrange
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	cfg, err := config.Load(config.Path())
 	require.NoError(t, err)
 
-	alerts, err := alert.NewManagerFromConfig(cfg)
+	adminTGClient, err := tg.NewAdminClientFromConfig(cfg)
 	require.NoError(t, err)
 
-	browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
+	alerts := alert.NewManager(adminTGClient)
+
+	browser, cleanup, err := chrome.NewLocal()
 	require.NoError(t, err)
 	defer cleanup()
 
@@ -40,9 +49,12 @@ func TestDrone(t *testing.T) {
 	require.NoError(t, err)
 	defer database.Stop()
 
+	dbqRegistry := dbq.NewRegistry()
+
 	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
 	require.NoError(t, err)
 
+	// act
 	err = bw.PublishLCDaily(ctx)
 	require.NoError(t, err)
 
@@ -66,7 +78,23 @@ func TestDrone(t *testing.T) {
 		slog.Info("got update", slog.Any("ctx", c))
 		return nil
 	})
+
+	err = bw.RegisterTasks(dbqRegistry)
+	require.NoError(t, err)
+
+	// assert
+	queue, err := dbq.NewQueue(dbqRegistry, database)
+	require.NoError(t, err)
+
+	dbqDone := make(chan struct{})
+	go func() {
+		queue.StartHandlers(ctx, time.Second)
+		dbqDone <- struct{}{}
+	}()
+
 	tgService.Start()
 	defer tgService.Stop()
+
 	<-ctx.Done()
+	<-dbqDone
 }

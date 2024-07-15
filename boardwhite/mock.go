@@ -13,7 +13,7 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-func (s *Service) mockKey(username string) string {
+func mockKey(username string) string {
 	return fmt.Sprintf("boardwhite:mock:%s:next", username)
 }
 
@@ -29,7 +29,7 @@ func (s *Service) OnMock(ctx context.Context, c tele.Context) error {
 		return nil
 	}
 
-	key := s.mockKey(username)
+	key := mockKey(username)
 	return s.database.Do(ctx, func(tx db.Tx) error {
 		mockAt, err := db.GetJson[time.Time](tx, key)
 		switch {
