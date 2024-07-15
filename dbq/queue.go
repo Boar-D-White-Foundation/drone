@@ -19,9 +19,9 @@ func queueDLXKey(name string) string {
 }
 
 type handler interface {
-	Do(ctx context.Context, task any) (int, any, error)
-	GetQueue(tx db.Tx, key string) ([]any, error)
-	SetQueue(tx db.Tx, key string, queue []any) error
+	do(ctx context.Context, task any) (int, any, error)
+	getQueue(tx db.Tx, key string) ([]any, error)
+	setQueue(tx db.Tx, key string, queue []any) error
 }
 
 type Registry struct {
@@ -67,11 +67,11 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 			// pick regular tasks before dlx
 			for k, handler := range q.registry.handlers {
 				key, dlxKey := queueKey(k), queueDLXKey(k)
-				queue, err := handler.GetQueue(tx, key)
+				queue, err := handler.getQueue(tx, key)
 				if err != nil {
 					return err
 				}
-				dlx, err := handler.GetQueue(tx, dlxKey)
+				dlx, err := handler.getQueue(tx, dlxKey)
 				if err != nil {
 					return err
 				}
@@ -91,11 +91,11 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 				}
 
 				slog.Info("fetched task to execute", slog.Any("task", task))
-				if err := handler.SetQueue(tx, selectedKey, selected); err != nil {
+				if err := handler.setQueue(tx, selectedKey, selected); err != nil {
 					return err
 				}
 
-				if ttl, task, err := handler.Do(ctx, task); err != nil {
+				if ttl, task, err := handler.do(ctx, task); err != nil {
 					// move task to dlx to deal with it later
 					logCtx := []any{slog.Any("err", err), slog.String("key", key), slog.Any("task", task)}
 					if ttl < 1 {
@@ -105,7 +105,7 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 
 					slog.Error("err executing task, ttl is not zero, moving to dlx", logCtx...)
 					dlx = append(dlx, task)
-					if err := handler.SetQueue(tx, dlxKey, dlx); err != nil {
+					if err := handler.setQueue(tx, dlxKey, dlx); err != nil {
 						return err
 					}
 				}
@@ -131,7 +131,7 @@ func (q *Queue) StartHandlers(ctx context.Context, pollDelay time.Duration) {
 
 type Handler[T any] func(context.Context, T) error
 
-func (h Handler[T]) Do(ctx context.Context, task any) (int, any, error) {
+func (h Handler[T]) do(ctx context.Context, task any) (int, any, error) {
 	casted, ok := task.(dbTask[T])
 	if !ok {
 		return 0, nil, fmt.Errorf("invalid task type %T: %+v", task, task)
@@ -141,7 +141,7 @@ func (h Handler[T]) Do(ctx context.Context, task any) (int, any, error) {
 	return casted.TTL, casted, h(ctx, casted.Args)
 }
 
-func (h Handler[T]) GetQueue(tx db.Tx, key string) ([]any, error) {
+func (h Handler[T]) getQueue(tx db.Tx, key string) ([]any, error) {
 	queue, err := db.GetJsonDefault[[]dbTask[T]](tx, key, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get queue %q: %w", key, err)
@@ -154,7 +154,7 @@ func (h Handler[T]) GetQueue(tx db.Tx, key string) ([]any, error) {
 	return result, nil
 }
 
-func (h Handler[T]) SetQueue(tx db.Tx, key string, queue []any) error {
+func (h Handler[T]) setQueue(tx db.Tx, key string, queue []any) error {
 	castedQueue := make([]dbTask[T], 0, len(queue))
 	for _, task := range queue {
 		castedTask, ok := task.(dbTask[T])
