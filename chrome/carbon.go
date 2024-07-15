@@ -22,7 +22,7 @@ func GenerateCodeSnippet(
 ) ([]byte, error) {
 	backoff := retry.LinearBackoff{
 		Delay:       time.Second,
-		MaxAttempts: 5,
+		MaxAttempts: 8,
 	}
 	return retry.Do(ctx, "generate code snippet "+submissionID, backoff, func() ([]byte, error) {
 		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
@@ -68,6 +68,7 @@ func GenerateCodeSnippet(
 		if err := exportBtns[0].Click(proto.InputMouseButtonLeft, 1); err != nil {
 			return nil, fmt.Errorf("click export button: %w", err)
 		}
+		time.Sleep(time.Second)
 		slog.Info("started exporting", slog.String("submissionID", submissionID))
 
 		img, err := page.Element("body > img")
@@ -75,14 +76,20 @@ func GenerateCodeSnippet(
 			return nil, fmt.Errorf("get img: %w", err)
 		}
 		src, err := img.Attribute("src")
-		if err != nil || src == nil {
+		if err != nil {
 			return nil, fmt.Errorf("get src: %w", err)
+		}
+		if src == nil {
+			return nil, errors.New("src is nil")
 		}
 		slog.Info("located image", slog.String("submissionID", submissionID))
 
 		buf, err := page.GetResource(*src)
-		if err != nil || len(buf) == 0 {
+		if err != nil {
 			return nil, fmt.Errorf("get img data: %w", err)
+		}
+		if len(buf) == 0 {
+			return nil, errors.New("img data is empty")
 		}
 		slog.Info("got image data", slog.String("submissionID", submissionID))
 
