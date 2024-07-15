@@ -31,7 +31,7 @@ const (
 )
 
 var (
-	lcSubmissionRe = regexp.MustCompile(`https://leetcode\.com.*/submissions/(?P<submissionID>\d+)`)
+	lcSubmissionRe = regexp.MustCompile(`https://leetcode\.com.*/submissions/(?:detail/)?(?P<submissionID>\d+)`)
 )
 
 type MockConfig struct {
