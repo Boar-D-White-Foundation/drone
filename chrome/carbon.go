@@ -41,6 +41,11 @@ func GenerateCodeSnippet(
 		if err := codeContainer.WaitStable(500 * time.Millisecond); err != nil {
 			return nil, fmt.Errorf("wait code container stabilization: %w", err)
 		}
+		// need to click to correctly apply code highlighting
+		if err := codeContainer.Click(proto.InputMouseButtonLeft, 1); err != nil {
+			return nil, fmt.Errorf("click code container: %w", err)
+		}
+		time.Sleep(time.Second)
 		slog.Info("selected code container", slog.String("submissionID", submissionID))
 
 		exportMenu, err := page.Element(`#export-menu`)
