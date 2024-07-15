@@ -23,7 +23,7 @@ func TestQueue(t *testing.T) {
 	registry := dbq.NewRegistry()
 	result := make(chan int)
 	shouldRetry := true
-	task, err := dbq.RegisterHandler(registry, "task", func(ctx context.Context, i int) error {
+	task, err := dbq.RegisterHandler(registry, "task", func(ctx context.Context, tx db.Tx, i int) error {
 		if shouldRetry {
 			shouldRetry = false
 			return errors.New("retry")
@@ -43,7 +43,11 @@ func TestQueue(t *testing.T) {
 		done <- struct{}{}
 	}()
 
-	err = task.Schedule(ctx, 1, 42)
+	err = database.Do(ctx, func(tx db.Tx) error {
+		err = task.Schedule(tx, 1, 42)
+		require.NoError(t, err)
+		return nil
+	})
 	require.NoError(t, err)
 
 	require.Equal(t, 42, <-result)

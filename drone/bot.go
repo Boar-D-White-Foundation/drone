@@ -73,6 +73,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 		queue.StartHandlers(ctx, time.Second)
 		dbqDone <- struct{}{}
 	}()
+	slog.Info("started dbq")
 
 	scheduler, err := gocron.NewScheduler(gocron.WithLocation(time.UTC))
 	if err != nil {

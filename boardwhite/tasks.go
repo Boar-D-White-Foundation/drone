@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/boar-d-white-foundation/drone/chrome"
+	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
 )
 
@@ -24,14 +25,16 @@ type postCodeSnippetArgs struct {
 	SubmissionID string `json:"submission_id"`
 }
 
-func (s *Service) postCodeSnippet(ctx context.Context, args postCodeSnippetArgs) error {
-	sub, err := s.lcClient.GetSubmission(ctx, args.SubmissionID)
+func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSnippetArgs) error {
+	submission, err := s.lcClient.GetSubmission(ctx, args.SubmissionID)
 	if err != nil {
+		s.alerts.Errorxf(err, "err get submission: %+v", args)
 		return fmt.Errorf("get submission: %w", err)
 	}
 
-	snippet, err := chrome.GenerateCodeSnippet(ctx, s.browser, args.SubmissionID, sub.Code)
+	snippet, err := chrome.GenerateCodeSnippet(ctx, s.browser, args.SubmissionID, submission.Code)
 	if err != nil {
+		s.alerts.Errorxf(err, "err generate snippet: %+v", args)
 		return fmt.Errorf("generate snippet: %w", err)
 	}
 
@@ -41,5 +44,10 @@ func (s *Service) postCodeSnippet(ctx context.Context, args postCodeSnippetArgs)
 		"image/png",
 		bytes.NewReader(snippet),
 	)
-	return err
+	if err != nil {
+		s.alerts.Errorxf(err, "err reply with snippet: %+v", args)
+		return fmt.Errorf("reply with snippet: %w", err)
+	}
+
+	return nil
 }
