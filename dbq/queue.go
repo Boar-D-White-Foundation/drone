@@ -185,33 +185,31 @@ type Task[T any] struct {
 	registry *Registry
 }
 
-func (t Task[T]) Schedule(ctx context.Context, retries int, args T) error {
-	return t.registry.queue.database.Do(ctx, func(tx db.Tx) error {
-		key := queueKey(t.name)
-		queue, err := db.GetJsonDefault[[]dbTask[T]](tx, key, nil)
-		if err != nil {
-			return fmt.Errorf("get queue %q: %w", key, err)
-		}
+func (t Task[T]) Schedule(tx db.Tx, retries int, args T) error {
+	key := queueKey(t.name)
+	queue, err := db.GetJsonDefault[[]dbTask[T]](tx, key, nil)
+	if err != nil {
+		return fmt.Errorf("get queue %q: %w", key, err)
+	}
 
-		dbt := dbTask[T]{
-			Name: t.name,
-			TTL:  retries + 1,
-			Args: args,
-		}
-		queue = append(queue, dbt)
-		if err := db.SetJson(tx, key, queue); err != nil {
-			return fmt.Errorf("set queue %q: %w", key, err)
-		}
+	dbt := dbTask[T]{
+		Name: t.name,
+		TTL:  retries + 1,
+		Args: args,
+	}
+	queue = append(queue, dbt)
+	if err := db.SetJson(tx, key, queue); err != nil {
+		return fmt.Errorf("set queue %q: %w", key, err)
+	}
 
-		select {
-		case t.registry.queue.taskEnqueued <- struct{}{}:
-		default:
-			slog.Info("miss notifying task scheduling", slog.Any("task", dbt))
-		}
+	select {
+	case t.registry.queue.taskEnqueued <- struct{}{}:
+	default:
+		slog.Info("miss notifying task scheduling", slog.Any("task", dbt))
+	}
 
-		slog.Info("scheduled task", slog.Any("task", dbt))
-		return nil
-	})
+	slog.Info("scheduled task", slog.Any("task", dbt))
+	return nil
 }
 
 func RegisterHandler[T any](registry *Registry, name string, handler Handler[T]) (Task[T], error) {

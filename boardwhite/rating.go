@@ -111,7 +111,7 @@ func (s *Service) makeStatsHandler(
 					return setClown()
 				}
 				if s.cfg.SnippetsGenerationEnabled {
-					err := s.tasks.postCodeSnippet.Schedule(ctx, 1, postCodeSnippetArgs{
+					err := s.tasks.postCodeSnippet.Schedule(tx, 1, postCodeSnippetArgs{
 						MessageID:    msg.ID,
 						SubmissionID: match[1],
 					})
