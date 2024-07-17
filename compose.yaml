@@ -7,6 +7,13 @@ services:
     volumes:
       - ${PWD}/data:/opt/drone/data
       - ${PWD}/config.yaml:/opt/drone/config.yaml:ro
+
   rod:
-    image: ghcr.io/go-rod/rod:v0.116.1
     restart: always
+    image: ghcr.io/go-rod/rod:v0.116.1
+
+  carbon:
+    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile.carbon
