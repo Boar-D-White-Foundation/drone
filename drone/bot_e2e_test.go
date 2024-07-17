@@ -39,6 +39,10 @@ func TestDrone(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
+	imageGenerator := chrome.NewImageGeneratorFromCfg(cfg, browser)
+	err = imageGenerator.WarmUpCaches(ctx)
+	require.NoError(t, err)
+
 	lcClient := leetcode.NewClientFromConfig(cfg)
 
 	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg)
@@ -51,7 +55,7 @@ func TestDrone(t *testing.T) {
 
 	dbqRegistry := dbq.NewRegistry()
 
-	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, imageGenerator, lcClient)
 	require.NoError(t, err)
 
 	// act

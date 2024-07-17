@@ -15,7 +15,6 @@ import (
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
-	"github.com/go-rod/rod"
 )
 
 func StartDrone(ctx context.Context, cfg config.Config) error {
@@ -26,18 +25,16 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 
 	alerts := alert.NewManager(adminTGClient)
 
-	var browser *rod.Browser
-	var cleanup func()
+	var imageGenerator *chrome.ImageGenerator
 	if cfg.Features.SnippetsGenerationEnabled {
-		browser, cleanup, err = chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
+		browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
 		if err != nil {
 			return err
 		}
 		defer cleanup()
 
-		// fill fonts cache
-		_, err := chrome.GenerateCodeSnippet(ctx, browser, "fonts_cache_loading", "test code")
-		if err != nil {
+		imageGenerator = chrome.NewImageGeneratorFromCfg(cfg, browser)
+		if err := imageGenerator.WarmUpCaches(ctx); err != nil {
 			return fmt.Errorf("fonts cache loading: %w", err)
 		}
 	}
@@ -55,7 +52,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 	}
 	defer database.Stop()
 
-	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, browser, lcClient)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, imageGenerator, lcClient)
 	if err != nil {
 		return err
 	}

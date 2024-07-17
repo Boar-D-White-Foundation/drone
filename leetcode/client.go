@@ -56,6 +56,72 @@ func NewClientFromConfig(cfg config.Config) *Client {
 	})
 }
 
+type Lang int
+
+const (
+	LangUnknown Lang = iota
+	LangCPP
+	LangJava
+	LangPy2
+	LangPy3
+	LangC
+	LangCSharp
+	LangJS
+	LangTS
+	LangPHP
+	LangSwift
+	LangKotlin
+	LangGO
+	LangRuby
+	LangScala
+	LangRust
+	LangRacket
+)
+
+func NewLang(raw string) Lang {
+	switch {
+	case raw == "cpp":
+		return LangCPP
+	case raw == "java":
+		return LangJava
+	case raw == "python":
+		return LangPy2
+	case raw == "python3":
+		return LangPy3
+	case raw == "c":
+		return LangC
+	case raw == "csharp":
+		return LangCSharp
+	case raw == "javascript":
+		return LangJS
+	case raw == "typescript":
+		return LangTS
+	case raw == "php":
+		return LangPHP
+	case raw == "swift":
+		return LangSwift
+	case raw == "kotlin":
+		return LangKotlin
+	case raw == "golang":
+		return LangGO
+	case raw == "ruby":
+		return LangRuby
+	case raw == "scala":
+		return LangScala
+	case raw == "rust":
+		return LangRust
+	case raw == "racket":
+		return LangRacket
+	default:
+		return LangUnknown
+	}
+}
+
+func (l *Lang) UnmarshalText(data []byte) error {
+	*l = NewLang(string(data))
+	return nil
+}
+
 type gqReq struct {
 	Method string `json:"submissionDetails"`
 	Query  string `json:"query"`
@@ -72,7 +138,7 @@ type submission struct {
 			Code              string  `json:"code"`
 			StatusCode        int     `json:"statusCode"`
 			Lang              struct {
-				Name string `json:"name"`
+				Name Lang `json:"name"`
 			} `json:"lang"`
 		} `json:"submissionDetails"`
 	} `json:"data"`
@@ -84,7 +150,7 @@ type Submission struct {
 	Memory            int
 	MemoryPercentile  float64
 	Code              string
-	Lang              string
+	Lang              Lang
 }
 
 func (c *Client) GetSubmission(ctx context.Context, id string) (Submission, error) {

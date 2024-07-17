@@ -7,12 +7,12 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/alert"
+	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
-	"github.com/go-rod/rod"
 )
 
 const (
@@ -60,7 +60,7 @@ type Service struct {
 	telegram           tg.Client
 	lcChickenQuestions lcChickenQuestions
 	alerts             *alert.Manager
-	browser            *rod.Browser
+	imageGenerator     *chrome.ImageGenerator
 	lcClient           *leetcode.Client
 }
 
@@ -69,7 +69,7 @@ func NewService(
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
-	browser *rod.Browser,
+	imageGenerator *chrome.ImageGenerator,
 	lcClient *leetcode.Client,
 ) (*Service, error) {
 	questions, err := newLCChickenQuestions()
@@ -83,7 +83,7 @@ func NewService(
 		telegram:           telegram,
 		lcChickenQuestions: questions,
 		alerts:             alerts,
-		browser:            browser,
+		imageGenerator:     imageGenerator,
 		lcClient:           lcClient,
 	}, nil
 }
@@ -93,7 +93,7 @@ func NewServiceFromConfig(
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
-	browser *rod.Browser,
+	imageGenerator *chrome.ImageGenerator,
 	lcClient *leetcode.Client,
 ) (*Service, error) {
 	mocks := make(map[string]MockConfig)
@@ -117,7 +117,7 @@ func NewServiceFromConfig(
 		SnippetsGenerationEnabled: cfg.Features.SnippetsGenerationEnabled,
 		Mocks:                     mocks,
 	}
-	return NewService(serviceCfg, telegram, database, alerts, browser, lcClient)
+	return NewService(serviceCfg, telegram, database, alerts, imageGenerator, lcClient)
 }
 
 type publishDailyReq struct {

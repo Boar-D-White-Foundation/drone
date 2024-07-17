@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
 )
@@ -32,7 +31,7 @@ func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSn
 		return fmt.Errorf("get submission: %w", err)
 	}
 
-	snippet, err := chrome.GenerateCodeSnippet(ctx, s.browser, args.SubmissionID, submission.Code)
+	snippet, err := s.imageGenerator.GenerateCodeSnippet(ctx, args.SubmissionID, submission.Lang, submission.Code)
 	if err != nil {
 		s.alerts.Errorxf(err, "err generate snippet: %+v", args)
 		return fmt.Errorf("generate snippet: %w", err)
