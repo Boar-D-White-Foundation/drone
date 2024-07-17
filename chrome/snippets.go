@@ -218,7 +218,7 @@ func (g *ImageGenerator) GenerateCodeSnippetRayso(
 	return retry.Do(ctx, "rayso snippet "+submissionID, backoff, func() ([]byte, error) {
 		slog.Info("start generate rayso code snippet", slog.String("submissionID", submissionID))
 		uri := fmt.Sprintf(
-			"%s/#theme=candy&background=true&darkMode=true&padding=16&language=%s&code=%s",
+			"%s/#theme=vercel&background=true&darkMode=true&padding=16&language=%s&code=%s",
 			g.cfg.RaysoURL, toRaysoLang(lang), base64.URLEncoding.EncodeToString([]byte(code)),
 		)
 		page, err := g.browser.Timeout(30 * time.Second).Page(proto.TargetCreateTarget{URL: uri})
@@ -231,6 +231,16 @@ func (g *ImageGenerator) GenerateCodeSnippetRayso(
 		slog.Info("fetched page", slog.String("submissionID", submissionID))
 
 		// TODO change size to 6x
+		// padding via query just doesn't work for vercel theme
+		paddingBt, err := page.Element(`div[dir="ltr"] > button[aria-label="16"]`)
+		if err != nil {
+			return nil, fmt.Errorf("get padding button: %w", err)
+		}
+		if err := paddingBt.Click(proto.InputMouseButtonLeft, 1); err != nil {
+			return nil, fmt.Errorf("click padding button: %w", err)
+		}
+		slog.Info("set padding", slog.String("submissionID", submissionID))
+
 		wait := g.browser.WaitDownload(g.cfg.RodDownloadsSaveFolder)
 		exportBtn, err := page.Element(`button[aria-label="Export as PNG"]`)
 		if err != nil {
