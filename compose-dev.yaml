@@ -1,19 +1,11 @@
 version: '3'
 services:
-  drone:
-    restart: always
-    depends_on:
-      - rod
-      - carbon
-    build:
-      context: .
-    volumes:
-      - ${PWD}/data:/opt/drone/data
-      - ${PWD}/config.yaml:/opt/drone/config.yaml:ro
-
   rod:
     restart: always
     image: ghcr.io/go-rod/rod:v0.116.1
+    ports:
+      - '7317:7317'
+      - '56174:56174'
     volumes:
       - ${PWD}/data:/opt/drone/data
 
@@ -22,9 +14,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.carbon
+    ports:
+      - '3000:3000'
 
   rayso:
     restart: always
     build:
       context: .
       dockerfile: Dockerfile.rayso
+    ports:
+      - '3001:3001'

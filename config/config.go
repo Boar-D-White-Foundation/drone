@@ -3,6 +3,7 @@ package config
 import (
 	_ "embed"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -38,9 +39,18 @@ type Config struct {
 	} `yaml:"tg"`
 
 	Rod struct {
-		Host string `yaml:"host"`
-		Port int    `yaml:"port"`
+		Host            string `yaml:"host"`
+		Port            int    `yaml:"port"`
+		DownloadsFolder string `yaml:"downloads_folder"`
 	} `yaml:"rod"`
+
+	ImageGenerator struct {
+		CarbonURL          string `yaml:"carbon_url"`
+		RaysoURL           string `yaml:"rayso_url"`
+		UseCarbon          bool   `yaml:"use_carbon"`
+		UseRayso           bool   `yaml:"use_rayso"`
+		RodDownloadsFolder string `yaml:"rod_downloads_folder"`
+	} `yaml:"image_generator"`
 
 	Boardwhite struct {
 		ChatID                   int64 `yaml:"chat_id"`
@@ -98,5 +108,19 @@ func Load(filename string) (Config, error) {
 		return Config{}, fmt.Errorf("unmarshal config: %w", err)
 	}
 
+	if err := cfg.validate(); err != nil {
+		return Config{}, fmt.Errorf("validate config: %w", err)
+	}
+
 	return cfg, nil
+}
+
+func (cfg Config) validate() error {
+	if (cfg.ImageGenerator.UseCarbon && cfg.ImageGenerator.UseRayso) ||
+		(!cfg.ImageGenerator.UseCarbon && !cfg.ImageGenerator.UseRayso) {
+
+		return errors.New("only one of use_carbon and use_rayso should be enabled")
+	}
+
+	return nil
 }

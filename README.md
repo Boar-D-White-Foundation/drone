@@ -35,6 +35,7 @@ go test -race ./...
 
 ### E2E tests
 ```shell
+docker-compose -f compose-dev.yaml up --build -d
 go test --tags=e2e -race ./...
 ```
 

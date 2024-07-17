@@ -6,7 +6,7 @@ RUN apk add --update git \
     && rm -rf /var/cache/apk/* \
     && git clone -b 4.9.10 --single-branch https://github.com/carbon-app/carbon.git . \
     && echo "legacy-peer-deps=true" >> .npmrc \
-    && yarn install --legacy-peer-deps \
+    && yarn install \
     && yarn build \
     && npm prune --production
 
