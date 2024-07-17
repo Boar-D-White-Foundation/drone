@@ -27,10 +27,10 @@ func GenerateCodeSnippet(
 	return retry.Do(ctx, "generate code snippet "+submissionID, backoff, func() ([]byte, error) {
 		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
 		page, err := browser.Page(proto.TargetCreateTarget{
-			URL: "https://carbon.now.sh/?t=vscode&es=4x&l=auto&code=" + url.QueryEscape(code),
+			URL: "http://carbon:3000/?t=vscode&es=4x&l=auto&code=" + url.QueryEscape(code),
 		})
 		if err != nil {
-			return nil, fmt.Errorf("fecth carbon page: %w", err)
+			return nil, fmt.Errorf("fetch carbon page: %w", err)
 		}
 		slog.Info("fetched page", slog.String("submissionID", submissionID))
 
