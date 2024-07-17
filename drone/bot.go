@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -33,6 +34,12 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 			return err
 		}
 		defer cleanup()
+
+		// fill fonts cache
+		_, err := chrome.GenerateCodeSnippet(ctx, browser, "fonts_cache_loading", "test code")
+		if err != nil {
+			return fmt.Errorf("fonts cache loading: %w", err)
+		}
 	}
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
