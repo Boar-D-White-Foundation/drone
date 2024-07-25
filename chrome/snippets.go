@@ -93,6 +93,11 @@ func (g *ImageGenerator) GenerateCodeSnippetCarbon(
 		if err != nil {
 			return nil, fmt.Errorf("fetch carbon page: %w", err)
 		}
+		defer func() {
+			if err := page.Close(); err != nil {
+				slog.Error("err closing page", slog.String("submissionID", submissionID), slog.Any("err", err))
+			}
+		}()
 		if err := page.WaitStable(200 * time.Millisecond); err != nil {
 			return nil, fmt.Errorf("wait page stabilization: %w", err)
 		}
@@ -225,6 +230,11 @@ func (g *ImageGenerator) GenerateCodeSnippetRayso(
 		if err != nil {
 			return nil, fmt.Errorf("fetch rayso page: %w", err)
 		}
+		defer func() {
+			if err := page.Close(); err != nil {
+				slog.Error("err closing page", slog.String("submissionID", submissionID), slog.Any("err", err))
+			}
+		}()
 		if err := page.WaitStable(300 * time.Millisecond); err != nil {
 			return nil, fmt.Errorf("wait page stabilization: %w", err)
 		}

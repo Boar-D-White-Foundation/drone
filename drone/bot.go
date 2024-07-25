@@ -74,7 +74,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 
 	dbqDone := make(chan struct{})
 	go func() {
-		queue.StartHandlers(ctx, time.Second)
+		queue.StartHandlers(ctx, 30*time.Second)
 		dbqDone <- struct{}{}
 	}()
 	slog.Info("started dbq")

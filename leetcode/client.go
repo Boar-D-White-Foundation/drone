@@ -194,7 +194,10 @@ func (c *Client) GetSubmission(ctx context.Context, id string) (Submission, erro
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return Submission{}, fmt.Errorf("got non %d resp for submissionDetails: %s", resp.StatusCode, string(respBody))
+		return Submission{}, fmt.Errorf(
+			"got non 200 resp for submissionDetails %d: %s",
+			resp.StatusCode, string(respBody),
+		)
 	}
 
 	raw := submission{}
