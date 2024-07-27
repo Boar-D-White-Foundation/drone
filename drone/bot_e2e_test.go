@@ -92,7 +92,7 @@ func TestDrone(t *testing.T) {
 
 	dbqDone := make(chan struct{})
 	go func() {
-		queue.StartHandlers(ctx, time.Second)
+		queue.StartHandlers(ctx, 30*time.Second)
 		dbqDone <- struct{}{}
 	}()
 
