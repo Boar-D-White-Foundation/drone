@@ -35,7 +35,7 @@ go test -race ./...
 
 ### E2E tests
 ```shell
-docker-compose -f compose-dev.yaml up --build -d
+docker compose -f compose-dev.yaml up --build -d
 go test --tags=e2e -race ./...
 ```
 
@@ -46,5 +46,5 @@ go test --tags=e2e -race ./...
 
 cp ./config/default_config.yaml ./config.yaml
 # set tg.api_key in config.yaml 
-docker-compose up --build -d
+docker compose up --build -d
 ```

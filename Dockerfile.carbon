@@ -1,4 +1,4 @@
-FROM node:20.15.1-alpine3.19 AS builder
+FROM node:18.20.4-alpine3.19 AS builder
 
 WORKDIR /opt/carbon
 
@@ -11,7 +11,7 @@ RUN apk add --update git \
     && npm prune --production
 
 
-FROM node:20.15.1-alpine3.19
+FROM node:18.20.4-alpine3.19
 
 WORKDIR /opt/carbon
 
