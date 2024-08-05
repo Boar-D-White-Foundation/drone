@@ -12,6 +12,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.Comparator;
@@ -69,20 +71,25 @@ public class ImagePreviewGenerator {
     private void saveToImage(RSyntaxTextArea textArea, File output, int padding) throws IOException {
         SwingUtilities.invokeLater(() -> {
             try {
-                JFrame frame = new JFrame();
-                frame.setVisible(false);
-                frame.setContentPane(textArea);
-                frame.pack();
+                var frame = new JPanel();
+                frame.setVisible(true);
+                frame.add(textArea);
+                textArea.addNotify();
+                frame.setSize(frame.getPreferredSize());
+                textArea.setBounds(0, 0, frame.getWidth(), frame.getHeight());
+                frame.getGraphics();
+
                 BufferedImage im = new BufferedImage(textArea.getWidth(), textArea.getHeight(), BufferedImage.TYPE_INT_ARGB);
-                textArea.paint(im.getGraphics());
+                Graphics2D renderGraphics = im.createGraphics();
+                setNoMetrics(textArea, renderGraphics);
+                frame.paint(renderGraphics);
                 BufferedImage imageWithPaddings = new BufferedImage(textArea.getWidth() + padding * 2, textArea.getHeight() + padding * 2, BufferedImage.TYPE_INT_ARGB);
 
-                Graphics graphics = imageWithPaddings.getGraphics();
+                Graphics2D graphics = imageWithPaddings.createGraphics();
                 graphics.setColor(textArea.getBackground());
                 graphics.fillRect(0, 0, imageWithPaddings.getWidth(), imageWithPaddings.getHeight());
                 graphics.drawImage(im, padding, padding, null);
                 ImageIO.write(imageWithPaddings, "PNG", output);
-                frame.dispose();
                 System.exit(0);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -91,6 +98,20 @@ public class ImagePreviewGenerator {
         });
 
 
+    }
+
+    private void setNoMetrics(RSyntaxTextArea textArea, Graphics2D g) {
+        try {
+            Class<?> clazz = RSyntaxTextArea.class;
+            Field f = clazz.getDeclaredField("metricsNeverRefreshed");
+            f.setAccessible(true);
+            f.setBoolean(textArea, false);
+            Method m = clazz.getDeclaredMethod("refreshFontMetrics", Graphics2D.class);
+            m.setAccessible(true);
+            m.invoke(textArea, g);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String getLanguage(String lang) {
