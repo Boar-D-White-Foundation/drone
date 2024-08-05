@@ -15,4 +15,4 @@ RUN mkdir -p /images
 COPY --from=build /home/app/target/SyntaxHighlight-1.0-SNAPSHOT-jar-with-dependencies.jar ./highlight.jar
 USER appuser
 ENTRYPOINT ["java", "-jar", "/usr/local/lib/highlight.jar"]
-CMD ["--lang=java", "--input=/images/input.java", "--output=/images/output1.png", "-p=10"]
+CMD ["--lang=java", "--input=/images/input.java", "--output=/images/output.png", "-p=10"]
