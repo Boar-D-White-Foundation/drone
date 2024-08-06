@@ -4,6 +4,7 @@ services:
     depends_on:
       - rod
       - carbon
+      - javahighlight
     build:
       context: .
     volumes:
@@ -27,3 +28,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.rayso
+
+  javahighlight:
+    restart: always
+    build:
+      context: ./java-syntax-hightlight
+      dockerfile: Dockerfile

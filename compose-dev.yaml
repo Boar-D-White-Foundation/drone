@@ -23,3 +23,11 @@ services:
       dockerfile: Dockerfile.rayso
     ports:
       - '3001:3001'
+
+  javahighlight:
+    restart: always
+    build:
+      context: ./java-syntax-hightlight
+      dockerfile: Dockerfile
+    ports:
+      - '3002:3002'

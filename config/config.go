@@ -47,8 +47,10 @@ type Config struct {
 	ImageGenerator struct {
 		CarbonURL          string `yaml:"carbon_url"`
 		RaysoURL           string `yaml:"rayso_url"`
+		JavaURL            string `yaml:"java_url"`
 		UseCarbon          bool   `yaml:"use_carbon"`
 		UseRayso           bool   `yaml:"use_rayso"`
+		UseJava            bool   `yaml:"use_java"`
 		RodDownloadsFolder string `yaml:"rod_downloads_folder"`
 	} `yaml:"image_generator"`
 
@@ -116,10 +118,16 @@ func Load(filename string) (Config, error) {
 }
 
 func (cfg Config) validate() error {
-	if (cfg.ImageGenerator.UseCarbon && cfg.ImageGenerator.UseRayso) ||
-		(!cfg.ImageGenerator.UseCarbon && !cfg.ImageGenerator.UseRayso) {
+	enabledFlags := []bool{cfg.ImageGenerator.UseCarbon, cfg.ImageGenerator.UseRayso, cfg.ImageGenerator.UseJava}
+	enabledCount := 0
+	for _, flag := range enabledFlags {
+		if flag {
+			enabledCount++
+		}
+	}
 
-		return errors.New("only one of use_carbon and use_rayso should be enabled")
+	if enabledCount != 1 {
+		return errors.New("only one of use_carbon, use_rayso, and use_java should be enabled")
 	}
 
 	return nil
