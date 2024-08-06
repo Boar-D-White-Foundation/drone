@@ -10,9 +10,5 @@ RUN ./mvnw clean package assembly:single
 #package
 FROM eclipse-temurin:17-jdk-jammy
 WORKDIR /usr/local/lib
-RUN useradd -ms /bin/bash appuser
-RUN mkdir -p /images
-COPY --from=build /home/app/target/SyntaxHighlight-1.0-SNAPSHOT-jar-with-dependencies.jar ./highlight.jar
-USER appuser
-ENTRYPOINT ["java", "-jar", "/usr/local/lib/highlight.jar"]
-CMD ["--lang=java", "--input=/images/input.java", "--output=/images/output.png", "-p=10"]
+COPY --from=build /home/app/target/SyntaxHighlight-1.0-SNAPSHOT-jar-with-dependencies.jar ./highlight-server.jar
+ENTRYPOINT ["java", "-jar", "/usr/local/lib/highlight-server.jar", "3002"]

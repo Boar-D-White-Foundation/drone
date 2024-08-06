@@ -3,6 +3,14 @@
     <deployment type="dockerfile">
       <settings>
         <option name="containerName" value="" />
+        <option name="portBindings">
+          <list>
+            <DockerPortBindingImpl>
+              <option name="containerPort" value="3002" />
+              <option name="hostPort" value="3002" />
+            </DockerPortBindingImpl>
+          </list>
+        </option>
         <option name="sourceFilePath" value="Dockerfile" />
         <option name="volumeBindings">
           <list>
