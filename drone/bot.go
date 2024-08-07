@@ -104,6 +104,8 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 			slog.String("next_run", t.String()),
 		)
 	}
+	slog.Info("start bot OK")
+
 	<-ctx.Done()
 	<-dbqDone
 	return scheduler.Shutdown()
