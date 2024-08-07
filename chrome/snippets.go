@@ -1,11 +1,14 @@
 package chrome
 
 import (
+	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
+	"net/http"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -22,8 +25,10 @@ import (
 type GeneratorConfig struct {
 	CarbonURL              string
 	RaysoURL               string
+	JavaURL                string
 	UseCarbon              bool
 	UseRayso               bool
+	UseJava                bool
 	RodDownloadsSaveFolder string
 	RodDownloadsGetFolder  string
 }
@@ -51,8 +56,10 @@ func NewImageGeneratorFromCfg(
 		GeneratorConfig{
 			CarbonURL:              cfg.ImageGenerator.CarbonURL,
 			RaysoURL:               cfg.ImageGenerator.RaysoURL,
+			JavaURL:                cfg.ImageGenerator.JavaURL,
 			UseCarbon:              cfg.ImageGenerator.UseCarbon,
 			UseRayso:               cfg.ImageGenerator.UseRayso,
+			UseJava:                cfg.ImageGenerator.UseJava,
 			RodDownloadsSaveFolder: cfg.Rod.DownloadsFolder,
 			RodDownloadsGetFolder:  cfg.ImageGenerator.RodDownloadsFolder,
 		},
@@ -71,6 +78,80 @@ func (g *ImageGenerator) WarmUpCaches(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (g *ImageGenerator) GenerateCodeSnippetJava(
+	ctx context.Context,
+	submissionID string,
+	lang leetcode.Lang,
+	code string,
+) ([]byte, error) {
+	backoff := retry.LinearBackoff{
+		Delay:       time.Second,
+		MaxAttempts: 2,
+	}
+	return retry.Do(ctx, "java highlight snippet "+submissionID, backoff, func() ([]byte, error) {
+		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
+		uri := fmt.Sprintf(
+			"%s/?l=%s&c=%s&t=dark&p=10",
+			g.cfg.JavaURL,
+			toRawLang(lang),
+			base64.URLEncoding.EncodeToString([]byte(code)),
+		)
+		resp, err := http.Get(uri)
+		if err != nil {
+			return nil, fmt.Errorf("fetch java hightligher image: %w", err)
+		}
+		defer func(Body io.ReadCloser) {
+			_ = Body.Close()
+		}(resp.Body)
+
+		var buf bytes.Buffer
+		err = resp.Write(&buf)
+		if err != nil {
+			return nil, fmt.Errorf("cannot write result to buffer: %w", err)
+		}
+		return buf.Bytes(), nil
+	})
+}
+
+func toRawLang(lang leetcode.Lang) string {
+	switch lang {
+	case leetcode.LangCPP:
+		return "cpp"
+	case leetcode.LangJava:
+		return "java"
+	case leetcode.LangPy2:
+		return "python"
+	case leetcode.LangPy3:
+		return "python3"
+	case leetcode.LangC:
+		return "c"
+	case leetcode.LangCSharp:
+		return "csharp"
+	case leetcode.LangJS:
+		return "javascript"
+	case leetcode.LangTS:
+		return "typescript"
+	case leetcode.LangPHP:
+		return "php"
+	case leetcode.LangSwift:
+		return "swift"
+	case leetcode.LangKotlin:
+		return "kotlin"
+	case leetcode.LangGO:
+		return "golang"
+	case leetcode.LangRuby:
+		return "ruby"
+	case leetcode.LangScala:
+		return "scala"
+	case leetcode.LangRust:
+		return "rust"
+	case leetcode.LangRacket:
+		return "racket"
+	default:
+		return ""
+	}
 }
 
 func (g *ImageGenerator) GenerateCodeSnippetCarbon(
@@ -291,6 +372,8 @@ func (g *ImageGenerator) GenerateCodeSnippet(
 		return g.GenerateCodeSnippetCarbon(ctx, submissionID, lang, code)
 	case g.cfg.UseRayso:
 		return g.GenerateCodeSnippetRayso(ctx, submissionID, lang, code)
+	case g.cfg.UseJava:
+		return g.GenerateCodeSnippetJava(ctx, submissionID, lang, code)
 	}
 
 	return nil, errors.New("no preferred image generator enabled")
