@@ -5,3 +5,4 @@ chromedriver
 config.yaml
 data/*
 !data/.gitkeep
+/.idea/
