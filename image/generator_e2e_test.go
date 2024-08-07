@@ -1,6 +1,6 @@
 //go:build e2e
 
-package chrome_test
+package image_test
 
 import (
 	"context"
@@ -9,6 +9,7 @@ import (
 
 	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
+	"github.com/boar-d-white-foundation/drone/image"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/stretchr/testify/require"
 )
@@ -24,22 +25,29 @@ func TestSnippetsGeneration(t *testing.T) {
 	defer cleanup()
 	browser.ServeMonitor("127.0.0.1:56174")
 
-	imageGenerator := chrome.NewImageGeneratorFromCfg(cfg, browser)
+	imageGenerator := image.NewGeneratorFromCfg(cfg, browser)
 	err = imageGenerator.WarmUpCaches(ctx)
 	require.NoError(t, err)
 
-	code, err := os.ReadFile("./chrome/snippets_e2e_test.go")
+	codeBytes, err := os.ReadFile("./image/generator_e2e_test.go")
+	require.NoError(t, err)
+	code := string(codeBytes)
+
+	buf, err := imageGenerator.GenerateCodeSnippetCarbon(ctx, "1", leetcode.LangGO, code)
 	require.NoError(t, err)
 
-	buf, err := imageGenerator.GenerateCodeSnippetCarbon(ctx, "1", leetcode.LangGO, string(code))
+	err = os.WriteFile("snippet_carbon.png", buf, 0600)
 	require.NoError(t, err)
 
-	err = os.WriteFile("snippet_carbon.png", buf, 0644)
+	buf, err = imageGenerator.GenerateCodeSnippetRayso(ctx, "1", leetcode.LangGO, code)
 	require.NoError(t, err)
 
-	buf, err = imageGenerator.GenerateCodeSnippetRayso(ctx, "1", leetcode.LangGO, string(code))
+	err = os.WriteFile("snippet_rayso.png", buf, 0600)
 	require.NoError(t, err)
 
-	err = os.WriteFile("snippet_rayso.png", buf, 0644)
+	buf, err = imageGenerator.GenerateCodeSnippetJavaHighlight(ctx, "1", leetcode.LangGO, code)
+	require.NoError(t, err)
+
+	err = os.WriteFile("snippet_java_highlight.png", buf, 0600)
 	require.NoError(t, err)
 }

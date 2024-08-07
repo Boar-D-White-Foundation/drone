@@ -39,13 +39,14 @@ type Config struct {
 
 type Client struct {
 	cfg    Config
-	client http.Client
+	client *http.Client
 }
 
 func NewClient(cfg Config) *Client {
+	client := http.Client{Timeout: 5 * time.Second}
 	return &Client{
 		cfg:    cfg,
-		client: http.Client{Timeout: 5 * time.Second},
+		client: &client,
 	}
 }
 

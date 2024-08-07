@@ -1,7 +1,6 @@
-package chrome
+package image
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
 	"errors"
@@ -12,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/config"
@@ -25,41 +25,44 @@ import (
 type GeneratorConfig struct {
 	CarbonURL              string
 	RaysoURL               string
-	JavaURL                string
+	JavaHighlightURL       string
 	UseCarbon              bool
 	UseRayso               bool
-	UseJava                bool
+	UseJavaHighlight       bool
 	RodDownloadsSaveFolder string
 	RodDownloadsGetFolder  string
 }
 
-type ImageGenerator struct {
+type Generator struct {
 	cfg     GeneratorConfig
 	browser *rod.Browser
+	client  *http.Client
 }
 
-func NewImageGenerator(
+func NewGenerator(
 	cfg GeneratorConfig,
 	browser *rod.Browser,
-) *ImageGenerator {
-	return &ImageGenerator{
+) *Generator {
+	client := http.Client{Timeout: 5 * time.Second}
+	return &Generator{
 		cfg:     cfg,
 		browser: browser,
+		client:  &client,
 	}
 }
 
-func NewImageGeneratorFromCfg(
+func NewGeneratorFromCfg(
 	cfg config.Config,
 	browser *rod.Browser,
-) *ImageGenerator {
-	return NewImageGenerator(
+) *Generator {
+	return NewGenerator(
 		GeneratorConfig{
 			CarbonURL:              cfg.ImageGenerator.CarbonURL,
 			RaysoURL:               cfg.ImageGenerator.RaysoURL,
-			JavaURL:                cfg.ImageGenerator.JavaURL,
+			JavaHighlightURL:       cfg.ImageGenerator.JavaHighlightURL,
 			UseCarbon:              cfg.ImageGenerator.UseCarbon,
 			UseRayso:               cfg.ImageGenerator.UseRayso,
-			UseJava:                cfg.ImageGenerator.UseJava,
+			UseJavaHighlight:       cfg.ImageGenerator.UseJavaHighlight,
 			RodDownloadsSaveFolder: cfg.Rod.DownloadsFolder,
 			RodDownloadsGetFolder:  cfg.ImageGenerator.RodDownloadsFolder,
 		},
@@ -68,7 +71,7 @@ func NewImageGeneratorFromCfg(
 }
 
 // WarmUpCaches generates images from all sources to correctly warm up fonts caches
-func (g *ImageGenerator) WarmUpCaches(ctx context.Context) error {
+func (g *Generator) WarmUpCaches(ctx context.Context) error {
 	if _, err := g.GenerateCodeSnippetCarbon(ctx, "warmup", leetcode.LangUnknown, "warmup"); err != nil {
 		return fmt.Errorf("warmup carbon: %w", err)
 	}
@@ -80,42 +83,11 @@ func (g *ImageGenerator) WarmUpCaches(ctx context.Context) error {
 	return nil
 }
 
-func (g *ImageGenerator) GenerateCodeSnippetJava(
-	ctx context.Context,
-	submissionID string,
-	lang leetcode.Lang,
-	code string,
-) ([]byte, error) {
-	backoff := retry.LinearBackoff{
-		Delay:       time.Second,
-		MaxAttempts: 2,
-	}
-	return retry.Do(ctx, "java highlight snippet "+submissionID, backoff, func() ([]byte, error) {
-		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
-		uri := fmt.Sprintf(
-			"%s/?l=%s&c=%s&t=dark&p=10",
-			g.cfg.JavaURL,
-			toRawLang(lang),
-			base64.URLEncoding.EncodeToString([]byte(code)),
-		)
-		resp, err := http.Get(uri)
-		if err != nil {
-			return nil, fmt.Errorf("fetch java hightligher image: %w", err)
-		}
-		defer func(Body io.ReadCloser) {
-			_ = Body.Close()
-		}(resp.Body)
-
-		var buf bytes.Buffer
-		err = resp.Write(&buf)
-		if err != nil {
-			return nil, fmt.Errorf("cannot write result to buffer: %w", err)
-		}
-		return buf.Bytes(), nil
-	})
+func normalizeCode(code string) string {
+	return strings.Trim(code, "\n")
 }
 
-func toRawLang(lang leetcode.Lang) string {
+func toJavaHighlightLang(lang leetcode.Lang) string {
 	switch lang {
 	case leetcode.LangCPP:
 		return "cpp"
@@ -154,12 +126,62 @@ func toRawLang(lang leetcode.Lang) string {
 	}
 }
 
-func (g *ImageGenerator) GenerateCodeSnippetCarbon(
+func (g *Generator) GenerateCodeSnippetJavaHighlight(
 	ctx context.Context,
 	submissionID string,
 	lang leetcode.Lang,
 	code string,
 ) ([]byte, error) {
+	code = normalizeCode(code)
+	backoff := retry.LinearBackoff{
+		Delay:       time.Second,
+		MaxAttempts: 2,
+	}
+	return retry.Do(ctx, "java highlight snippet "+submissionID, backoff, func() ([]byte, error) {
+		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
+		uri := fmt.Sprintf(
+			"%s/?l=%s&c=%s&t=dark&p=50",
+			g.cfg.JavaHighlightURL, toJavaHighlightLang(lang), base64.URLEncoding.EncodeToString([]byte(code)),
+		)
+		req, err := http.NewRequest(http.MethodGet, uri, nil)
+		if err != nil {
+			return nil, fmt.Errorf("create request: %w", err)
+		}
+
+		req = req.WithContext(ctx)
+		resp, err := g.client.Do(req)
+		if err != nil {
+			return nil, fmt.Errorf("fetch java hightligher image: %w", err)
+		}
+		defer func() {
+			if err := resp.Body.Close(); err != nil {
+				slog.Error("err close resp body", slog.String("submissionID", submissionID), slog.Any("err", err))
+			}
+		}()
+
+		respBody, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return nil, fmt.Errorf("read response body: %w", err)
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			return nil, fmt.Errorf(
+				"got non 200 resp for javahighlight generation %d: %s",
+				resp.StatusCode, string(respBody),
+			)
+		}
+
+		return respBody, nil
+	})
+}
+
+func (g *Generator) GenerateCodeSnippetCarbon(
+	ctx context.Context,
+	submissionID string,
+	lang leetcode.Lang,
+	code string,
+) ([]byte, error) {
+	code = normalizeCode(code)
 	backoff := retry.LinearBackoff{
 		Delay:       time.Second,
 		MaxAttempts: 8,
@@ -291,12 +313,13 @@ func toRaysoLang(lang leetcode.Lang) string {
 	}
 }
 
-func (g *ImageGenerator) GenerateCodeSnippetRayso(
+func (g *Generator) GenerateCodeSnippetRayso(
 	ctx context.Context,
 	submissionID string,
 	lang leetcode.Lang,
 	code string,
 ) ([]byte, error) {
+	code = normalizeCode(code)
 	backoff := retry.LinearBackoff{
 		Delay:       time.Second,
 		MaxAttempts: 8,
@@ -361,7 +384,7 @@ func (g *ImageGenerator) GenerateCodeSnippetRayso(
 	})
 }
 
-func (g *ImageGenerator) GenerateCodeSnippet(
+func (g *Generator) GenerateCodeSnippet(
 	ctx context.Context,
 	submissionID string,
 	lang leetcode.Lang,
@@ -372,8 +395,8 @@ func (g *ImageGenerator) GenerateCodeSnippet(
 		return g.GenerateCodeSnippetCarbon(ctx, submissionID, lang, code)
 	case g.cfg.UseRayso:
 		return g.GenerateCodeSnippetRayso(ctx, submissionID, lang, code)
-	case g.cfg.UseJava:
-		return g.GenerateCodeSnippetJava(ctx, submissionID, lang, code)
+	case g.cfg.UseJavaHighlight:
+		return g.GenerateCodeSnippetJavaHighlight(ctx, submissionID, lang, code)
 	}
 
 	return nil, errors.New("no preferred image generator enabled")
