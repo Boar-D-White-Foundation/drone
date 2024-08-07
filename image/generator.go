@@ -143,12 +143,11 @@ func (g *Generator) GenerateCodeSnippetJavaHighlight(
 			"%s/?l=%s&c=%s&t=dark&p=50",
 			g.cfg.JavaHighlightURL, toJavaHighlightLang(lang), base64.URLEncoding.EncodeToString([]byte(code)),
 		)
-		req, err := http.NewRequest(http.MethodGet, uri, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
 		if err != nil {
 			return nil, fmt.Errorf("create request: %w", err)
 		}
 
-		req = req.WithContext(ctx)
 		resp, err := g.client.Do(req)
 		if err != nil {
 			return nil, fmt.Errorf("fetch java hightligher image: %w", err)

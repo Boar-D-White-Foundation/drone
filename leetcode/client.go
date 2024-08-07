@@ -168,12 +168,11 @@ func (c *Client) GetSubmission(ctx context.Context, id string) (Submission, erro
 		return Submission{}, fmt.Errorf("marshall submissionDetails body: %w", err)
 	}
 
-	req, err := http.NewRequest(http.MethodPost, "https://leetcode.com/graphql", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, "https://leetcode.com/graphql", bytes.NewReader(body))
 	if err != nil {
 		return Submission{}, fmt.Errorf("create request: %w", err)
 	}
 
-	req = req.WithContext(ctx)
 	req.Header.Add("Content-Type", "application/json")
 	req.Header.Add("X-Csrftoken", c.cfg.CSRF)
 	req.Header.Add("Referer", "https://leetcode.com")
