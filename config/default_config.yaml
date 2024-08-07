@@ -14,10 +14,10 @@ rod:
 image_generator:
   carbon_url: "http://carbon:3000"
   rayso_url: "http://rayso:3001"
-  java_url:  "http://javahighlight:3002"
+  javahighlight_url:  "http://javahighlight:3002"
   use_carbon: false
   use_rayso: false
-  use_java: true
+  use_javahighlight: true
   rod_downloads_folder: "/opt/drone/data/rod/downloads"
 boardwhite:
   chat_id: -1001640461540

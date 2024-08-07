@@ -27,7 +27,7 @@ services:
   javahighlight:
     restart: always
     build:
-      context: ./java-syntax-hightlight
+      context: ./third-party/javahightlight
       dockerfile: Dockerfile
     ports:
       - '3002:3002'

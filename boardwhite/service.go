@@ -7,10 +7,10 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/alert"
-	"github.com/boar-d-white-foundation/drone/chrome"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
+	"github.com/boar-d-white-foundation/drone/image"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 )
@@ -60,7 +60,7 @@ type Service struct {
 	telegram           tg.Client
 	lcChickenQuestions lcChickenQuestions
 	alerts             *alert.Manager
-	imageGenerator     *chrome.ImageGenerator
+	imageGenerator     *image.Generator
 	lcClient           *leetcode.Client
 }
 
@@ -69,7 +69,7 @@ func NewService(
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
-	imageGenerator *chrome.ImageGenerator,
+	imageGenerator *image.Generator,
 	lcClient *leetcode.Client,
 ) (*Service, error) {
 	questions, err := newLCChickenQuestions()
@@ -93,7 +93,7 @@ func NewServiceFromConfig(
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
-	imageGenerator *chrome.ImageGenerator,
+	imageGenerator *image.Generator,
 	lcClient *leetcode.Client,
 ) (*Service, error) {
 	mocks := make(map[string]MockConfig)

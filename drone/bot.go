@@ -12,6 +12,7 @@ import (
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
+	"github.com/boar-d-white-foundation/drone/image"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
@@ -25,7 +26,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 
 	alerts := alert.NewManager(adminTGClient)
 
-	var imageGenerator *chrome.ImageGenerator
+	var imageGenerator *image.Generator
 	if cfg.Features.SnippetsGenerationEnabled {
 		browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
 		if err != nil {
@@ -33,7 +34,7 @@ func StartDrone(ctx context.Context, cfg config.Config) error {
 		}
 		defer cleanup()
 
-		imageGenerator = chrome.NewImageGeneratorFromCfg(cfg, browser)
+		imageGenerator = image.NewGeneratorFromCfg(cfg, browser)
 		if err := imageGenerator.WarmUpCaches(ctx); err != nil {
 			return fmt.Errorf("fonts cache loading: %w", err)
 		}
