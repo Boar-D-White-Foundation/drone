@@ -92,13 +92,18 @@ func (g *ImageGenerator) GenerateCodeSnippetJava(
 	}
 	return retry.Do(ctx, "java highlight snippet "+submissionID, backoff, func() ([]byte, error) {
 		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
-		uri := fmt.Sprintf(
-			"%s/?l=%s&c=%s&t=dark&p=10",
-			g.cfg.JavaURL,
-			toRawLang(lang),
-			base64.URLEncoding.EncodeToString([]byte(code)),
-		)
-		resp, err := http.Get(uri)
+		u, err := url.Parse(g.cfg.JavaURL)
+		if err != nil {
+			return nil, fmt.Errorf("cannot parse java hightligher url: %w", err)
+		}
+		u.RawQuery = url.Values{
+			"l": {toRawLang(lang)},
+			"c": {base64.URLEncoding.EncodeToString([]byte(code))},
+			"t": {"dark"},
+			"p": {"10"},
+		}.Encode()
+
+		resp, err := http.Get(u.String())
 		if err != nil {
 			return nil, fmt.Errorf("fetch java hightligher image: %w", err)
 		}
