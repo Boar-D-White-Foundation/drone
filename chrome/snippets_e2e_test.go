@@ -42,4 +42,10 @@ func TestSnippetsGeneration(t *testing.T) {
 
 	err = os.WriteFile("snippet_rayso.png", buf, 0644)
 	require.NoError(t, err)
+
+	buf, err = imageGenerator.GenerateCodeSnippetJava(ctx, "1", leetcode.LangGO, string(code))
+	require.NoError(t, err)
+
+	err = os.WriteFile("snippet_java_highlight.png", buf, 0644)
+	require.NoError(t, err)
 }
