@@ -51,7 +51,7 @@ public class ImageRenderer {
 
     private Theme loadTheme(String theme) throws IOException {
         return Theme.load(getClass().getResourceAsStream(
-                "/org/fife/ui/rsyntaxtextarea/themes/" + theme + ".xml"));
+                "/themes/rsyntax/" + theme + ".xml"));
     }
 
     private void loadFonts() throws IOException, FontFormatException {
