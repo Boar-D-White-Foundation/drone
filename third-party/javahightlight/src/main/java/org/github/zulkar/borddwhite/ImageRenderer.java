@@ -38,6 +38,7 @@ public class ImageRenderer {
             "JetBrainsMono-Thin.ttf",
             "JetBrainsMono-ThinItalic.ttf"};
 
+    private boolean initialized = false;
 
     private final ConcurrentMap<String, Theme> themes;
 
@@ -47,11 +48,12 @@ public class ImageRenderer {
 
     public void initialize() throws Exception {
         loadFonts();
+        initialized = true;
     }
 
     private Theme loadTheme(String theme) throws IOException {
         return Theme.load(getClass().getResourceAsStream(
-                "/org/fife/ui/rsyntaxtextarea/themes/" + theme + ".xml"));
+                "/themes/rsyntax/" + theme + ".xml"));
     }
 
     private void loadFonts() throws IOException, FontFormatException {
@@ -69,11 +71,17 @@ public class ImageRenderer {
         }
     }
 
-    public  byte[] renderToPng(String code, String lang, String themeName, int paddings) throws Exception {
+    public byte[] renderToPng(String code, String lang, String themeName, int paddings) throws Exception {
+        if (!initialized) throw new IllegalStateException("call initialize first");
+        code = removeFuckingTabs(code);
         var font = new Font("JetBrains Mono", Font.PLAIN, 30);
         var theme = getOrLoadTheme(themeName);
         var textArea = prepareRSyntax(code, lang, theme, font);
         return render(textArea, paddings);
+    }
+
+    private String removeFuckingTabs(String code) {
+        return code.replaceAll("\t", "    ");
     }
 
     private Theme getOrLoadTheme(String themeName) {
