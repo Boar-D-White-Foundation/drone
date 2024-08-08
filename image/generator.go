@@ -140,10 +140,10 @@ func (g *Generator) GenerateCodeSnippetJavaHighlight(
 	return retry.Do(ctx, "java highlight snippet "+submissionID, backoff, func() ([]byte, error) {
 		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
 		uri := fmt.Sprintf(
-			"%s/?l=%s&c=%s&t=dark&p=50",
-			g.cfg.JavaHighlightURL, toJavaHighlightLang(lang), base64.URLEncoding.EncodeToString([]byte(code)),
+			"%s/?l=%s&t=dark&p=50",
+			g.cfg.JavaHighlightURL, toJavaHighlightLang(lang),
 		)
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, uri, nil)
+		req, err := http.NewRequestWithContext(ctx, http.MethodPost, uri, strings.NewReader(code))
 		if err != nil {
 			return nil, fmt.Errorf("create request: %w", err)
 		}
