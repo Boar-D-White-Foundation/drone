@@ -73,10 +73,15 @@ public class ImageRenderer {
 
     public byte[] renderToPng(String code, String lang, String themeName, int paddings) throws Exception {
         if (!initialized) throw new IllegalStateException("call initialize first");
+        code = removeFuckingTabs(code);
         var font = new Font("JetBrains Mono", Font.PLAIN, 30);
         var theme = getOrLoadTheme(themeName);
         var textArea = prepareRSyntax(code, lang, theme, font);
         return render(textArea, paddings);
+    }
+
+    private String removeFuckingTabs(String code) {
+        return code.replaceAll("\t", "    ");
     }
 
     private Theme getOrLoadTheme(String themeName) {
