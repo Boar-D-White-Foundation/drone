@@ -24,7 +24,7 @@ class ImageRendererTest {
         try (var inp = getClass().getResourceAsStream("/input/input.java");
              var exp = getClass().getResourceAsStream("/output/java.png")) {
             String text = new String(inp.readAllBytes(), StandardCharsets.UTF_8);
-            byte[] data = imageRenderer.renderToPng(text, "java", "dark", 20);
+            byte[] data = imageRenderer.renderToPng(text, "java", "dark", 20, false);
             Assertions.assertArrayEquals(exp.readAllBytes(), data);
         }
     }
