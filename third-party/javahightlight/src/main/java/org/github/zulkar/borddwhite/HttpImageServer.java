@@ -70,7 +70,8 @@ public class HttpImageServer {
             var paddings = params.get("p");
             if (paddings == null || paddings.isEmpty()) paddings = "10";
             var code = new String(e.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-            byte[] imageData = renderer.renderToPng(code, lang, theme, Integer.parseInt(paddings));
+            var useLigatures = Boolean.parseBoolean(params.get("ligatures"));
+            byte[] imageData = renderer.renderToPng(code, lang, theme, Integer.parseInt(paddings), useLigatures);
             e.getResponseHeaders().add("Content-Type", "image/png");
             e.sendResponseHeaders(200, imageData.length);
             e.getResponseBody().write(imageData);
@@ -85,8 +86,9 @@ public class HttpImageServer {
             if (theme == null || theme.isEmpty()) theme = "dark";
             var paddings = params.get("p");
             if (paddings == null || paddings.isEmpty()) paddings = "10";
+            var useLigatures = Boolean.parseBoolean(params.get("ligatures"));
             var code = new String(Base64.getDecoder().decode(code64), StandardCharsets.UTF_8);
-            byte[] imageData = renderer.renderToPng(code, lang, theme, Integer.parseInt(paddings));
+            byte[] imageData = renderer.renderToPng(code, lang, theme, Integer.parseInt(paddings), useLigatures);
             e.getResponseHeaders().add("Content-Type", "image/png");
             e.sendResponseHeaders(200, imageData.length);
             e.getResponseBody().write(imageData);

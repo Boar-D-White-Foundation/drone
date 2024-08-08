@@ -15,9 +15,13 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+
+import static java.awt.font.TextAttribute.LIGATURES;
+import static java.awt.font.TextAttribute.LIGATURES_ON;
 
 public class ImageRenderer {
     public static final String[] FONT_NAMES = new String[]{
@@ -39,15 +43,23 @@ public class ImageRenderer {
             "JetBrainsMono-ThinItalic.ttf"};
 
     private boolean initialized = false;
+    private Font withLigatures;
+    private Font withoutLigatures;
+
 
     private final ConcurrentMap<String, Theme> themes;
 
     public ImageRenderer() {
         themes = new ConcurrentHashMap<>();
+
     }
 
     public void initialize() throws Exception {
         loadFonts();
+        withoutLigatures = new Font("JetBrains Mono", Font.PLAIN, 30);
+        Map attributes = withoutLigatures.getAttributes();
+        attributes.put(LIGATURES, LIGATURES_ON);
+        withLigatures = withoutLigatures.deriveFont(attributes);
         initialized = true;
     }
 
@@ -71,12 +83,12 @@ public class ImageRenderer {
         }
     }
 
-    public byte[] renderToPng(String code, String lang, String themeName, int paddings) throws Exception {
+    public byte[] renderToPng(String code, String lang, String themeName, int paddings, boolean useLigatures) throws Exception {
         if (!initialized) throw new IllegalStateException("call initialize first");
         code = removeFuckingTabs(code);
-        var font = new Font("JetBrains Mono", Font.PLAIN, 30);
+
         var theme = getOrLoadTheme(themeName);
-        var textArea = prepareRSyntax(code, lang, theme, font);
+        var textArea = prepareRSyntax(code, lang, theme, useLigatures ? withLigatures : withoutLigatures);
         return render(textArea, paddings);
     }
 
