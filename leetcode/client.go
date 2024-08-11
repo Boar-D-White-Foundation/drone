@@ -52,8 +52,8 @@ func NewClient(cfg Config) *Client {
 
 func NewClientFromConfig(cfg config.Config) *Client {
 	return NewClient(Config{
-		Session: cfg.Tg.Session,
-		CSRF:    cfg.Tg.CSRF,
+		Session: cfg.Leetcode.Session,
+		CSRF:    cfg.Leetcode.CSRF,
 	})
 }
 

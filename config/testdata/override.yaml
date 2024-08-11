@@ -1,4 +1,5 @@
 tg:
   api_key: "overriden key"
+leetcode:
   session: "overriden session"
   csrf: "overriden csrf"

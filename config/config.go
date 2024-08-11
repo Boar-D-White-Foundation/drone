@@ -34,8 +34,6 @@ type Config struct {
 		Key               string        `yaml:"api_key" json:"-"` // intentionally hidden from logs
 		LongPollerTimeout time.Duration `yaml:"long_poller_timeout"`
 		AdminChatID       int64         `yaml:"admin_chat_id"`
-		Session           string        `yaml:"session" json:"-"` // intentionally hidden from logs
-		CSRF              string        `yaml:"csrf" json:"-"`    // intentionally hidden from logs
 	} `yaml:"tg"`
 
 	Rod struct {
@@ -59,6 +57,11 @@ type Config struct {
 		LeetCodeThreadID         int   `yaml:"leetcode_thread_id"`
 		LeetcodeChickensThreadID int   `yaml:"leetcode_chickens_thread_id"`
 	} `yaml:"boardwhite"`
+
+	Leetcode struct {
+		Session string `yaml:"session" json:"-"` // intentionally hidden from logs
+		CSRF    string `yaml:"csrf" json:"-"`    // intentionally hidden from logs
+	} `yaml:"leetcode"`
 
 	LeetcodeDaily struct {
 		Cron       string `yaml:"cron"`
@@ -118,6 +121,7 @@ func Load(filename string) (Config, error) {
 }
 
 func (cfg Config) validate() error {
+	// TODO: 2 phase parsing to be able to use enums
 	enabledFlags := []bool{
 		cfg.ImageGenerator.UseCarbon,
 		cfg.ImageGenerator.UseRayso,

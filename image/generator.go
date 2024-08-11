@@ -343,7 +343,7 @@ func (g *Generator) GenerateCodeSnippetRayso(
 		}
 		slog.Info("fetched page", slog.String("submissionID", submissionID))
 
-		// TODO change size to 6x
+		// TODO: change size to 6x
 		// padding via query just doesn't work for vercel theme
 		paddingBt, err := page.Element(`div[dir="ltr"] > button[aria-label="16"]`)
 		if err != nil {
