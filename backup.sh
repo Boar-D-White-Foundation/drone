@@ -8,12 +8,12 @@ docker compose down
 # create backups
 # sudo is needed to access files written by root inside docker
 sudo tar -czvf data_backup.tar.gz data/
-sudo go run cmd/db-dump/main.go -p db_dump.json.gz
+sudo go run ./cmd/db-dump -p db_dump.json.gz
 sudo chown fh:fh data_backup.tar.gz db_dump.json.gz
 
 # test db restore
 sudo rm -rf data/badger
-sudo go run cmd/db-restore/main.go -p db_dump.json.gz
+sudo go run ./cmd/db-restore -p db_dump.json.gz
 
 # upload backups to cloud
 # to work properly needs: rclone config -> add ydrive & gdrive remotes
