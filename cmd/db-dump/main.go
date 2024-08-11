@@ -43,8 +43,7 @@ func main() {
 		}
 	}()
 
-	backup := db.JsonBackup{DB: database}
-	if err := backup.Dump(ctx, fd); err != nil {
+	if err := db.DumpJson(ctx, database, fd); err != nil {
 		slog.Error("failed to dump database", slog.Any("err", err))
 		os.Exit(1)
 	}

@@ -158,16 +158,13 @@ func testDB(t *testing.T, name string, database db.DB, restoreDB db.DB) {
 		})
 		require.NoError(t, err)
 
-		backup := db.JsonBackup{DB: database}
-		restoreBackup := db.JsonBackup{DB: restoreDB}
-
 		var buf bytes.Buffer
 		require.Empty(t, buf)
-		err = backup.Dump(ctx, &buf)
+		err = db.DumpJson(ctx, database, &buf)
 		require.NoError(t, err)
 		require.NotEmpty(t, buf)
 
-		err = restoreBackup.Restore(ctx, &buf)
+		err = db.RestoreJson(ctx, restoreDB, &buf)
 		require.NoError(t, err)
 		err = restoreDB.Do(ctx, func(tx db.Tx) error {
 			for _, key := range keys {
