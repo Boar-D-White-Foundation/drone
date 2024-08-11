@@ -104,6 +104,7 @@ func (b *BadgerDB) Do(ctx context.Context, f func(Tx) error) error {
 }
 
 func (b *BadgerDB) Dump(ctx context.Context) ([]KV, error) {
+	// badger already has a file level lock
 	b.Lock()
 	defer b.Unlock()
 

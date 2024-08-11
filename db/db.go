@@ -30,12 +30,8 @@ type Tx interface {
 	Set(key []byte, val []byte) error
 }
 
-type JsonBackup struct {
-	DB DB
-}
-
-func (b JsonBackup) Dump(ctx context.Context, writer io.Writer) error {
-	dump, err := b.DB.Dump(ctx)
+func DumpJson(ctx context.Context, db DB, writer io.Writer) error {
+	dump, err := db.Dump(ctx)
 	if err != nil {
 		return fmt.Errorf("dump db: %w", err)
 	}
@@ -58,7 +54,7 @@ func (b JsonBackup) Dump(ctx context.Context, writer io.Writer) error {
 	return nil
 }
 
-func (b JsonBackup) Restore(ctx context.Context, reader io.Reader) error {
+func RestoreJson(ctx context.Context, db DB, reader io.Reader) error {
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return fmt.Errorf("read dump: %w", err)
@@ -73,7 +69,7 @@ func (b JsonBackup) Restore(ctx context.Context, reader io.Reader) error {
 	for k, v := range raw {
 		dump = append(dump, KV{Key: []byte(k), Val: v})
 	}
-	return b.DB.Do(ctx, func(tx Tx) error {
+	return db.Do(ctx, func(tx Tx) error {
 		for _, kv := range dump {
 			if err := tx.Set(kv.Key, kv.Val); err != nil {
 				return err
@@ -94,7 +90,7 @@ func GetJson[T any](tx Tx, key string) (T, error) {
 	result := *new(T)
 	err = json.Unmarshal(data, &result)
 	if err != nil {
-		return *new(T), fmt.Errorf("unmarshall: %w", err)
+		return *new(T), fmt.Errorf("unmarshall key val: %w", err)
 	}
 
 	return result, nil
@@ -112,7 +108,7 @@ func GetJsonDefault[T any](tx Tx, key string, val T) (T, error) {
 func SetJson[T any](tx Tx, key string, val T) error {
 	data, err := json.Marshal(val)
 	if err != nil {
-		return fmt.Errorf("marshall: %w", err)
+		return fmt.Errorf("marshall key val: %w", err)
 	}
 
 	err = tx.Set([]byte(key), data)

@@ -44,8 +44,7 @@ func main() {
 		}
 	}()
 
-	backup := db.JsonBackup{DB: database}
-	if err := backup.Restore(ctx, bufio.NewReader(fd)); err != nil {
+	if err := db.RestoreJson(ctx, database, bufio.NewReader(fd)); err != nil {
 		slog.Error("failed to restore database", slog.Any("err", err))
 		os.Exit(1)
 	}
