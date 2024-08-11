@@ -27,15 +27,15 @@ func TestConfigOverride(t *testing.T) {
 	require.NoError(t, err)
 
 	tgKey := cfg.Tg.Key
-	tgSession := cfg.Tg.Session
-	tgCSRF := cfg.Tg.CSRF
 	assert.NotEmpty(t, cfg.Tg.LongPollerTimeout)
+	lcSession := cfg.Leetcode.Session
+	lcCSRF := cfg.Leetcode.CSRF
 
 	cfg, err = Load("testdata/override.yaml")
 	require.NoError(t, err)
 
 	assert.NotEqual(t, tgKey, cfg.Tg.Key)
-	assert.NotEqual(t, tgSession, cfg.Tg.Session)
-	assert.NotEqual(t, tgCSRF, cfg.Tg.CSRF)
 	assert.NotEmpty(t, cfg.Tg.LongPollerTimeout)
+	assert.NotEqual(t, lcSession, cfg.Leetcode.Session)
+	assert.NotEqual(t, lcCSRF, cfg.Leetcode.CSRF)
 }

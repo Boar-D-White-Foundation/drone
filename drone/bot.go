@@ -18,14 +18,7 @@ import (
 	"github.com/go-co-op/gocron/v2"
 )
 
-func StartDrone(ctx context.Context, cfg config.Config) error {
-	adminTGClient, err := tg.NewAdminClientFromConfig(cfg)
-	if err != nil {
-		return err
-	}
-
-	alerts := alert.NewManager(adminTGClient)
-
+func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) error {
 	var imageGenerator *image.Generator
 	if cfg.Features.SnippetsGenerationEnabled {
 		browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
