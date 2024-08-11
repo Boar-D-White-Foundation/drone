@@ -19,6 +19,15 @@ import (
 )
 
 func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) error {
+	started := make(chan struct{})
+	go func() {
+		select {
+		case <-started:
+		case <-time.After(time.Minute):
+			alerts.Errorf("bot start is stuck")
+		}
+	}()
+
 	var imageGenerator *image.Generator
 	if cfg.Features.SnippetsGenerationEnabled {
 		browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
@@ -99,6 +108,7 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 	}
 	slog.Info("start bot OK")
 
+	started <- struct{}{}
 	<-ctx.Done()
 	<-dbqDone
 	return scheduler.Shutdown()
