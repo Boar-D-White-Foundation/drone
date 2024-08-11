@@ -1,6 +1,7 @@
 package db_test
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"sync"
@@ -16,14 +17,18 @@ func TestBadger(t *testing.T) {
 	t.Parallel()
 
 	bdb := db.NewBadgerDB(":memory:")
-	testDB(t, "badger", bdb)
+	restoreBDB := db.NewBadgerDB(":memory:")
+	testDB(t, "badger", bdb, restoreBDB)
 }
 
-func testDB(t *testing.T, name string, database db.DB) {
+func testDB(t *testing.T, name string, database db.DB, restoreDB db.DB) {
 	ctx := context.Background()
 	err := database.Start(ctx)
 	require.NoError(t, err)
 	defer database.Stop()
+	err = restoreDB.Start(ctx)
+	require.NoError(t, err)
+	defer restoreDB.Stop()
 
 	t.Run(name+" get set", func(t *testing.T) {
 		key := "key1"
@@ -41,6 +46,38 @@ func testDB(t *testing.T, name string, database db.DB) {
 		})
 		require.NoError(t, err)
 	})
+
+	type S1 struct {
+		A string `json:"a,omitempty"`
+		B int    `json:"b,omitempty"`
+	}
+
+	type S2 struct {
+		Struct S1             `json:"struct,omitempty"`
+		Slice  []int          `json:"slice,omitempty"`
+		String string         `json:"string"`
+		Int    int            `json:"int"`
+		Float  float64        `json:"float"`
+		True   bool           `json:"true"`
+		False  bool           `json:"false"`
+		Null   *int           `json:"null"`
+		Map    map[string]int `json:"map"`
+	}
+
+	testSet := S2{
+		Struct: S1{
+			A: "s1_a",
+			B: 33,
+		},
+		Slice:  []int{444, 13, 44, -1, 0, 44},
+		String: "string sg",
+		Int:    535533535,
+		Float:  -666.44,
+		True:   true,
+		False:  false,
+		Null:   nil,
+		Map:    map[string]int{"k1": 1, "k2": 2, "k3": 3},
+	}
 
 	t.Run(name+" json", func(t *testing.T) {
 		key := "key2"
@@ -100,47 +137,51 @@ func testDB(t *testing.T, name string, database db.DB) {
 			require.NoError(t, err)
 			require.True(t, tm.Equal(timeRes))
 
-			type S1 struct {
-				A string `json:"a,omitempty"`
-				B int    `json:"b,omitempty"`
-			}
-
-			type S2 struct {
-				Struct S1      `json:"struct,omitempty"`
-				Slice  []int   `json:"slice,omitempty"`
-				String string  `json:"string"`
-				Int    int     `json:"int"`
-				Float  float64 `json:"float"`
-				True   bool    `json:"true"`
-				False  bool    `json:"false"`
-				Null   *int    `json:"null"`
-			}
-
-			s2 := S2{
-				Struct: S1{
-					A: "s1_a",
-					B: 33,
-				},
-				Slice:  []int{444, 13, 44, -1, 0, 44},
-				String: "string sg",
-				Int:    535533535,
-				Float:  -666.44,
-				True:   true,
-				False:  false,
-				Null:   nil,
-			}
-			err = db.SetJson(tx, key, s2)
+			err = db.SetJson(tx, key, testSet)
 			require.NoError(t, err)
 			structRes, err := db.GetJson[S2](tx, key)
 			require.NoError(t, err)
-			require.Equal(t, s2, structRes)
+			require.Equal(t, testSet, structRes)
+			return nil
+		})
+		require.NoError(t, err)
+	})
+
+	t.Run(name+" json backup", func(t *testing.T) {
+		keys := []string{"key3.0", "key3.1", "key3.2"}
+		err := database.Do(ctx, func(tx db.Tx) error {
+			for _, key := range keys {
+				err = db.SetJson(tx, key, testSet)
+				require.NoError(t, err)
+			}
+			return nil
+		})
+		require.NoError(t, err)
+
+		backup := db.JsonBackup{DB: database}
+		restoreBackup := db.JsonBackup{DB: restoreDB}
+
+		var buf bytes.Buffer
+		require.Empty(t, buf)
+		err = backup.Dump(ctx, &buf)
+		require.NoError(t, err)
+		require.NotEmpty(t, buf)
+
+		err = restoreBackup.Restore(ctx, &buf)
+		require.NoError(t, err)
+		err = restoreDB.Do(ctx, func(tx db.Tx) error {
+			for _, key := range keys {
+				restored, err := db.GetJson[S2](tx, key)
+				require.NoError(t, err)
+				require.Equal(t, testSet, restored)
+			}
 			return nil
 		})
 		require.NoError(t, err)
 	})
 
 	t.Run(name+" transaction", func(t *testing.T) {
-		key := "key3"
+		key := "key4"
 		err := database.Do(ctx, func(tx db.Tx) error {
 			err = db.SetJson(tx, key, 80)
 			require.NoError(t, err)
@@ -165,7 +206,7 @@ func testDB(t *testing.T, name string, database db.DB) {
 	})
 
 	t.Run(name+" concurrent transactions", func(t *testing.T) {
-		key := "key4"
+		key := "key5"
 
 		var wg sync.WaitGroup
 		wg.Add(10000)

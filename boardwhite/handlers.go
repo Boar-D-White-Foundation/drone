@@ -10,19 +10,16 @@ import (
 
 func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegistry) {
 	lcStatsHandler := s.makeStatsHandler(
-		tg.ReactionClown,
 		keyLCPinnedMessages,
 		keyLCPinnedToStatsDayInfo,
 		keyLCStats,
 	)
 	lcChickensStatsHandler := s.makeStatsHandler(
-		tg.ReactionMoai,
 		keyLCChickensPinnedMessages,
 		keyLCChickensPinnedToStatsDayInfo,
 		keyLCChickensStats,
 	)
 	ncStatsHandler := s.makeStatsHandler(
-		tg.ReactionClown,
 		keyNCPinnedMessages,
 		keyNCPinnedToStatsDayInfo,
 		keyNCStats,
