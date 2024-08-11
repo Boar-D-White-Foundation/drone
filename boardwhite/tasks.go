@@ -39,6 +39,10 @@ func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSn
 
 	_, err = s.telegram.ReplyWithSpoilerPhoto(
 		args.MessageID,
+		fmt.Sprintf(
+			"Runtime beats %.0f%%\nMemory beats %.0f%%",
+			submission.RuntimePercentile, submission.MemoryPercentile,
+		),
 		fmt.Sprintf("submission_%s.png", args.SubmissionID),
 		"image/png",
 		bytes.NewReader(snippet),

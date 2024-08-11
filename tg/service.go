@@ -21,7 +21,7 @@ type Client interface {
 	SendSpoilerLink(threadID int, header, link string) (int, error)
 	SendSticker(threadID int, stickerID string) (int, error)
 	ReplyWithSticker(messageID int, stickerID string) (int, error)
-	ReplyWithSpoilerPhoto(messageID int, name, mime string, reader io.ReadSeeker) (int, error)
+	ReplyWithSpoilerPhoto(messageID int, caption, name, mime string, reader io.ReadSeeker) (int, error)
 	Pin(id int) error
 	Unpin(id int) error
 	SetReaction(messageID int, reaction Reaction, isBig bool) error
@@ -261,11 +261,14 @@ func (s *Service) ReplyWithSticker(messageID int, stickerID string) (int, error)
 	return message.ID, nil
 }
 
-func (s *Service) ReplyWithSpoilerPhoto(messageID int, name, mime string, reader io.ReadSeeker) (int, error) {
+func (s *Service) ReplyWithSpoilerPhoto(messageID int, caption, name, mime string, reader io.ReadSeeker) (int, error) {
 	var message *tele.Message
 	var err error
 
-	photo := tele.Photo{File: tele.FromReader(reader)}
+	photo := tele.Photo{
+		File:    tele.FromReader(reader),
+		Caption: caption,
+	}
 	opts := tele.SendOptions{
 		ReplyTo: &tele.Message{
 			ID: messageID,
