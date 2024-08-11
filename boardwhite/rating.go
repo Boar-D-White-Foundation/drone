@@ -75,7 +75,6 @@ func (s *Service) getLastPublishedQuestionDayInfo(tx db.Tx, msgToDayInfoKey stri
 }
 
 func (s *Service) makeStatsHandler(
-	deadlineMissReaction tg.Reaction,
 	pinnedMessagesKey string,
 	msgToDayInfoKey string,
 	statsKey string,
@@ -89,11 +88,8 @@ func (s *Service) makeStatsHandler(
 			return nil
 		}
 
-		setClown := func() error {
-			return s.telegram.SetReaction(msg.ID, tg.ReactionClown, false)
-		}
-		setOk := func() error {
-			return s.telegram.SetReaction(msg.ID, tg.ReactionOk, false)
+		set := func(reaction tg.Reaction) error {
+			return s.telegram.SetReaction(msg.ID, reaction, false)
 		}
 		return s.database.Do(ctx, func(tx db.Tx) error {
 			pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMessagesKey, nil)
@@ -108,7 +104,7 @@ func (s *Service) makeStatsHandler(
 			case len(msg.Text) > 0:
 				match := lcSubmissionRe.FindStringSubmatch(msg.Text)
 				if len(match) < 2 {
-					return setClown()
+					return set(tg.ReactionClown)
 				}
 				if s.cfg.SnippetsGenerationEnabled {
 					err := s.tasks.postCodeSnippet.Schedule(tx, 1, postCodeSnippetArgs{
@@ -121,14 +117,14 @@ func (s *Service) makeStatsHandler(
 				}
 			case msg.Photo != nil:
 				if !msg.HasMediaSpoiler {
-					return setClown()
+					return set(tg.ReactionClown)
 				}
 			default:
-				return setClown()
+				return set(tg.ReactionClown)
 			}
 
 			if msg.ReplyTo.ID != pinnedIDs[len(pinnedIDs)-1] {
-				return s.telegram.SetReaction(msg.ID, deadlineMissReaction, false)
+				return set(tg.ReactionMoai) // deadline miss
 			}
 
 			stats, err := db.GetJsonDefault[stats](tx, statsKey, stats{})
@@ -157,7 +153,7 @@ func (s *Service) makeStatsHandler(
 				UserID: sender.ID,
 			}
 			if _, ok := stats.Solutions[key]; ok {
-				return setOk() // keep only first solution to not ruin solve time stats
+				return set(tg.ReactionOk) // keep only first solution to not ruin solve time stats
 			}
 
 			stats.Solutions[key] = solution{Update: update}
@@ -166,7 +162,7 @@ func (s *Service) makeStatsHandler(
 				return fmt.Errorf("set stats: %w", err)
 			}
 
-			return setOk()
+			return set(tg.ReactionOk)
 		})
 	}
 }
