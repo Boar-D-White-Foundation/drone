@@ -109,6 +109,7 @@ func (s *Service) makeStatsHandler(
 				if s.cfg.SnippetsGenerationEnabled {
 					err := s.tasks.postCodeSnippet.Schedule(tx, 1, postCodeSnippetArgs{
 						MessageID:    msg.ID,
+						ThreadID:     msg.ThreadID,
 						SubmissionID: match[1],
 					})
 					if err != nil {

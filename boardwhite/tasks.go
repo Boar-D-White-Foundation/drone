@@ -21,6 +21,7 @@ func (s *Service) RegisterTasks(registry *dbq.Registry) error {
 
 type postCodeSnippetArgs struct {
 	MessageID    int    `json:"message_id"`
+	ThreadID     int    `json:"thread_id"`
 	SubmissionID string `json:"submission_id"`
 }
 
@@ -37,13 +38,18 @@ func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSn
 		return fmt.Errorf("generate snippet: %w", err)
 	}
 
-	_, err = s.telegram.ReplyWithSpoilerPhoto(
-		args.MessageID,
-		fmt.Sprintf(
+	caption := ""
+	if args.ThreadID != s.cfg.LeetcodeChickensThreadID {
+		caption = fmt.Sprintf(
 			"Runtime beats %.0f%%\nMemory beats %.0f%%",
 			submission.RuntimePercentile, submission.MemoryPercentile,
-		),
-		fmt.Sprintf("submission_%s.png", args.SubmissionID),
+		)
+	}
+	imgName := fmt.Sprintf("submission_%s.png", args.SubmissionID)
+	_, err = s.telegram.ReplyWithSpoilerPhoto(
+		args.MessageID,
+		caption,
+		imgName,
 		"image/png",
 		bytes.NewReader(snippet),
 	)
