@@ -16,7 +16,7 @@ public class ImagePreviewGenerator {
 
     public void generateImage(CmdOptions options) throws Exception {
         var code = loadFile(options.input);
-        byte[] data = renderer.renderToPng(code, options.lang, options.theme, options.paddings, false);
+        byte[] data = renderer.renderToPng(code, options.getLang(), options.getTheme(), options.getPaddings(), false);
         Files.write(options.output.toPath(), data);
     }
 
