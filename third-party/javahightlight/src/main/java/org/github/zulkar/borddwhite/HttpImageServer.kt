@@ -1,121 +1,108 @@
-package org.github.zulkar.borddwhite;
+package org.github.zulkar.borddwhite
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
+import com.sun.net.httpserver.HttpExchange
+import com.sun.net.httpserver.HttpHandler
+import com.sun.net.httpserver.HttpServer
+import java.net.InetSocketAddress
+import java.net.URLDecoder
+import java.nio.charset.StandardCharsets
+import java.util.*
+import java.util.Map
 
-import java.io.IOException;
-import java.net.InetSocketAddress;
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+class HttpImageServer(private val port: Int, renderer: ImageRenderer) {
+    private val httpServer: HttpServer = HttpServer.create()
 
-public class HttpImageServer {
-    private final HttpServer httpServer;
-    private final int port;
-
-    public HttpImageServer(int port, ImageRenderer renderer) throws IOException {
-        this.port = port;
-        httpServer = HttpServer.create();
-        httpServer.bind(new InetSocketAddress(port), 0);
-        httpServer.createContext("/", new MyRenderHandler(renderer));
+    init {
+        httpServer.bind(InetSocketAddress(port), 0)
+        httpServer.createContext("/", MyRenderHandler(renderer))
     }
 
-    public void start() {
-        httpServer.start();
-        System.out.println("Render server started on port " + port);
+    fun start() {
+        httpServer.start()
+        println("Render server started on port $port")
     }
 
-
-    private static class MyRenderHandler implements HttpHandler {
-
-        private final ImageRenderer renderer;
-
-        public MyRenderHandler(ImageRenderer renderer) {
-            this.renderer = renderer;
-        }
-
-        Map<String, String> urlParamsMap(HttpExchange exchange) {
-            var query = exchange.getRequestURI().getRawQuery();
-            if (query == null || query.isEmpty()) {
-                return Map.of();
+    private class MyRenderHandler(private val renderer: ImageRenderer) : HttpHandler {
+        override fun handle(exchange: HttpExchange) {
+            when (exchange.requestMethod) {
+                "GET" -> withExceptionProcessing(exchange, this::processGet)
+                "POST" -> withExceptionProcessing(exchange, this::processPost)
+                else -> {
+                    exchange.sendResponseHeaders(405, 0)
+                    exchange.responseBody.write(
+                        "${exchange.requestMethod} is not supported".toByteArray(
+                            StandardCharsets.UTF_8
+                        )
+                    )
+                    exchange.close()
+                }
             }
-            Map<String, String> result = new HashMap<>();
-            for (String param : query.split("&")) {
-                String[] entry = param.split("=", 2);
-                var name = entry[0];
-                var value = entry.length > 1 ? URLDecoder.decode(entry[1], StandardCharsets.UTF_8) : "";
-                result.put(name, value);
-            }
-            return result;
         }
 
-        @Override
-        public void handle(HttpExchange exchange) throws IOException {
-
-            switch (exchange.getRequestMethod()) {
-                case "GET" -> withExceptionProcessing(exchange, this::processGet);
-                case "POST" -> withExceptionProcessing(exchange, this::processPost);
-            }
-
+        fun processPost(e: HttpExchange) {
+            val params = urlParamsMap(e)
+            val lang = params["l"]
+            var theme = params["t"]
+            if (theme == null || theme.isEmpty()) theme = "dark"
+            var paddings = params["p"]
+            if (paddings == null || paddings.isEmpty()) paddings = "10"
+            val code = String(e.requestBody.readAllBytes(), StandardCharsets.UTF_8)
+            val useLigatures = params["ligatures"].toBoolean()
+            val imageData = renderer.renderToPng(code, lang, theme, paddings.toInt(), useLigatures)
+            e.responseHeaders.add("Content-Type", "image/png")
+            e.sendResponseHeaders(200, imageData.size.toLong())
+            e.responseBody.write(imageData)
+            e.close()
         }
 
-        private void processPost(HttpExchange e) throws Exception {
-            var params = urlParamsMap(e);
-            var lang = params.get("l");
-            var theme = params.get("t");
-            if (theme == null || theme.isEmpty()) theme = "dark";
-            var paddings = params.get("p");
-            if (paddings == null || paddings.isEmpty()) paddings = "10";
-            var code = new String(e.getRequestBody().readAllBytes(), StandardCharsets.UTF_8);
-            var useLigatures = Boolean.parseBoolean(params.get("ligatures"));
-            byte[] imageData = renderer.renderToPng(code, lang, theme, Integer.parseInt(paddings), useLigatures);
-            e.getResponseHeaders().add("Content-Type", "image/png");
-            e.sendResponseHeaders(200, imageData.length);
-            e.getResponseBody().write(imageData);
-            e.close();
+        fun processGet(e: HttpExchange) {
+            val params = urlParamsMap(e)
+            val lang = params["l"]
+            val code64 = params["c64"]
+            val codeP = params["c"]
+            var theme = params["t"]
+            if (theme == null || theme.isEmpty()) theme = "dark"
+            var paddings = params["p"]
+            if (paddings == null || paddings.isEmpty()) paddings = "10"
+            val useLigatures = params["ligatures"].toBoolean()
+            val code = codeP ?: String(Base64.getDecoder().decode(code64), StandardCharsets.UTF_8)
+            val imageData = renderer.renderToPng(code, lang, theme, paddings.toInt(), useLigatures)
+            e.responseHeaders.add("Content-Type", "image/png")
+            e.sendResponseHeaders(200, imageData.size.toLong())
+            e.responseBody.write(imageData)
+            e.close()
         }
 
-        private void processGet(HttpExchange e) throws Exception {
-            var params = urlParamsMap(e);
-            var lang = params.get("l");
-            var code64 = params.get("c64");
-            var theme = params.get("t");
-            if (theme == null || theme.isEmpty()) theme = "dark";
-            var paddings = params.get("p");
-            if (paddings == null || paddings.isEmpty()) paddings = "10";
-            var useLigatures = Boolean.parseBoolean(params.get("ligatures"));
-            var code = new String(Base64.getDecoder().decode(code64), StandardCharsets.UTF_8);
-            byte[] imageData = renderer.renderToPng(code, lang, theme, Integer.parseInt(paddings), useLigatures);
-            e.getResponseHeaders().add("Content-Type", "image/png");
-            e.sendResponseHeaders(200, imageData.length);
-            e.getResponseBody().write(imageData);
-            e.close();
-        }
-
-        private void withExceptionProcessing(HttpExchange exchange, RunThrowable run) throws IOException {
+        fun withExceptionProcessing(exchange: HttpExchange, process: (HttpExchange) -> Unit) {
             try {
-                run.run(exchange);
-            } catch (IllegalArgumentException e) {
-                e.printStackTrace();
-                exchange.sendResponseHeaders(400, 0);
-                exchange.getResponseBody().write(e.getMessage().getBytes(StandardCharsets.UTF_8));
-                exchange.close();
-            } catch (Exception e) {
-                e.printStackTrace();
-                exchange.sendResponseHeaders(500, 0);
-                exchange.getResponseBody().write(e.getMessage().getBytes(StandardCharsets.UTF_8));
-                exchange.close();
+                process(exchange)
+            } catch (e: IllegalArgumentException) {
+                e.printStackTrace()
+                exchange.sendResponseHeaders(400, 0)
+                e.message?.let { exchange.responseBody.write(it.toByteArray(StandardCharsets.UTF_8)) }
+                exchange.close()
+            } catch (e: Exception) {
+                e.printStackTrace()
+                exchange.sendResponseHeaders(500, 0)
+                e.message?.let { exchange.responseBody.write(it.toByteArray(StandardCharsets.UTF_8)) }
+                exchange.close()
             }
         }
-
-
     }
+}
 
-    private interface RunThrowable {
-        void run(HttpExchange e) throws Exception;
+private fun urlParamsMap(exchange: HttpExchange): MutableMap<String?, String?> {
+    val query = exchange.requestURI.rawQuery
+    if (query == null || query.isEmpty()) {
+        return Map.of<String?, String?>()
     }
+    val result: MutableMap<String?, String?> = HashMap<String?, String?>()
+    for (param in query.split("&".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()) {
+        val entry: Array<String?> = param.split("=".toRegex(), limit = 2).toTypedArray()
+        val name = entry[0]
+        val value = if (entry.size > 1) URLDecoder.decode(entry[1], StandardCharsets.UTF_8) else ""
+        result.put(name, value)
+    }
+    return result
 }
 

@@ -1,15 +1,18 @@
-package org.github.zulkar.borddwhite;
+package org.github.zulkar.borddwhite
 
-public class HttpServerMain {
-    public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            System.err.println("First parameter should be port number");
-            System.exit(1);
+import kotlin.system.exitProcess
+
+object HttpServerMain {
+    @JvmStatic
+    fun main(args: Array<String>) {
+        if (args.isEmpty()) {
+            System.err.println("First parameter should be port number")
+            exitProcess(1)
         }
-        var port = Integer.parseInt(args[0]);
-        var renderer = new ImageRenderer();
-        renderer.initialize();
-        HttpImageServer server = new HttpImageServer(port, renderer);
-        server.start();
+        val port = args[0].toInt()
+        val renderer = ImageRenderer()
+        renderer.initialize()
+        val server = HttpImageServer(port, renderer)
+        server.start()
     }
 }
