@@ -1,50 +1,47 @@
-package org.github.zulkar.borddwhite;
+package org.github.zulkar.borddwhite
 
-import picocli.CommandLine;
+import picocli.CommandLine
+import picocli.CommandLine.ParameterException
+import java.io.File
+import java.nio.file.Files
+import kotlin.system.exitProcess
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
+class ImagePreviewGenerator {
+    private val renderer: ImageRenderer = ImageRenderer()
 
-public class ImagePreviewGenerator {
-    private final ImageRenderer renderer;
-
-    public ImagePreviewGenerator() throws Exception {
-        renderer = new ImageRenderer();
-        renderer.initialize();
+    init {
+        renderer.initialize()
     }
 
-    public void generateImage(CmdOptions options) throws Exception {
-        var code = loadFile(options.input);
-        byte[] data = renderer.renderToPng(code, options.getLang(), options.getTheme(), options.getPaddings(), false);
-        Files.write(options.output.toPath(), data);
+    fun generateImage(options: CmdOptions) {
+        val code = loadFile(options.input)
+        val data = renderer.renderToPng(code, options.lang, options.theme, options.paddings, false)
+        Files.write(options.output.toPath(), data)
     }
 
-    private String loadFile(File input) throws IOException {
-        return Files.readString(input.toPath());
+    private fun loadFile(input: File): String? {
+        return Files.readString(input.toPath())
     }
+}
 
-
-    public static void main(String[] args) throws IOException {
-        CmdOptions options = new CmdOptions();
-        CommandLine cmd = new CommandLine(options);
-        try {
-            CommandLine.ParseResult parseResult = cmd.parseArgs(args);
-            if (parseResult.isUsageHelpRequested()) {
-                cmd.usage(cmd.getOut());
-                return;
-            }
-            new ImagePreviewGenerator().generateImage(options);
-        } catch (CommandLine.ParameterException ex) {
-            cmd.getErr().println(ex.getMessage());
-            if (!CommandLine.UnmatchedArgumentException.printSuggestions(ex, cmd.getErr())) {
-                ex.getCommandLine().usage(cmd.getErr());
-            }
-            System.exit(1);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(2);
-
+fun main(args: Array<String>) {
+    val options = CmdOptions()
+    val cmd = CommandLine(options)
+    try {
+        val parseResult = cmd.parseArgs(*args)
+        if (parseResult.isUsageHelpRequested) {
+            cmd.usage(cmd.out)
+            return
         }
+        ImagePreviewGenerator().generateImage(options)
+    } catch (ex: ParameterException) {
+        cmd.err.println(ex.message)
+        if (!CommandLine.UnmatchedArgumentException.printSuggestions(ex, cmd.getErr())) {
+            ex.getCommandLine().usage(cmd.err)
+        }
+        exitProcess(1)
+    } catch (e: Exception) {
+        e.printStackTrace()
+        exitProcess(2)
     }
 }
