@@ -15,7 +15,7 @@ class ImagePreviewGenerator {
 
     fun generateImage(options: CmdOptions) {
         val code = loadFile(options.input)
-        val data = renderer.renderToPng(code, options.lang, options.theme, options.paddings, false)
+        val data = renderer.renderToPng(code ?: "", options.lang, options.theme ?: "dark", options.paddings, false)
         Files.write(options.output.toPath(), data)
     }
 
