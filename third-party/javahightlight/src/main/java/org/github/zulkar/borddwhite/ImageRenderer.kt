@@ -6,6 +6,7 @@ import org.fife.ui.rsyntaxtextarea.Theme
 import java.awt.Font
 import java.awt.Graphics2D
 import java.awt.GraphicsEnvironment
+import java.awt.Image.SCALE_SMOOTH
 import java.awt.font.TextAttribute
 import java.awt.font.TextAttribute.LIGATURES
 import java.awt.image.BufferedImage
@@ -21,20 +22,13 @@ import kotlin.streams.asStream
 
 class ImageRenderer {
     private var initialized = false
-    private lateinit var withLigatures: Font
-    private lateinit var withoutLigatures: Font
 
 
     private val themes: ConcurrentMap<String?, Theme?> = ConcurrentHashMap<String?, Theme?>()
 
     fun initialize() {
         loadFonts()
-        withoutLigatures = Font("JetBrains Mono", Font.PLAIN, 30)
 
-        @Suppress("UNCHECKED_CAST")
-        val attributes = withoutLigatures.attributes as MutableMap<TextAttribute, Any>
-        attributes[LIGATURES] = TextAttribute.LIGATURES_ON
-        withLigatures = withoutLigatures.deriveFont(attributes)
         initialized = true
     }
 
@@ -60,13 +54,65 @@ class ImageRenderer {
     }
 
     fun renderToPng(code: String, lang: String?, themeName: String, paddings: Int, useLigatures: Boolean): ByteArray {
+        var min = 18
+        var max = 30
+
+        val start = System.currentTimeMillis()
+        val optimistic = getFont(max, useLigatures)
+        val firstResult = doRenderToPng(code, lang, themeName, optimistic, paddings)
+        if (firstResult.w <= MAX && firstResult.h <= MAX) {
+            val image = firstResult.image.toPng()
+            println("generated image with first try. Size=${image.size} bytes ${firstResult.w}x${firstResult.h} with fontSize = $max and in ${System.currentTimeMillis() - start}ms")
+            return image
+        }
+
+        if ((firstResult.w >= MAX * 1.5 && firstResult.w <= MAX * 2.0) || (firstResult.h >= MAX * 1.5 && firstResult.h <= MAX * 2.0)) {
+            val image = firstResult.image.scale().toPng()
+            println("generated image and scale to 0.5. Size=${image.size} bytes ${firstResult.w / 2}x${firstResult.h / 2} with fontSize = $max and in ${System.currentTimeMillis() - start}ms")
+            return image
+        }
+
+        var ans = firstResult
+        var counter = 1
+        while (min < max) {
+            val mid = (max + min) / 2
+            counter++
+            val result = doRenderToPng(code, lang, themeName, getFont(mid, useLigatures), paddings)
+            if (result.w <= MAX && result.h <= MAX) {
+                ans = result
+                min = mid + 1
+            } else {
+                max = mid - 1
+            }
+        }
+        val image = ans.image.toPng()
+        println("generated image in $counter tries with size=${image.size} bytes ${ans.w}x${ans.h} with fontSize = ${ans.font} and in ${System.currentTimeMillis() - start}ms")
+        return image
+    }
+
+    private fun getFont(size: Int, useLigatures: Boolean): Font {
+        val font = Font("JetBrains Mono", Font.PLAIN, size)
+        if (!useLigatures) return font
+        @Suppress("UNCHECKED_CAST")
+        val attributes = font.attributes as MutableMap<TextAttribute, Any>
+        attributes[LIGATURES] = TextAttribute.LIGATURES_ON
+        return font.deriveFont(attributes)
+    }
+
+    private fun doRenderToPng(
+        code: String,
+        lang: String?,
+        themeName: String,
+        font: Font,
+        paddings: Int
+    ): RenderResult {
         var code = code
         check(initialized) { "call initialize first" }
         code = removeFuckingTabs(code)
 
-        val theme = getOrLoadTheme(themeName)
+        val theme = getOrLoadTheme(themeName, font)
         val textArea: RSyntaxTextArea =
-            prepareRSyntax(code, lang, theme, if (useLigatures) withLigatures else withoutLigatures)
+            prepareRSyntax(code, lang, theme, font)
         return render(textArea, paddings)
     }
 
@@ -74,22 +120,23 @@ class ImageRenderer {
         return code.replace("\t", "    ")
     }
 
-    private fun getOrLoadTheme(themeName: String): Theme? {
-        var theme =
-            themes[themeName] //no need computeIfAbsent, in case of race condition just load twice. Better stay robust if the theme does not exist
+    private fun getOrLoadTheme(themeName: String, font: Font): Theme? {
+        val key = "$themeName|${font.name}|${font.size}"
+        var theme: Theme? =
+            themes[key] //no need computeIfAbsent, in case of race condition just load twice. Better stay robust if the theme does not exist
 
         if (theme == null) {
             try {
                 theme = loadTheme(themeName)
-                themes.put(themeName, theme)
+                themes.put(key, theme)
             } catch (_: IOException) {
             }
         }
         return theme
     }
 
-    private fun render(textArea: RSyntaxTextArea, paddings: Int): ByteArray {
-        val ref = AtomicReference<ByteArray>(ByteArray(0))
+    private fun render(textArea: RSyntaxTextArea, paddings: Int): RenderResult {
+        val ref = AtomicReference<RenderResult>()
         SwingUtilities.invokeAndWait(Runnable {
             val frame = JPanel()
             frame.isVisible = true
@@ -113,13 +160,16 @@ class ImageRenderer {
             graphics.color = textArea.getBackground()
             graphics.fillRect(0, 0, imageWithPaddings.width, imageWithPaddings.height)
             graphics.drawImage(im, paddings, paddings, null)
-            val output = ByteArrayOutputStream()
-            try {
-                ImageIO.write(imageWithPaddings, "PNG", output)
-                ref.set(output.toByteArray())
-            } catch (e: IOException) {
-                throw RuntimeException(e)
-            }
+            ref.set(
+                RenderResult(
+                    imageWithPaddings.width,
+                    imageWithPaddings.height,
+                    textArea.font.size,
+                    imageWithPaddings
+                )
+            )
+            renderGraphics.dispose()
+            graphics.dispose()
         })
         return ref.get()
     }
@@ -139,6 +189,7 @@ class ImageRenderer {
     }
 
     companion object {
+        const val MAX = 2560
         val FONT_NAMES: Array<String> = arrayOf(
             "JetBrainsMono-Bold.ttf",
             "JetBrainsMono-BoldItalic.ttf",
@@ -158,7 +209,8 @@ class ImageRenderer {
             "JetBrainsMono-ThinItalic.ttf"
         )
 
-        private fun prepareRSyntax(code: String, lang: String?, theme: Theme?, font: Font?): RSyntaxTextArea {
+
+        private fun prepareRSyntax(code: String, lang: String?, theme: Theme?, font: Font): RSyntaxTextArea {
             val lines = code.lineSequence().asStream().toList()
             val textArea = RSyntaxTextArea(
                 lines.size, lines.maxOf { it.length }
@@ -201,3 +253,21 @@ class ImageRenderer {
         }
     }
 }
+
+private fun BufferedImage.scale(): BufferedImage {
+    val img = this.getScaledInstance(width / 2, height / 2, SCALE_SMOOTH)
+    if (img is BufferedImage) return img
+    val res = BufferedImage(img.getWidth(null), img.getHeight(null), BufferedImage.TYPE_INT_ARGB)
+    val g2 = res.createGraphics();
+    g2.drawImage(img, 0, 0, null);
+    g2.dispose();
+    return res
+}
+
+private fun BufferedImage.toPng(): ByteArray {
+    val output = ByteArrayOutputStream()
+    ImageIO.write(this, "PNG", output)
+    return output.toByteArray()
+}
+
+private class RenderResult(val w: Int, val h: Int, val font: Int, val image: BufferedImage)
