@@ -3,7 +3,7 @@ Copyright © 2077, Boar D'White foundation. All rights reserved.
 
 ## Repo setup
 ```shell
-curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.56.2
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.60.3
 ln -sf $(pwd)/pre-commit .git/hooks/pre-commit
 ```
 
