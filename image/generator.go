@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/config"
-	"github.com/boar-d-white-foundation/drone/iter"
+	"github.com/boar-d-white-foundation/drone/iterx"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"github.com/boar-d-white-foundation/drone/retry"
 	"github.com/go-rod/rod"
@@ -235,7 +235,7 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 		if err != nil {
 			return nil, fmt.Errorf("get export buttons: %w", err)
 		}
-		exportBtns = iter.FilterMut(exportBtns, func(e *rod.Element) bool {
+		exportBtns = iterx.FilterMut(exportBtns, func(e *rod.Element) bool {
 			return e.MustText() == "Open"
 		})
 		if len(exportBtns) != 1 {

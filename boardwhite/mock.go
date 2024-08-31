@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
-	"github.com/boar-d-white-foundation/drone/iter"
+	"github.com/boar-d-white-foundation/drone/iterx"
 	tele "gopkg.in/telebot.v3"
 )
 
@@ -44,7 +44,7 @@ func (s *Service) OnMock(ctx context.Context, c tele.Context) error {
 			return fmt.Errorf("get %q: %w", key, err)
 		}
 
-		stickerID, err := iter.PickRandom(cfg.StickerIDs)
+		stickerID, err := iterx.PickRandom(cfg.StickerIDs)
 		if err != nil {
 			return fmt.Errorf("pick random sticker: %w", err)
 		}

@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/boar-d-white-foundation/drone/db"
-	"github.com/boar-d-white-foundation/drone/iter"
+	"github.com/boar-d-white-foundation/drone/iterx"
 	"github.com/boar-d-white-foundation/drone/neetcode"
 )
 
@@ -48,7 +48,7 @@ func (s *Service) PublishNCDaily(ctx context.Context) error {
 		if group.Name == "1-D DP" || group.Name == "2-D DP" {
 			stickerID = s.cfg.DpStickerID
 		} else {
-			stickerID, err = iter.PickRandom(s.cfg.DailyStickersIDs)
+			stickerID, err = iterx.PickRandom(s.cfg.DailyStickersIDs)
 			if err != nil {
 				return fmt.Errorf("get sticker: %w", err)
 			}

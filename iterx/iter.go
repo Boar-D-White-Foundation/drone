@@ -1,4 +1,4 @@
-package iter
+package iterx
 
 import (
 	"crypto/rand"

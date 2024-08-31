@@ -56,6 +56,7 @@ type Config struct {
 		ChatID                   int64 `yaml:"chat_id"`
 		LeetCodeThreadID         int   `yaml:"leetcode_thread_id"`
 		LeetcodeChickensThreadID int   `yaml:"leetcode_chickens_thread_id"`
+		FloodThreadID            int   `yaml:"flood_thread_id"`
 	} `yaml:"boardwhite"`
 
 	Leetcode struct {
@@ -82,6 +83,8 @@ type Config struct {
 		Period     string   `yaml:"period"`
 		StickerIDs []string `yaml:"sticker_ids"`
 	} `yaml:"mocks"`
+
+	GreetingsTemplates []string `yaml:"greetings_templates"`
 }
 
 func (cfg Config) String() string {

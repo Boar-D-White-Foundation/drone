@@ -21,6 +21,7 @@ boardwhite:
   chat_id: -1001640461540
   leetcode_thread_id: 10095
   leetcode_chickens_thread_id: 372377
+  flood_thread_id: 11214
 leetcode:
   session: ""
   csrf: ""
@@ -98,3 +99,13 @@ mocks:
     period: "48h"
     sticker_ids:
       - "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"
+greetings_templates:
+  - "%s кто тебе рассказал про чат?"
+  - "%s сколько пунктов в resumeworded?"
+  - "%s как дела с ДП?"
+  - "%s кто твой любимый смешарик?"
+  - "%s дашь реф?"
+  - "%s любишь лук с творогом?"
+  - "%s сколько присед?"
+  - "%s облизываешься на нидерландские зарплаты?"
+  - "%s какой у тебя IQ?"

@@ -47,6 +47,8 @@ type Config struct {
 	DpStickerID               string
 	SnippetsGenerationEnabled bool
 	Mocks                     map[string]MockConfig
+	FloodThreadID             int
+	GreetingsTemplates        []string
 }
 
 type tasks struct {
@@ -116,6 +118,8 @@ func NewServiceFromConfig(
 		DpStickerID:               cfg.DPStickerID,
 		SnippetsGenerationEnabled: cfg.Features.SnippetsGenerationEnabled,
 		Mocks:                     mocks,
+		FloodThreadID:             cfg.Boardwhite.FloodThreadID,
+		GreetingsTemplates:        cfg.GreetingsTemplates,
 	}
 	return NewService(serviceCfg, telegram, database, alerts, imageGenerator, lcClient)
 }
