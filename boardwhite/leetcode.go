@@ -6,7 +6,7 @@ import (
 	"log/slog"
 
 	"github.com/boar-d-white-foundation/drone/db"
-	"github.com/boar-d-white-foundation/drone/iter"
+	"github.com/boar-d-white-foundation/drone/iterx"
 	"github.com/boar-d-white-foundation/drone/leetcode"
 	"golang.org/x/exp/rand"
 )
@@ -22,7 +22,7 @@ func (s *Service) PublishLCDaily(ctx context.Context) error {
 		return fmt.Errorf("get link: %w", err)
 	}
 
-	stickerID, err := iter.PickRandom(s.cfg.DailyStickersIDs)
+	stickerID, err := iterx.PickRandom(s.cfg.DailyStickersIDs)
 	if err != nil {
 		return fmt.Errorf("get sticker: %w", err)
 	}
@@ -118,7 +118,7 @@ func (s *Service) PublishLCChickensDaily(ctx context.Context) error {
 		return fmt.Errorf("get link: %w", err)
 	}
 
-	stickerID, err := iter.PickRandom(s.cfg.DailyChickensStickerIDs)
+	stickerID, err := iterx.PickRandom(s.cfg.DailyChickensStickerIDs)
 	if err != nil {
 		return fmt.Errorf("get sticker: %w", err)
 	}

@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/config"
-	"github.com/boar-d-white-foundation/drone/iter"
+	"github.com/boar-d-white-foundation/drone/iterx"
 	"gopkg.in/telebot.v3"
 	tele "gopkg.in/telebot.v3"
 )
@@ -348,7 +348,7 @@ func BuildMentionMarkdownV2(user *tele.User) (name string) {
 	if len(user.Username) > 0 {
 		name = "@" + EscapeMD(user.Username)
 	} else {
-		fullName := iter.JoinNonEmpty(" ", user.FirstName, user.LastName)
+		fullName := iterx.JoinNonEmpty(" ", user.FirstName, user.LastName)
 		name = fmt.Sprintf("[%s](tg://user?id=%d)", EscapeMD(fullName), user.ID)
 	}
 	return name

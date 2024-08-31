@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
-	"github.com/boar-d-white-foundation/drone/iter"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"golang.org/x/exp/slog"
 	tele "gopkg.in/telebot.v3"
@@ -207,9 +206,6 @@ func (s *Service) publishRating(
 }
 
 type ratingRow struct {
-	UserID        int64
-	Username      string
-	Name          string
 	Mention       string
 	Solved        int
 	CurrentStreak int
@@ -262,9 +258,6 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 			if msg == nil || msg.Sender == nil || msg.ReplyTo == nil {
 				continue
 			}
-			row.UserID = sol.UserID
-			row.Username = msg.Sender.Username
-			row.Name = iter.JoinNonEmpty(" ", msg.Sender.FirstName, msg.Sender.LastName)
 			row.Mention = tg.BuildMentionMarkdownV2(msg.Sender)
 			row.Solved++
 			row.SolveTime += msg.Time().Sub(msg.ReplyTo.Time())
