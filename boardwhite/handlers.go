@@ -24,7 +24,6 @@ func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegis
 		keyNCPinnedToStatsDayInfo,
 		keyNCStats,
 	)
-	greetJoinedUserHandler := s.makeGreetJoinedUserHandler()
 
 	registry.RegisterHandler(tele.OnText, "OnLeetCodeUpdateText", withContext(ctx, lcStatsHandler))
 	registry.RegisterHandler(tele.OnPhoto, "OnLeetCodeUpdatePhoto", withContext(ctx, lcStatsHandler))
@@ -34,7 +33,7 @@ func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegis
 	registry.RegisterHandler(tele.OnPhoto, "OnNeetCodeUpdatePhoto", withContext(ctx, ncStatsHandler))
 	registry.RegisterHandler(tele.OnText, "OnMock", withContext(ctx, s.OnMock))
 	registry.RegisterHandler(tele.OnPinned, "OnBotPinned", withContext(ctx, s.OnBotPinned))
-	registry.RegisterHandler(tele.OnUserJoined, "OnUserJoined", withContext(ctx, greetJoinedUserHandler))
+	registry.RegisterHandler(tele.OnUserJoined, "OnUserJoined", withContext(ctx, s.OnGreetJoinedUser))
 }
 
 func withContext(ctx context.Context, f func(context.Context, tele.Context) error) tele.HandlerFunc {

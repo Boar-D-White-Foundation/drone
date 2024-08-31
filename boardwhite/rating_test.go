@@ -21,6 +21,7 @@ func TestBuildRating(t *testing.T) {
 	rating := buildRating(stats, 6, 8)
 	require.Len(t, rating, 10)
 	require.Equal(t, "faucct", rating[0].Username)
+	require.Equal(t, "@faucct", rating[0].Mention)
 	require.Equal(t, 3, rating[0].Solved)
 	for _, row := range rating {
 		require.LessOrEqual(t, row.MaxStreak, row.Solved)

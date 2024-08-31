@@ -56,7 +56,7 @@ type Config struct {
 		ChatID                   int64 `yaml:"chat_id"`
 		LeetCodeThreadID         int   `yaml:"leetcode_thread_id"`
 		LeetcodeChickensThreadID int   `yaml:"leetcode_chickens_thread_id"`
-		GreetingsThreadId        int   `yaml:"greetings_thread_id"`
+		FloodThreadID            int   `yaml:"flood_thread_id"`
 	} `yaml:"boardwhite"`
 
 	Leetcode struct {
@@ -84,7 +84,7 @@ type Config struct {
 		StickerIDs []string `yaml:"sticker_ids"`
 	} `yaml:"mocks"`
 
-	Greetings []string `yaml:"greetings"`
+	GreetingsTemplates []string `yaml:"greetings_templates"`
 }
 
 func (cfg Config) String() string {

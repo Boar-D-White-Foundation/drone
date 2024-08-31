@@ -210,6 +210,7 @@ type ratingRow struct {
 	UserID        int64
 	Username      string
 	Name          string
+	Mention       string
 	Solved        int
 	CurrentStreak int
 	MaxStreak     int
@@ -264,6 +265,7 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 			row.UserID = sol.UserID
 			row.Username = msg.Sender.Username
 			row.Name = iter.JoinNonEmpty(" ", msg.Sender.FirstName, msg.Sender.LastName)
+			row.Mention = tg.BuildMentionMarkdownV2(msg.Sender)
 			row.Solved++
 			row.SolveTime += msg.Time().Sub(msg.ReplyTo.Time())
 
@@ -294,16 +296,10 @@ func (r rating) toMarkdownV2(header string) string {
 	buf.Grow(len(header) + len(r)*30)
 	buf.WriteString(tg.EscapeMD(header) + "\n")
 	for _, row := range r {
-		var name string
-		if len(row.Username) > 0 {
-			name = "@" + tg.EscapeMD(row.Username)
-		} else {
-			name = fmt.Sprintf("[%s](tg://user?id=%d)", tg.EscapeMD(row.Name), row.UserID)
-		}
 		solveTime := tg.EscapeMD(fmt.Sprintf("%.1fh", row.SolveTime.Hours()))
 		buf.WriteString(fmt.Sprintf(
 			"%s \\- solved %d, streak %d, max streak %d, total time %s\n",
-			name, row.Solved, row.CurrentStreak, row.MaxStreak, solveTime,
+			row.Mention, row.Solved, row.CurrentStreak, row.MaxStreak, solveTime,
 		))
 	}
 	return buf.String()
