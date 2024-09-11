@@ -36,6 +36,18 @@ func FilterMut[T any](xs []T, f func(T) bool) []T {
 	return xs[:insertIdx]
 }
 
+func Uniq[T comparable](xs []T) []T {
+	seen := make(map[T]struct{})
+	result := make([]T, 0, len(xs))
+	for _, x := range xs {
+		if _, ok := seen[x]; !ok {
+			seen[x] = struct{}{}
+			result = append(result, x)
+		}
+	}
+	return result
+}
+
 func JoinNonEmpty(sep string, xs ...string) string {
 	nonEmpty := make([]string, 0, len(xs))
 	for _, s := range xs {
