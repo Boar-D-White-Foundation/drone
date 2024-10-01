@@ -6,7 +6,7 @@ services:
       - '7317:7317'
       - '56174:56174'
     volumes:
-      - ${PWD}/data:/opt/drone/data
+      - ./data:/opt/drone/data
 
   carbon:
     restart: always
