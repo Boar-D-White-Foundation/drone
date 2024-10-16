@@ -53,15 +53,16 @@ func testDB(t *testing.T, name string, database db.DB, restoreDB db.DB) {
 	}
 
 	type S2 struct {
-		Struct S1             `json:"struct,omitempty"`
-		Slice  []int          `json:"slice,omitempty"`
-		String string         `json:"string"`
-		Int    int            `json:"int"`
-		Float  float64        `json:"float"`
-		True   bool           `json:"true"`
-		False  bool           `json:"false"`
-		Null   *int           `json:"null"`
-		Map    map[string]int `json:"map"`
+		Struct S1                  `json:"struct,omitempty"`
+		Slice  []int               `json:"slice,omitempty"`
+		String string              `json:"string"`
+		Int    int                 `json:"int"`
+		Float  float64             `json:"float"`
+		True   bool                `json:"true"`
+		False  bool                `json:"false"`
+		Null   *int                `json:"null"`
+		Map    map[string]int      `json:"map"`
+		Set    map[string]struct{} `json:"set"`
 	}
 
 	testSet := S2{
@@ -77,6 +78,7 @@ func testDB(t *testing.T, name string, database db.DB, restoreDB db.DB) {
 		False:  false,
 		Null:   nil,
 		Map:    map[string]int{"k1": 1, "k2": 2, "k3": 3},
+		Set:    map[string]struct{}{"k1": {}, "k2": {}, "k3": {}},
 	}
 
 	t.Run(name+" json", func(t *testing.T) {

@@ -46,7 +46,7 @@ func TestDrone(t *testing.T) {
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
 
-	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg)
+	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg, alerts)
 	require.NoError(t, err)
 
 	database := db.NewBadgerDBFromConfig(cfg)

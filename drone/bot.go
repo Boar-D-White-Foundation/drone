@@ -44,7 +44,7 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
 
-	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg)
+	tgService, err := tg.NewBoardwhiteServiceFromConfig(cfg, alerts)
 	if err != nil {
 		return err
 	}
@@ -87,7 +87,7 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 		return err
 	}
 
-	jobs, err := registerCronJobs(ctx, cfg, scheduler, bw)
+	jobs, err := registerCronJobs(ctx, cfg, alerts, scheduler, bw)
 	if err != nil {
 		return err
 	}
@@ -124,23 +124,12 @@ type job struct {
 func registerCronJobs(
 	ctx context.Context,
 	cfg config.Config,
+	alerts *alert.Manager,
 	scheduler gocron.Scheduler,
 	bw *boardwhite.Service,
 ) ([]job, error) {
 	jobs := make([]job, 0)
-	jb, err := registerJob(ctx, scheduler, "PublishLCDaily", cfg.LeetcodeDaily.Cron, bw.PublishLCDaily)
-	if err != nil {
-		return nil, err
-	}
-	jobs = append(jobs, jb)
-
-	jb, err = registerJob(ctx, scheduler, "PublishLCChickensDaily", cfg.LeetcodeDaily.Cron, bw.PublishLCChickensDaily)
-	if err != nil {
-		return nil, err
-	}
-	jobs = append(jobs, jb)
-
-	jb, err = registerJob(ctx, scheduler, "PublishLCRating", cfg.LeetcodeDaily.RatingCron, bw.PublishLCRating)
+	jb, err := registerJob(ctx, alerts, scheduler, "PublishLCDaily", cfg.LeetcodeDaily.Cron, bw.PublishLCDaily)
 	if err != nil {
 		return nil, err
 	}
@@ -148,6 +137,26 @@ func registerCronJobs(
 
 	jb, err = registerJob(
 		ctx,
+		alerts,
+		scheduler,
+		"PublishLCChickensDaily",
+		cfg.LeetcodeDaily.Cron,
+		bw.PublishLCChickensDaily,
+	)
+	if err != nil {
+		return nil, err
+	}
+	jobs = append(jobs, jb)
+
+	jb, err = registerJob(ctx, alerts, scheduler, "PublishLCRating", cfg.LeetcodeDaily.RatingCron, bw.PublishLCRating)
+	if err != nil {
+		return nil, err
+	}
+	jobs = append(jobs, jb)
+
+	jb, err = registerJob(
+		ctx,
+		alerts,
 		scheduler,
 		"PublishLCChickensRating",
 		cfg.LeetcodeDaily.RatingCron,
@@ -158,13 +167,13 @@ func registerCronJobs(
 	}
 	jobs = append(jobs, jb)
 
-	jb, err = registerJob(ctx, scheduler, "PublishNCDaily", cfg.NeetcodeDaily.Cron, bw.PublishNCDaily)
+	jb, err = registerJob(ctx, alerts, scheduler, "PublishNCDaily", cfg.NeetcodeDaily.Cron, bw.PublishNCDaily)
 	if err != nil {
 		return nil, err
 	}
 	jobs = append(jobs, jb)
 
-	jb, err = registerJob(ctx, scheduler, "PublishNCRating", cfg.NeetcodeDaily.RatingCron, bw.PublishNCRating)
+	jb, err = registerJob(ctx, alerts, scheduler, "PublishNCRating", cfg.NeetcodeDaily.RatingCron, bw.PublishNCRating)
 	if err != nil {
 		return nil, err
 	}
@@ -175,13 +184,14 @@ func registerCronJobs(
 
 func registerJob(
 	ctx context.Context,
+	alerts *alert.Manager,
 	s gocron.Scheduler,
 	name, cron string,
 	f func(context.Context) error,
 ) (job, error) {
 	jb, err := s.NewJob(
 		gocron.CronJob(cron, false),
-		gocron.NewTask(wrapErrors(name, f), ctx),
+		gocron.NewTask(wrapErrors(alerts, name, f), ctx),
 	)
 	if err != nil {
 		return job{}, err
@@ -194,18 +204,18 @@ func registerJob(
 	}, nil
 }
 
-func wrapErrors(name string, f func(context.Context) error) func(context.Context) {
+func wrapErrors(alerts *alert.Manager, name string, f func(context.Context) error) func(context.Context) {
 	return func(ctx context.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error("panic in cron task", slog.String("name", name), slog.Any("err", err))
+				alerts.Errorf("panic in cron task %s: %s", name, fmt.Sprintf("%+v", err))
 			}
 		}()
 
 		slog.Info("started cron task run", slog.String("name", name))
 		err := f(ctx)
 		if err != nil {
-			slog.Error("err in cron task", slog.String("name", name), slog.Any("err", err))
+			alerts.Errorxf(err, "err in cron task %s", name)
 			return
 		}
 		slog.Info("finished cron task run", slog.String("name", name))

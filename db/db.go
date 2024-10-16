@@ -96,10 +96,10 @@ func GetJson[T any](tx Tx, key string) (T, error) {
 	return result, nil
 }
 
-func GetJsonDefault[T any](tx Tx, key string, val T) (T, error) {
+func GetJsonDefault[T any](tx Tx, key string, defaultVal T) (T, error) {
 	result, err := GetJson[T](tx, key)
 	if errors.Is(err, ErrKeyNotFound) {
-		return val, nil
+		return defaultVal, nil
 	}
 
 	return result, err
