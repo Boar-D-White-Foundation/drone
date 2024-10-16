@@ -84,7 +84,8 @@ type Config struct {
 		StickerIDs []string `yaml:"sticker_ids"`
 	} `yaml:"mocks"`
 
-	GreetingsTemplates []string `yaml:"greetings_templates"`
+	GreetingsNewUsersTemplates []string `yaml:"greetings_new_users_templates"`
+	GreetingsOldUsersTemplates []string `yaml:"greetings_old_users_templates"`
 }
 
 func (cfg Config) String() string {

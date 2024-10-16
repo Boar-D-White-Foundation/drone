@@ -33,7 +33,6 @@ func Run(name string, cmd func(context.Context, config.Config, *alert.Manager) e
 	defer stop()
 
 	if err := cmd(ctx, cfg, alerts); err != nil {
-		slog.Error("failed to run cmd", slog.Any("err", err), slog.String("cmd", name))
 		alerts.Errorxf(err, "failed to run cmd: %s", name)
 		stop()
 		os.Exit(1)

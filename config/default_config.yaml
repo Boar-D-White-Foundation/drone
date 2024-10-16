@@ -137,7 +137,7 @@ mocks:
     sticker_ids: 
       - "CAACAgEAAxkBAAEM4mBm9b3oi05lz2KXbyG35vbZnbqJsQACCAADkzooTd0mr2l96bDKNgQ"
       - "CAACAgIAAxkBAAEM4mJm9b4J1P3GcSmJNgoz7LDfy_0ULQACexoAAqr0AUsWxy9aRgffRzYE"
-greetings_templates:
+greetings_new_users_templates:
   - "%s кто тебе рассказал про чат?"
   - "%s сколько пунктов в resumeworded?"
   - "%s как дела с ДП?"
@@ -147,3 +147,5 @@ greetings_templates:
   - "%s сколько присед?"
   - "%s облизываешься на нидерландские зарплаты?"
   - "%s какой у тебя IQ?"
+greetings_old_users_templates:
+  - "%s однажды упав, в рай не возвращаются"

@@ -28,6 +28,8 @@ const (
 	keyNCPinnedMessages       = "boardwhite:neetcode:pinned_messages"
 	keyNCPinnedToStatsDayInfo = "boardwhite:neetcode:pinned_to_stats_day_info"
 	keyNCStats                = "boardwhite:neetcode:stats"
+
+	keyOnJoinGreetedUsers = "boardwhite:on_join_greeted_users"
 )
 
 var (
@@ -40,15 +42,16 @@ type MockConfig struct {
 }
 
 type Config struct {
-	LeetcodeThreadID          int
-	LeetcodeChickensThreadID  int
-	DailyStickersIDs          []string
-	DailyChickensStickerIDs   []string
-	DpStickerID               string
-	SnippetsGenerationEnabled bool
-	Mocks                     map[string]MockConfig
-	FloodThreadID             int
-	GreetingsTemplates        []string
+	LeetcodeThreadID           int
+	LeetcodeChickensThreadID   int
+	DailyStickersIDs           []string
+	DailyChickensStickerIDs    []string
+	DpStickerID                string
+	SnippetsGenerationEnabled  bool
+	Mocks                      map[string]MockConfig
+	FloodThreadID              int
+	GreetingsNewUsersTemplates []string
+	GreetingsOldUsersTemplates []string
 }
 
 type tasks struct {
@@ -111,15 +114,16 @@ func NewServiceFromConfig(
 	}
 
 	serviceCfg := Config{
-		LeetcodeThreadID:          cfg.Boardwhite.LeetCodeThreadID,
-		LeetcodeChickensThreadID:  cfg.Boardwhite.LeetcodeChickensThreadID,
-		DailyStickersIDs:          cfg.DailyStickerIDs,
-		DailyChickensStickerIDs:   cfg.DailyChickensStickerIDs,
-		DpStickerID:               cfg.DPStickerID,
-		SnippetsGenerationEnabled: cfg.Features.SnippetsGenerationEnabled,
-		Mocks:                     mocks,
-		FloodThreadID:             cfg.Boardwhite.FloodThreadID,
-		GreetingsTemplates:        cfg.GreetingsTemplates,
+		LeetcodeThreadID:           cfg.Boardwhite.LeetCodeThreadID,
+		LeetcodeChickensThreadID:   cfg.Boardwhite.LeetcodeChickensThreadID,
+		DailyStickersIDs:           cfg.DailyStickerIDs,
+		DailyChickensStickerIDs:    cfg.DailyChickensStickerIDs,
+		DpStickerID:                cfg.DPStickerID,
+		SnippetsGenerationEnabled:  cfg.Features.SnippetsGenerationEnabled,
+		Mocks:                      mocks,
+		FloodThreadID:              cfg.Boardwhite.FloodThreadID,
+		GreetingsNewUsersTemplates: cfg.GreetingsNewUsersTemplates,
+		GreetingsOldUsersTemplates: cfg.GreetingsOldUsersTemplates,
 	}
 	return NewService(serviceCfg, telegram, database, alerts, imageGenerator, lcClient)
 }

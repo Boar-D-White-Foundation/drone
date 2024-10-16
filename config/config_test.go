@@ -33,6 +33,9 @@ func TestDefault(t *testing.T) {
 	for _, mock := range cfg.Mocks {
 		assert.Equal(t, mock.StickerIDs, iterx.Uniq(mock.StickerIDs))
 	}
+
+	assert.NotEmpty(t, cfg.GreetingsNewUsersTemplates)
+	assert.NotEmpty(t, cfg.GreetingsOldUsersTemplates)
 }
 
 func TestConfigOverride(t *testing.T) {

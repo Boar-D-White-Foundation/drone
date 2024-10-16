@@ -3,32 +3,28 @@ package alert
 import (
 	"fmt"
 	"log/slog"
-
-	"github.com/boar-d-white-foundation/drone/tg"
 )
 
+type Sender interface {
+	SendAlert(msg string) error
+}
+
 type Manager struct {
-	telegram tg.Client
+	sender Sender
 }
 
 func NewManager(
-	telegram tg.Client,
+	sender Sender,
 ) *Manager {
 	return &Manager{
-		telegram: telegram,
+		sender: sender,
 	}
 }
 
 func (m *Manager) send(msg string) {
-	chunkLen := 4096
-	for i := 0; i < len(msg); i += chunkLen {
-		chunk := msg[i:min(i+chunkLen, len(msg))]
-		if _, err := m.telegram.SendMonospace(0, chunk); err != nil {
-			slog.Error(
-				"err sending alert chunk",
-				slog.Any("err", err), slog.String("msg", msg), slog.String("chunk", chunk),
-			)
-		}
+	slog.Error("sending alert", slog.String("msg", msg))
+	if err := m.sender.SendAlert(msg); err != nil {
+		slog.Error("err sending alert", slog.String("msg", msg), slog.Any("err", err))
 	}
 }
 

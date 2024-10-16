@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/iterx"
 	"gopkg.in/telebot.v3"
@@ -29,11 +30,18 @@ type Client interface {
 	Delete(id int) error
 }
 
+type AdminClient interface {
+	Client
+
+	SendAlert(msg string) error
+}
+
 type HandlerRegistry interface {
 	RegisterHandler(endpoint string, name string, f tele.HandlerFunc)
 }
 
 type Service struct {
+	alerts   *alert.Manager
 	bot      *tele.Bot
 	chatID   tele.ChatID
 	chat     *tele.Chat
@@ -43,7 +51,7 @@ type Service struct {
 var _ Client = (*Service)(nil)
 var _ HandlerRegistry = (*Service)(nil)
 
-func NewService(token string, chatID int64, longPollerTimeout time.Duration) (*Service, error) {
+func NewService(alerts *alert.Manager, token string, chatID int64, longPollerTimeout time.Duration) (*Service, error) {
 	poller := tele.LongPoller{
 		Timeout: longPollerTimeout,
 	}
@@ -60,6 +68,7 @@ func NewService(token string, chatID int64, longPollerTimeout time.Duration) (*S
 		ID: chatID,
 	}
 	return &Service{
+		alerts:   alerts,
 		bot:      bot,
 		chatID:   telebot.ChatID(chatID),
 		chat:     &chat,
@@ -67,8 +76,8 @@ func NewService(token string, chatID int64, longPollerTimeout time.Duration) (*S
 	}, nil
 }
 
-func NewBoardwhiteServiceFromConfig(cfg config.Config) (*Service, error) {
-	tgService, err := NewService(cfg.Tg.Key, cfg.Boardwhite.ChatID, cfg.Tg.LongPollerTimeout)
+func NewBoardwhiteServiceFromConfig(cfg config.Config, alerts *alert.Manager) (*Service, error) {
+	tgService, err := NewService(alerts, cfg.Tg.Key, cfg.Boardwhite.ChatID, cfg.Tg.LongPollerTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("new tg client: %w", err)
 	}
@@ -76,8 +85,9 @@ func NewBoardwhiteServiceFromConfig(cfg config.Config) (*Service, error) {
 	return tgService, nil
 }
 
-func NewAdminClientFromConfig(cfg config.Config) (Client, error) {
-	tgService, err := NewService(cfg.Tg.Key, cfg.Tg.AdminChatID, cfg.Tg.LongPollerTimeout)
+func NewAdminClientFromConfig(cfg config.Config) (AdminClient, error) {
+	// client doesn't need alerts
+	tgService, err := NewService(nil, cfg.Tg.Key, cfg.Tg.AdminChatID, cfg.Tg.LongPollerTimeout)
 	if err != nil {
 		return nil, fmt.Errorf("new tg client: %w", err)
 	}
@@ -98,16 +108,16 @@ func (s *Service) RegisterHandler(endpoint string, name string, f tele.HandlerFu
 	})
 }
 
-func wrapErrors(h handler) func(tele.Context) {
+func wrapErrors(alerts *alert.Manager, h handler) func(tele.Context) {
 	return func(c tele.Context) {
 		defer func() {
 			if err := recover(); err != nil {
-				slog.Error("panic in tg handler", slog.String("name", h.name), slog.Any("err", err))
+				alerts.Errorf("panic in tg handler %s: %s", h.name, fmt.Sprintf("%+v", err))
 			}
 		}()
 		err := h.f(c)
 		if err != nil {
-			slog.Error("err in tg handler", slog.String("name", h.name), slog.Any("err", err))
+			alerts.Errorxf(err, "err in tg handler %s", h.name)
 		}
 	}
 }
@@ -116,7 +126,7 @@ func (s *Service) Start() {
 	for endpoint, handlers := range s.handlers {
 		h := func(tc tele.Context) error {
 			for _, h := range handlers {
-				wrapErrors(h)(tc)
+				wrapErrors(s.alerts, h)(tc)
 			}
 			return nil
 		}
@@ -344,7 +354,19 @@ func (s *Service) Delete(id int) error {
 	return nil
 }
 
-func BuildMentionMarkdownV2(user *tele.User) (name string) {
+func (s *Service) SendAlert(msg string) error {
+	chunkLen := 4096
+	for i := 0; i < len(msg); i += chunkLen {
+		chunk := msg[i:min(i+chunkLen, len(msg))]
+		if _, err := s.SendMonospace(0, chunk); err != nil {
+			return fmt.Errorf("send alert chunk %q: %w", chunk, err)
+		}
+	}
+
+	return nil
+}
+
+func BuildMentionMarkdownV2(user tele.User) (name string) {
 	if len(user.Username) > 0 {
 		name = "@" + EscapeMD(user.Username)
 	} else {

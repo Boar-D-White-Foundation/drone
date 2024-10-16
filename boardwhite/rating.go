@@ -258,7 +258,7 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 			if msg == nil || msg.Sender == nil || msg.ReplyTo == nil {
 				continue
 			}
-			row.Mention = tg.BuildMentionMarkdownV2(msg.Sender)
+			row.Mention = tg.BuildMentionMarkdownV2(*msg.Sender)
 			row.Solved++
 			row.SolveTime += msg.Time().Sub(msg.ReplyTo.Time())
 
