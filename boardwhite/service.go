@@ -42,6 +42,7 @@ type MockConfig struct {
 }
 
 type Config struct {
+	ChatID                     int64
 	LeetcodeThreadID           int
 	LeetcodeChickensThreadID   int
 	DailyStickersIDs           []string
@@ -114,6 +115,7 @@ func NewServiceFromConfig(
 	}
 
 	serviceCfg := Config{
+		ChatID:                     cfg.Boardwhite.ChatID,
 		LeetcodeThreadID:           cfg.Boardwhite.LeetCodeThreadID,
 		LeetcodeChickensThreadID:   cfg.Boardwhite.LeetcodeChickensThreadID,
 		DailyStickersIDs:           cfg.DailyStickerIDs,
