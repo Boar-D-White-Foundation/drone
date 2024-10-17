@@ -11,8 +11,8 @@ import (
 )
 
 func (s *Service) OnPopulateOldGreetedUsers(ctx context.Context, c tele.Context) error {
-	sender := c.Sender()
-	if sender == nil || sender.IsBot {
+	sender, chat := c.Sender(), c.Chat()
+	if sender == nil || sender.IsBot || chat == nil || chat.ID != s.cfg.ChatID {
 		return nil
 	}
 
