@@ -34,8 +34,8 @@ func (s *Service) OnPopulateOldGreetedUsers(ctx context.Context, c tele.Context)
 }
 
 func (s *Service) OnGreetJoinedUser(ctx context.Context, c tele.Context) error {
-	msg := c.Message()
-	if msg == nil || msg.UserJoined == nil || msg.UserJoined.IsBot {
+	msg, chat := c.Message(), c.Chat()
+	if msg == nil || msg.UserJoined == nil || msg.UserJoined.IsBot || chat == nil || chat.ID != s.cfg.ChatID {
 		return nil
 	}
 
