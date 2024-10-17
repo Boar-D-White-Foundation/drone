@@ -55,6 +55,10 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 	}
 	defer database.Stop()
 
+	if err := migrate(ctx, database); err != nil {
+		return err
+	}
+
 	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, imageGenerator, lcClient)
 	if err != nil {
 		return err
