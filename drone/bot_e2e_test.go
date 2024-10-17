@@ -54,6 +54,9 @@ func TestDrone(t *testing.T) {
 	require.NoError(t, err)
 	defer database.Stop()
 
+	err = migrate(ctx, database)
+	require.NoError(t, err)
+
 	dbqRegistry := dbq.NewRegistry()
 
 	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, imageGenerator, lcClient)
