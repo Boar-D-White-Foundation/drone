@@ -18,8 +18,8 @@ func mockKey(username string) string {
 }
 
 func (s *Service) OnMock(ctx context.Context, c tele.Context) error {
-	msg, sender := c.Message(), c.Sender()
-	if msg == nil || sender == nil {
+	msg, sender, chat := c.Message(), c.Sender(), c.Chat()
+	if msg == nil || sender == nil || chat == nil || chat.ID != s.cfg.ChatID {
 		return nil
 	}
 
