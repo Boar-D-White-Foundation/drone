@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/db"
+	"github.com/boar-d-white-foundation/drone/leetcode"
+	"github.com/boar-d-white-foundation/drone/retry"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"golang.org/x/exp/slog"
 	tele "gopkg.in/telebot.v3"
@@ -105,11 +107,36 @@ func (s *Service) makeStatsHandler(
 				if len(match) < 2 {
 					return set(tg.ReactionClown)
 				}
+
+				submissionID := leetcode.SubmissionID(match[1])
+				backoff := retry.LinearBackoff{
+					Delay:       time.Millisecond * 50,
+					MaxAttempts: 3,
+				}
+				submission, err := retry.Do(
+					ctx, "get lc submission "+submissionID.String(), backoff,
+					func() (leetcode.Submission, error) {
+						submission, err := s.lcClient.GetSubmission(ctx, submissionID)
+						if err != nil {
+							return leetcode.Submission{}, fmt.Errorf("get lc submission %s: %w", submissionID, err)
+						}
+
+						return submission, err
+					},
+				)
+				if err != nil {
+					return err
+				}
+
+				if !submission.IsSolved() {
+					return set(tg.ReactionClown)
+				}
+
 				if s.cfg.SnippetsGenerationEnabled {
 					err := s.tasks.postCodeSnippet.Schedule(tx, 1, postCodeSnippetArgs{
-						MessageID:    msg.ID,
-						ThreadID:     msg.ThreadID,
-						SubmissionID: match[1],
+						MessageID:  msg.ID,
+						ThreadID:   msg.ThreadID,
+						Submission: submission,
 					})
 					if err != nil {
 						s.alerts.Errorxf(err, "err schedule post code snippet: %v", msg.Text)

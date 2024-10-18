@@ -128,7 +128,7 @@ func toJavaHighlightLang(lang leetcode.Lang) string {
 
 func (g *Generator) GenerateCodeSnippetJavaHighlight(
 	ctx context.Context,
-	submissionID string,
+	id leetcode.SubmissionID,
 	lang leetcode.Lang,
 	code string,
 ) ([]byte, error) {
@@ -137,8 +137,8 @@ func (g *Generator) GenerateCodeSnippetJavaHighlight(
 		Delay:       time.Second,
 		MaxAttempts: 2,
 	}
-	return retry.Do(ctx, "java highlight snippet "+submissionID, backoff, func() ([]byte, error) {
-		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
+	return retry.Do(ctx, "java highlight snippet "+id.String(), backoff, func() ([]byte, error) {
+		slog.Info("start generate code snippet", slog.String("submissionID", id.String()))
 		uri := fmt.Sprintf(
 			"%s/?l=%s&t=one-dark-vivid&p=30&ligatures=true",
 			g.cfg.JavaHighlightURL, toJavaHighlightLang(lang),
@@ -154,7 +154,10 @@ func (g *Generator) GenerateCodeSnippetJavaHighlight(
 		}
 		defer func() {
 			if err := resp.Body.Close(); err != nil {
-				slog.Error("err close resp body", slog.String("submissionID", submissionID), slog.Any("err", err))
+				slog.Error(
+					"err close resp body",
+					slog.String("submissionID", id.String()), slog.Any("err", err),
+				)
 			}
 		}()
 
@@ -176,7 +179,7 @@ func (g *Generator) GenerateCodeSnippetJavaHighlight(
 
 func (g *Generator) GenerateCodeSnippetCarbon(
 	ctx context.Context,
-	submissionID string,
+	id leetcode.SubmissionID,
 	lang leetcode.Lang,
 	code string,
 ) ([]byte, error) {
@@ -185,8 +188,8 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 		Delay:       time.Second,
 		MaxAttempts: 8,
 	}
-	return retry.Do(ctx, "carbon snippet "+submissionID, backoff, func() ([]byte, error) {
-		slog.Info("start generate code snippet", slog.String("submissionID", submissionID))
+	return retry.Do(ctx, "carbon snippet "+id.String(), backoff, func() ([]byte, error) {
+		slog.Info("start generate code snippet", slog.String("submissionID", id.String()))
 		uri := fmt.Sprintf(
 			"%s/?t=vscode&es=4x&l=auto&ln=false&fm=Hack&code=%s",
 			g.cfg.CarbonURL, url.QueryEscape(code),
@@ -197,13 +200,16 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 		}
 		defer func() {
 			if err := page.Close(); err != nil {
-				slog.Error("err closing page", slog.String("submissionID", submissionID), slog.Any("err", err))
+				slog.Error(
+					"err closing page",
+					slog.String("submissionID", id.String()), slog.Any("err", err),
+				)
 			}
 		}()
 		if err := page.WaitStable(200 * time.Millisecond); err != nil {
 			return nil, fmt.Errorf("wait page stabilization: %w", err)
 		}
-		slog.Info("fetched page", slog.String("submissionID", submissionID))
+		slog.Info("fetched page", slog.String("submissionID", id.String()))
 
 		codeContainer, err := page.Element(".CodeMirror__container")
 		if err != nil {
@@ -217,7 +223,7 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 			return nil, fmt.Errorf("click code container: %w", err)
 		}
 		time.Sleep(time.Second)
-		slog.Info("selected code container", slog.String("submissionID", submissionID))
+		slog.Info("selected code container", slog.String("submissionID", id.String()))
 
 		exportMenu, err := page.Element(`#export-menu`)
 		if err != nil {
@@ -229,7 +235,7 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 		if err := exportMenu.Click(proto.InputMouseButtonLeft, 1); err != nil {
 			return nil, fmt.Errorf("click export menu: %w", err)
 		}
-		slog.Info("opened export menu", slog.String("submissionID", submissionID))
+		slog.Info("opened export menu", slog.String("submissionID", id.String()))
 
 		exportBtns, err := page.Elements(".export-menu-container button")
 		if err != nil {
@@ -245,7 +251,7 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 			return nil, fmt.Errorf("click export button: %w", err)
 		}
 		time.Sleep(time.Second)
-		slog.Info("started exporting", slog.String("submissionID", submissionID))
+		slog.Info("started exporting", slog.String("submissionID", id.String()))
 
 		img, err := page.Element("body > img")
 		if err != nil {
@@ -258,7 +264,7 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 		if src == nil {
 			return nil, errors.New("src is nil")
 		}
-		slog.Info("located image", slog.String("submissionID", submissionID))
+		slog.Info("located image", slog.String("submissionID", id.String()))
 
 		buf, err := page.GetResource(*src)
 		if err != nil {
@@ -267,7 +273,7 @@ func (g *Generator) GenerateCodeSnippetCarbon(
 		if len(buf) == 0 {
 			return nil, errors.New("img data is empty")
 		}
-		slog.Info("got image data", slog.String("submissionID", submissionID))
+		slog.Info("got image data", slog.String("submissionID", id.String()))
 
 		return buf, nil
 	})
@@ -314,7 +320,7 @@ func toRaysoLang(lang leetcode.Lang) string {
 
 func (g *Generator) GenerateCodeSnippetRayso(
 	ctx context.Context,
-	submissionID string,
+	id leetcode.SubmissionID,
 	lang leetcode.Lang,
 	code string,
 ) ([]byte, error) {
@@ -323,8 +329,8 @@ func (g *Generator) GenerateCodeSnippetRayso(
 		Delay:       time.Second,
 		MaxAttempts: 8,
 	}
-	return retry.Do(ctx, "rayso snippet "+submissionID, backoff, func() ([]byte, error) {
-		slog.Info("start generate rayso code snippet", slog.String("submissionID", submissionID))
+	return retry.Do(ctx, "rayso snippet "+id.String(), backoff, func() ([]byte, error) {
+		slog.Info("start generate rayso code snippet", slog.String("submissionID", id.String()))
 		uri := fmt.Sprintf(
 			"%s/#theme=vercel&background=true&darkMode=true&padding=16&language=%s&code=%s",
 			g.cfg.RaysoURL, toRaysoLang(lang), base64.URLEncoding.EncodeToString([]byte(code)),
@@ -335,13 +341,16 @@ func (g *Generator) GenerateCodeSnippetRayso(
 		}
 		defer func() {
 			if err := page.Close(); err != nil {
-				slog.Error("err closing page", slog.String("submissionID", submissionID), slog.Any("err", err))
+				slog.Error(
+					"err closing page",
+					slog.String("submissionID", id.String()), slog.Any("err", err),
+				)
 			}
 		}()
 		if err := page.WaitStable(300 * time.Millisecond); err != nil {
 			return nil, fmt.Errorf("wait page stabilization: %w", err)
 		}
-		slog.Info("fetched page", slog.String("submissionID", submissionID))
+		slog.Info("fetched page", slog.String("submissionID", id.String()))
 
 		// TODO: change size to 6x
 		// padding via query just doesn't work for vercel theme
@@ -352,7 +361,7 @@ func (g *Generator) GenerateCodeSnippetRayso(
 		if err := paddingBt.Click(proto.InputMouseButtonLeft, 1); err != nil {
 			return nil, fmt.Errorf("click padding button: %w", err)
 		}
-		slog.Info("set padding", slog.String("submissionID", submissionID))
+		slog.Info("set padding", slog.String("submissionID", id.String()))
 
 		wait := g.browser.WaitDownload(g.cfg.RodDownloadsSaveFolder)
 		exportBtn, err := page.Element(`button[aria-label="Export as PNG"]`)
@@ -362,7 +371,7 @@ func (g *Generator) GenerateCodeSnippetRayso(
 		if err := exportBtn.Click(proto.InputMouseButtonLeft, 1); err != nil {
 			return nil, fmt.Errorf("click export button: %w", err)
 		}
-		slog.Info("started exporting", slog.String("submissionID", submissionID))
+		slog.Info("started exporting", slog.String("submissionID", id.String()))
 
 		path := filepath.Join(g.cfg.RodDownloadsGetFolder, wait().GUID)
 		defer func() {
@@ -377,7 +386,7 @@ func (g *Generator) GenerateCodeSnippetRayso(
 		if len(buf) == 0 {
 			return nil, errors.New("snippet data is empty")
 		}
-		slog.Info("got snippet data", slog.String("submissionID", submissionID))
+		slog.Info("got snippet data", slog.String("submissionID", id.String()))
 
 		return buf, nil
 	})
@@ -385,17 +394,17 @@ func (g *Generator) GenerateCodeSnippetRayso(
 
 func (g *Generator) GenerateCodeSnippet(
 	ctx context.Context,
-	submissionID string,
+	id leetcode.SubmissionID,
 	lang leetcode.Lang,
 	code string,
 ) ([]byte, error) {
 	switch {
 	case g.cfg.UseCarbon:
-		return g.GenerateCodeSnippetCarbon(ctx, submissionID, lang, code)
+		return g.GenerateCodeSnippetCarbon(ctx, id, lang, code)
 	case g.cfg.UseRayso:
-		return g.GenerateCodeSnippetRayso(ctx, submissionID, lang, code)
+		return g.GenerateCodeSnippetRayso(ctx, id, lang, code)
 	case g.cfg.UseJavaHighlight:
-		return g.GenerateCodeSnippetJavaHighlight(ctx, submissionID, lang, code)
+		return g.GenerateCodeSnippetJavaHighlight(ctx, id, lang, code)
 	}
 
 	return nil, errors.New("no preferred image generator enabled")

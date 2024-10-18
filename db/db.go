@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 )
 
 var (
@@ -116,5 +117,67 @@ func SetJson[T any](tx Tx, key string, val T) error {
 		return fmt.Errorf("set key: %w", err)
 	}
 
+	return nil
+}
+
+type appliedMigration struct {
+	ID        string    `json:"id"`
+	AppliedAt time.Time `json:"applied_at"`
+}
+
+type appliedMigrations struct {
+	Applied []appliedMigration `json:"applied"`
+}
+
+type Migration struct {
+	ID   string
+	Name string
+	Fn   func(tx Tx) error
+}
+
+func MigrateJson(ctx context.Context, db DB, appliedKey string, migrations []Migration) error {
+	slog.Info("applying migrations")
+	err := db.Do(ctx, func(tx Tx) error {
+		applied, err := GetJsonDefault(tx, appliedKey, appliedMigrations{})
+		if err != nil {
+			return fmt.Errorf("get %q: %w", appliedKey, err)
+		}
+
+		appliedIDs := make(map[string]struct{}, len(applied.Applied))
+		for _, mgr := range applied.Applied {
+			appliedIDs[mgr.ID] = struct{}{}
+		}
+
+		for _, mgr := range migrations {
+			if _, ok := appliedIDs[mgr.ID]; ok {
+				slog.Info(
+					"migration already applied, skipping",
+					slog.String("id", mgr.ID), slog.String("name", mgr.Name),
+				)
+				continue
+			}
+
+			slog.Info("applying migration", slog.String("id", mgr.ID), slog.String("name", mgr.Name))
+			if err := mgr.Fn(tx); err != nil {
+				return fmt.Errorf("apply migration %s: %w", mgr.Name, err)
+			}
+
+			applied.Applied = append(applied.Applied, appliedMigration{
+				ID:        mgr.ID,
+				AppliedAt: time.Now(),
+			})
+		}
+
+		if err := SetJson(tx, appliedKey, applied); err != nil {
+			return fmt.Errorf("set %q: %w", appliedKey, err)
+		}
+
+		return nil
+	})
+	if err != nil {
+		return err
+	}
+
+	slog.Info("migrations applied")
 	return nil
 }
