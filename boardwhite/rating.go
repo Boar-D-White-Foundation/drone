@@ -78,6 +78,13 @@ func (s *Service) getLastPublishedQuestionDayInfo(tx db.Tx, msgToDayInfoKey stri
 	return result, nil
 }
 
+func okReaction(hasComplexityEstimate bool) tg.Reaction {
+	if hasComplexityEstimate {
+		return tg.ReactionFire
+	}
+	return tg.ReactionOk
+}
+
 func (s *Service) makeStatsHandler(
 	pinnedMessagesKey string,
 	msgToDayInfoKey string,
@@ -183,8 +190,14 @@ func (s *Service) makeStatsHandler(
 				DayIdx: dayInfo.DayIdx,
 				UserID: sender.ID,
 			}
-			if _, ok := stats.Solutions[key]; ok {
-				return set(tg.ReactionOk) // keep only first solution to not ruin solve time stats
+
+			oldSol, ok := stats.Solutions[key]
+			hasComplexityEstimate := !ratingOpts.noComplexityEstimations && extractEstimatedComplexity(*msg).isFull()
+			oldSolhasComplexityEstimate := !ratingOpts.noComplexityEstimations && oldSol.Update.Message != nil &&
+				extractEstimatedComplexity(*oldSol.Update.Message).isFull()
+
+			if ok && (ratingOpts.noComplexityEstimations || oldSolhasComplexityEstimate || !hasComplexityEstimate) {
+				return set(okReaction(hasComplexityEstimate)) // keep only first solution to not ruin solve time stats
 			}
 
 			stats.Solutions[key] = solution{Update: update}
@@ -193,14 +206,7 @@ func (s *Service) makeStatsHandler(
 				return fmt.Errorf("set stats: %w", err)
 			}
 
-			var okReaction tg.Reaction
-			if !ratingOpts.noComplexityEstimations && extractEstimatedComplexity(*msg).isFull() {
-				okReaction = tg.ReactionFire
-			} else {
-				okReaction = tg.ReactionOk
-			}
-
-			return set(okReaction)
+			return set(okReaction(hasComplexityEstimate))
 		})
 	}
 }
