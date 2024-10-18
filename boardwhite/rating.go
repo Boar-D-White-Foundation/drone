@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"slices"
 	"sort"
 	"strconv"
@@ -17,6 +18,8 @@ import (
 	"golang.org/x/exp/slog"
 	tele "gopkg.in/telebot.v3"
 )
+
+var estimatedComplexityRe = regexp.MustCompile(`[OoоО]\s?\((.+)\)[^OoоО]*[OoоО]\s?\((.+)\)`)
 
 type solutionKey struct {
 	DayIdx int64 `json:"day_idx"` // subsequent days must have values v, v+1
@@ -79,6 +82,7 @@ func (s *Service) makeStatsHandler(
 	pinnedMessagesKey string,
 	msgToDayInfoKey string,
 	statsKey string,
+	ratingOpts ratingOpts,
 ) func(context.Context, tele.Context) error {
 	return func(ctx context.Context, c tele.Context) error {
 		update, msg, sender := c.Update(), c.Message(), c.Sender()
@@ -189,7 +193,14 @@ func (s *Service) makeStatsHandler(
 				return fmt.Errorf("set stats: %w", err)
 			}
 
-			return set(tg.ReactionOk)
+			var okReaction tg.Reaction
+			if !ratingOpts.noComplexityEstimations && extractEstimatedComplexity(*msg).isFull() {
+				okReaction = tg.ReactionFire
+			} else {
+				okReaction = tg.ReactionOk
+			}
+
+			return set(okReaction)
 		})
 	}
 }
@@ -197,6 +208,7 @@ func (s *Service) makeStatsHandler(
 func (s *Service) publishRating(
 	ctx context.Context,
 	questionsToInclude int,
+	opts ratingOpts,
 	header string,
 	threadID int,
 	msgToDayInfoKey string,
@@ -217,8 +229,8 @@ func (s *Service) publishRating(
 			return fmt.Errorf("get stats: %w", err)
 		}
 
-		rating := buildRating(stats, lastDayInfo.DayIdx-int64(questionsToInclude)+1, lastDayInfo.DayIdx)
-		if len(rating) == 0 {
+		rating := buildRating(stats, lastDayInfo.DayIdx-int64(questionsToInclude)+1, lastDayInfo.DayIdx, opts)
+		if len(rating.rows) == 0 {
 			slog.Info("rating is empty skipping posting", slog.String("header", header))
 			return nil
 		}
@@ -233,11 +245,12 @@ func (s *Service) publishRating(
 }
 
 type ratingRow struct {
-	Mention       string
-	Solved        int
-	CurrentStreak int
-	MaxStreak     int
-	SolveTime     time.Duration
+	Mention             string
+	Solved              int
+	CurrentStreak       int
+	MaxStreak           int
+	ComplexityEstimates int
+	SolveTime           time.Duration
 }
 
 func (r ratingRow) less(other ratingRow) bool {
@@ -250,12 +263,49 @@ func (r ratingRow) less(other ratingRow) bool {
 	if r.MaxStreak != other.MaxStreak {
 		return -r.MaxStreak < -other.MaxStreak
 	}
+	if r.ComplexityEstimates != other.ComplexityEstimates {
+		return -r.ComplexityEstimates < -other.ComplexityEstimates
+	}
 	return r.SolveTime < other.SolveTime
 }
 
-type rating []ratingRow
+type ratingOpts struct {
+	noComplexityEstimations bool
+}
 
-func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
+type rating struct {
+	rows []ratingRow
+	opts ratingOpts
+}
+
+type complexity struct {
+	time   string
+	memory string
+}
+
+func (c complexity) isFull() bool {
+	return len(c.time) > 0 && len(c.memory) > 0
+}
+
+func extractEstimatedComplexity(msg tele.Message) complexity {
+	var text string
+	if len(msg.Caption) > 0 {
+		text = msg.Caption
+	} else {
+		text = msg.Text
+	}
+	match := estimatedComplexityRe.FindStringSubmatch(text)
+	if len(match) < 3 {
+		return complexity{}
+	}
+
+	return complexity{
+		time:   match[1],
+		memory: match[2],
+	}
+}
+
+func buildRating(stats stats, dayIdxFrom, dayIdxTo int64, opts ratingOpts) rating {
 	type userSolution struct {
 		solutionKey
 		solution
@@ -272,7 +322,7 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 		})
 	}
 
-	result := make(rating, 0, len(userSolutions))
+	rows := make([]ratingRow, 0, len(userSolutions))
 	for _, solutions := range userSolutions {
 		sort.Slice(solutions, func(i, j int) bool {
 			return solutions[i].DayIdx < solutions[j].DayIdx
@@ -288,6 +338,9 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 			row.Mention = tg.BuildMentionMarkdownV2(*msg.Sender)
 			row.Solved++
 			row.SolveTime += msg.Time().Sub(msg.ReplyTo.Time())
+			if !opts.noComplexityEstimations && extractEstimatedComplexity(*msg).isFull() {
+				row.ComplexityEstimates++
+			}
 
 			if sol.DayIdx-currIdx > 1 {
 				maxStreak = max(maxStreak, currStreak)
@@ -302,25 +355,32 @@ func buildRating(stats stats, dayIdxFrom, dayIdxTo int64) rating {
 		}
 		row.CurrentStreak = currStreak
 		row.MaxStreak = max(maxStreak, currStreak)
-		result = append(result, row)
+		rows = append(rows, row)
 	}
 
-	sort.Slice(result, func(i, j int) bool {
-		return result[i].less(result[j])
+	sort.Slice(rows, func(i, j int) bool {
+		return rows[i].less(rows[j])
 	})
-	return result
+	return rating{
+		rows: rows,
+		opts: opts,
+	}
 }
 
 func (r rating) toMarkdownV2(header string) string {
 	var buf strings.Builder
-	buf.Grow(len(header) + len(r)*30)
+	buf.Grow(len(header) + len(r.rows)*30)
 	buf.WriteString(tg.EscapeMD(header) + "\n")
-	for _, row := range r {
+	for _, row := range r.rows {
 		solveTime := tg.EscapeMD(fmt.Sprintf("%.1fh", row.SolveTime.Hours()))
 		buf.WriteString(fmt.Sprintf(
-			"%s \\- solved %d, streak %d, max streak %d, total time %s\n",
-			row.Mention, row.Solved, row.CurrentStreak, row.MaxStreak, solveTime,
+			"%s \\- solved %d, streak %d, max streak %d, ",
+			row.Mention, row.Solved, row.CurrentStreak, row.MaxStreak,
 		))
+		if !r.opts.noComplexityEstimations {
+			buf.WriteString(fmt.Sprintf("O(f) estimates %d, ", row.ComplexityEstimates))
+		}
+		buf.WriteString(fmt.Sprintf("total time %s\n", solveTime))
 	}
 	return buf.String()
 }

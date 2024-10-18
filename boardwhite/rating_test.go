@@ -18,13 +18,15 @@ func TestBuildRating(t *testing.T) {
 	err := json.Unmarshal(rawNCStats, &stats)
 	require.NoError(t, err)
 
-	rating := buildRating(stats, 6, 8)
-	require.Len(t, rating, 10)
-	require.Equal(t, "@faucct", rating[0].Mention)
-	require.Equal(t, 3, rating[0].Solved)
-	for _, row := range rating {
+	rating := buildRating(stats, 6, 8, ratingOpts{})
+	require.Len(t, rating.rows, 10)
+	require.Equal(t, "@cauchy2384", rating.rows[0].Mention)
+	require.Equal(t, 3, rating.rows[0].Solved)
+	for _, row := range rating.rows {
 		require.LessOrEqual(t, row.MaxStreak, row.Solved)
 		require.LessOrEqual(t, row.CurrentStreak, row.Solved)
 		require.LessOrEqual(t, row.CurrentStreak, row.MaxStreak)
 	}
+
+	require.NotEmpty(t, rating.toMarkdownV2("header"))
 }

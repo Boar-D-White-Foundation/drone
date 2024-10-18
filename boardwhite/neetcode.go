@@ -75,6 +75,7 @@ func (s *Service) PublishNCRating(ctx context.Context) error {
 	return s.publishRating(
 		ctx,
 		35,
+		ratingOpts{},
 		"Neetcode leaderboard (last 35 questions):",
 		s.cfg.LeetcodeThreadID,
 		keyNCPinnedToStatsDayInfo,

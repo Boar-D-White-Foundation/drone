@@ -13,16 +13,19 @@ func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegis
 		keyLCPinnedMessages,
 		keyLCPinnedToStatsDayInfo,
 		keyLCStats,
+		ratingOpts{},
 	)
 	lcChickensStatsHandler := s.makeStatsHandler(
 		keyLCChickensPinnedMessages,
 		keyLCChickensPinnedToStatsDayInfo,
 		keyLCChickensStats,
+		ratingOpts{noComplexityEstimations: true},
 	)
 	ncStatsHandler := s.makeStatsHandler(
 		keyNCPinnedMessages,
 		keyNCPinnedToStatsDayInfo,
 		keyNCStats,
+		ratingOpts{},
 	)
 
 	registry.RegisterHandler(tele.OnText, "OnLeetCodeUpdateText", withContext(ctx, lcStatsHandler))

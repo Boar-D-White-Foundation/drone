@@ -54,6 +54,7 @@ func (s *Service) PublishLCRating(ctx context.Context) error {
 	return s.publishRating(
 		ctx,
 		35,
+		ratingOpts{},
 		"Leetcode leaderboard (last 35 questions):",
 		s.cfg.LeetcodeThreadID,
 		keyLCPinnedToStatsDayInfo,
@@ -173,6 +174,7 @@ func (s *Service) PublishLCChickensRating(ctx context.Context) error {
 	return s.publishRating(
 		ctx,
 		35,
+		ratingOpts{noComplexityEstimations: true},
 		"Leetcode easy leaderboard (last 35 questions):",
 		s.cfg.LeetcodeChickensThreadID,
 		keyLCChickensPinnedToStatsDayInfo,
