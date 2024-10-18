@@ -24,6 +24,8 @@ const (
 				memoryPercentile
 				code
 				statusCode
+				totalCorrect
+        		totalTestcases
 				lang {
 					name
 				}
@@ -138,6 +140,8 @@ type submission struct {
 			MemoryPercentile  float64 `json:"memoryPercentile"`
 			Code              string  `json:"code"`
 			StatusCode        int     `json:"statusCode"`
+			TotalCorrect      int     `json:"totalCorrect"`
+			TotalTestcases    int     `json:"totalTestcases"`
 			Lang              struct {
 				Name Lang `json:"name"`
 			} `json:"lang"`
@@ -145,18 +149,31 @@ type submission struct {
 	} `json:"data"`
 }
 
-type Submission struct {
-	Runtime           int
-	RuntimePercentile float64
-	Memory            int
-	MemoryPercentile  float64
-	Code              string
-	Lang              Lang
+type SubmissionID string
+
+func (sid SubmissionID) String() string {
+	return string(sid)
 }
 
-func (c *Client) GetSubmission(ctx context.Context, id string) (Submission, error) {
+type Submission struct {
+	ID                SubmissionID `json:"id"`
+	Runtime           int          `json:"runtime"`
+	RuntimePercentile float64      `json:"runtime_percentile"`
+	Memory            int          `json:"memory"`
+	MemoryPercentile  float64      `json:"memory_percentile"`
+	Code              string       `json:"code"`
+	Lang              Lang         `json:"lang"`
+	TotalCorrect      int          `json:"total_correct"`
+	TotalTestcases    int          `json:"total_testcases"`
+}
+
+func (s Submission) IsSolved() bool {
+	return s.TotalCorrect == s.TotalTestcases
+}
+
+func (c *Client) GetSubmission(ctx context.Context, id SubmissionID) (Submission, error) {
 	type args struct {
-		SubmissionID string `json:"submissionId"`
+		SubmissionID SubmissionID `json:"submissionId"`
 	}
 	gqr := gqReq{
 		Method: "submissionDetails",
@@ -209,11 +226,14 @@ func (c *Client) GetSubmission(ctx context.Context, id string) (Submission, erro
 	}
 
 	return Submission{
+		ID:                id,
 		Runtime:           raw.Data.SubmissionDetails.Runtime,
 		RuntimePercentile: raw.Data.SubmissionDetails.RuntimePercentile,
 		Memory:            raw.Data.SubmissionDetails.Memory,
 		MemoryPercentile:  raw.Data.SubmissionDetails.MemoryPercentile,
 		Code:              raw.Data.SubmissionDetails.Code,
 		Lang:              raw.Data.SubmissionDetails.Lang.Name,
+		TotalCorrect:      raw.Data.SubmissionDetails.TotalCorrect,
+		TotalTestcases:    raw.Data.SubmissionDetails.TotalTestcases,
 	}, nil
 }

@@ -7,6 +7,7 @@ import (
 
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
+	"github.com/boar-d-white-foundation/drone/leetcode"
 )
 
 func (s *Service) RegisterTasks(registry *dbq.Registry) error {
@@ -20,19 +21,14 @@ func (s *Service) RegisterTasks(registry *dbq.Registry) error {
 }
 
 type postCodeSnippetArgs struct {
-	MessageID    int    `json:"message_id"`
-	ThreadID     int    `json:"thread_id"`
-	SubmissionID string `json:"submission_id"`
+	MessageID  int                 `json:"message_id"`
+	ThreadID   int                 `json:"thread_id"`
+	Submission leetcode.Submission `json:"submission"`
 }
 
 func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSnippetArgs) error {
-	submission, err := s.lcClient.GetSubmission(ctx, args.SubmissionID)
-	if err != nil {
-		s.alerts.Errorxf(err, "err get submission: %+v", args)
-		return fmt.Errorf("get submission: %w", err)
-	}
-
-	snippet, err := s.imageGenerator.GenerateCodeSnippet(ctx, args.SubmissionID, submission.Lang, submission.Code)
+	sub := args.Submission
+	snippet, err := s.imageGenerator.GenerateCodeSnippet(ctx, sub.ID, sub.Lang, sub.Code)
 	if err != nil {
 		s.alerts.Errorxf(err, "err generate snippet: %+v", args)
 		return fmt.Errorf("generate snippet: %w", err)
@@ -42,10 +38,10 @@ func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSn
 	if args.ThreadID != s.cfg.LeetcodeChickensThreadID {
 		caption = fmt.Sprintf(
 			"Runtime beats %.0f%%\nMemory beats %.0f%%",
-			submission.RuntimePercentile, submission.MemoryPercentile,
+			sub.RuntimePercentile, sub.MemoryPercentile,
 		)
 	}
-	imgName := fmt.Sprintf("submission_%s.png", args.SubmissionID)
+	imgName := fmt.Sprintf("submission_%s.png", sub.ID)
 	_, err = s.telegram.ReplyWithSpoilerPhoto(
 		args.MessageID,
 		caption,
