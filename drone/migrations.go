@@ -14,6 +14,7 @@ const (
 func migrate(ctx context.Context, database db.DB) error {
 	return db.MigrateJson(ctx, database, keyAppliedMigrations, []db.Migration{
 		{ID: "0001", Name: "add_default_greeted_users", Fn: addDefaultGreetedUsers},
+		{ID: "0002", Name: "drop_poisoned_db_queue", Fn: dropPoisonedDBQueue},
 	})
 }
 
@@ -28,6 +29,15 @@ func addDefaultGreetedUsers(tx db.Tx) error {
 		greetedUsers[uid] = struct{}{}
 	}
 	if err := db.SetJson(tx, key, greetedUsers); err != nil {
+		return fmt.Errorf("set %q: %w", key, err)
+	}
+
+	return nil
+}
+
+func dropPoisonedDBQueue(tx db.Tx) error {
+	key := "dbq:queue:boardwhite:post_code_snippet"
+	if err := db.SetJson[*int](tx, key, nil); err != nil {
 		return fmt.Errorf("set %q: %w", key, err)
 	}
 

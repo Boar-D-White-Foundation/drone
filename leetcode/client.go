@@ -120,6 +120,49 @@ func NewLang(raw string) Lang {
 	}
 }
 
+func (l Lang) String() string {
+	switch l {
+	case LangCPP:
+		return "cpp"
+	case LangJava:
+		return "java"
+	case LangPy2:
+		return "python"
+	case LangPy3:
+		return "python3"
+	case LangC:
+		return "c"
+	case LangCSharp:
+		return "csharp"
+	case LangJS:
+		return "javascript"
+	case LangTS:
+		return "typescript"
+	case LangPHP:
+		return "php"
+	case LangSwift:
+		return "swift"
+	case LangKotlin:
+		return "kotlin"
+	case LangGO:
+		return "golang"
+	case LangRuby:
+		return "ruby"
+	case LangScala:
+		return "scala"
+	case LangRust:
+		return "rust"
+	case LangRacket:
+		return "racket"
+	default:
+		return ""
+	}
+}
+
+func (l Lang) MarshalText() ([]byte, error) {
+	return []byte(l.String()), nil
+}
+
 func (l *Lang) UnmarshalText(data []byte) error {
 	*l = NewLang(string(data))
 	return nil
