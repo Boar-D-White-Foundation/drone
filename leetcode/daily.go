@@ -34,6 +34,23 @@ func NewDifficulty(raw string) Difficulty {
 	}
 }
 
+func (d Difficulty) String() string {
+	switch d {
+	case DifficultyEasy:
+		return "Easy"
+	case DifficultyMedium:
+		return "Medium"
+	case DifficultyHard:
+		return "Hard"
+	default:
+		return ""
+	}
+}
+
+func (d Difficulty) MarshalText() ([]byte, error) {
+	return []byte(d.String()), nil
+}
+
 func (d *Difficulty) UnmarshalText(data []byte) error {
 	*d = NewDifficulty(string(data))
 	return nil

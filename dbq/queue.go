@@ -2,6 +2,7 @@ package dbq
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -198,7 +199,17 @@ func (t Task[T]) Schedule(tx db.Tx, retries int, args T) error {
 		Args: args,
 	}
 	queue = append(queue, dbt)
-	if err := db.SetJson(tx, key, queue); err != nil {
+
+	bytes, err := json.Marshal(queue)
+	if err != nil {
+		return fmt.Errorf("marshall queue: %w", err)
+	}
+	// just a sanity check to not poison the queue with unmarshallable messages
+	var unmarshalled []dbTask[T]
+	if err := json.Unmarshal(bytes, &unmarshalled); err != nil {
+		return fmt.Errorf("unmarshall queue: %w", err)
+	}
+	if err := tx.Set([]byte(key), bytes); err != nil {
 		return fmt.Errorf("set queue %q: %w", key, err)
 	}
 
