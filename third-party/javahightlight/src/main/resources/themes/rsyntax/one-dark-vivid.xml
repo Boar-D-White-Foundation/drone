@@ -57,9 +57,9 @@
         <style token="SEPARATOR" fg="E8E2B7" />
         <style token="VARIABLE" fg="ae9fbf" bold="true" />
         <style token="WHITESPACE" fg="E0E2E4" />
-        <style token="ERROR_IDENTIFIER" fg="E0E2E4" bg="04790e" />
-        <style token="ERROR_NUMBER_FORMAT" fg="E0E2E4" bg="04790e" />
-        <style token="ERROR_STRING_DOUBLE" fg="E0E2E4" bg="04790e" />
-        <style token="ERROR_CHAR" fg="E0E2E4" bg="04790e" />
+        <style token="ERROR_IDENTIFIER" fg="D4D4D4" />
+        <style token="ERROR_NUMBER_FORMAT" fg="D4D4D4" />
+        <style token="ERROR_STRING_DOUBLE" fg="D4D4D4" />
+        <style token="ERROR_CHAR" fg="D4D4D4" />
     </tokenStyles>
 </RSyntaxTheme>

@@ -29,7 +29,7 @@ func TestSnippetsGeneration(t *testing.T) {
 	err = imageGenerator.WarmUpCaches(ctx)
 	require.NoError(t, err)
 
-	codeBytes, err := os.ReadFile("./image/generator_e2e_test.go")
+	codeBytes, err := os.ReadFile("./image/testdata/main.rs")
 	require.NoError(t, err)
 	code := string(codeBytes)
 
