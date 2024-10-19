@@ -193,10 +193,10 @@ func (s *Service) makeStatsHandler(
 
 			oldSol, ok := stats.Solutions[key]
 			hasComplexityEstimate := !ratingOpts.noComplexityEstimations && extractEstimatedComplexity(*msg).isFull()
-			oldSolhasComplexityEstimate := !ratingOpts.noComplexityEstimations && oldSol.Update.Message != nil &&
+			oldSolHasComplexityEstimate := !ratingOpts.noComplexityEstimations && oldSol.Update.Message != nil &&
 				extractEstimatedComplexity(*oldSol.Update.Message).isFull()
 
-			if ok && (ratingOpts.noComplexityEstimations || oldSolhasComplexityEstimate || !hasComplexityEstimate) {
+			if ok && (ratingOpts.noComplexityEstimations || oldSolHasComplexityEstimate || !hasComplexityEstimate) {
 				return set(okReaction(hasComplexityEstimate)) // keep only first solution to not ruin solve time stats
 			}
 
