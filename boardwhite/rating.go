@@ -384,7 +384,7 @@ func (r rating) toMarkdownV2(header string) string {
 			row.Mention, row.Solved, row.CurrentStreak, row.MaxStreak,
 		))
 		if !r.opts.noComplexityEstimations {
-			buf.WriteString(fmt.Sprintf("O(f) estimates %d, ", row.ComplexityEstimates))
+			buf.WriteString(tg.EscapeMD(fmt.Sprintf("O(f) estimates %d, ", row.ComplexityEstimates)))
 		}
 		buf.WriteString(fmt.Sprintf("total time %s\n", solveTime))
 	}
