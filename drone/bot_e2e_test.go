@@ -16,8 +16,8 @@ import (
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
-	"github.com/boar-d-white-foundation/drone/image"
 	"github.com/boar-d-white-foundation/drone/leetcode"
+	"github.com/boar-d-white-foundation/drone/media"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/stretchr/testify/require"
 	tele "gopkg.in/telebot.v3"
@@ -40,8 +40,8 @@ func TestDrone(t *testing.T) {
 	require.NoError(t, err)
 	defer cleanup()
 
-	imageGenerator := image.NewGeneratorFromCfg(cfg, browser)
-	err = imageGenerator.WarmUpCaches(ctx)
+	mediaGenerator := media.NewGeneratorFromCfg(cfg, browser)
+	err = mediaGenerator.WarmUpCaches(ctx)
 	require.NoError(t, err)
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
@@ -59,7 +59,7 @@ func TestDrone(t *testing.T) {
 
 	dbqRegistry := dbq.NewRegistry()
 
-	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, imageGenerator, lcClient)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, mediaGenerator, lcClient)
 	require.NoError(t, err)
 
 	// act

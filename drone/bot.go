@@ -12,8 +12,8 @@ import (
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
-	"github.com/boar-d-white-foundation/drone/image"
 	"github.com/boar-d-white-foundation/drone/leetcode"
+	"github.com/boar-d-white-foundation/drone/media"
 	"github.com/boar-d-white-foundation/drone/tg"
 	"github.com/go-co-op/gocron/v2"
 )
@@ -28,7 +28,7 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 		}
 	}()
 
-	var imageGenerator *image.Generator
+	var mediaGenerator *media.Generator
 	if cfg.Features.SnippetsGenerationEnabled {
 		browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
 		if err != nil {
@@ -36,8 +36,8 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 		}
 		defer cleanup()
 
-		imageGenerator = image.NewGeneratorFromCfg(cfg, browser)
-		if err := imageGenerator.WarmUpCaches(ctx); err != nil {
+		mediaGenerator = media.NewGeneratorFromCfg(cfg, browser)
+		if err := mediaGenerator.WarmUpCaches(ctx); err != nil {
 			return fmt.Errorf("fonts cache loading: %w", err)
 		}
 	}
@@ -59,7 +59,7 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 		return err
 	}
 
-	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, imageGenerator, lcClient)
+	bw, err := boardwhite.NewServiceFromConfig(cfg, tgService, database, alerts, mediaGenerator, lcClient)
 	if err != nil {
 		return err
 	}

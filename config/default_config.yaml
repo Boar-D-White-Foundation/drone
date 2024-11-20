@@ -9,7 +9,7 @@ rod:
   host: "rod" # inside docker, for local use "docker run --rm -p 7317:7317 ghcr.io/go-rod/rod:v0.116.1" and 127.0.0.1 as host
   port: 7317
   downloads_folder: "/opt/drone/data/rod/downloads"
-image_generator:
+media_generator:
   carbon_url: "http://carbon:3000"
   rayso_url: "http://rayso:3001"
   javahighlight_url: "http://javahighlight:3002"

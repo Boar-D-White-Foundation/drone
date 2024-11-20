@@ -10,29 +10,6 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-func (s *Service) OnPopulateOldGreetedUsers(ctx context.Context, c tele.Context) error {
-	sender, chat := c.Sender(), c.Chat()
-	if sender == nil || sender.IsBot || chat == nil || chat.ID != s.cfg.ChatID {
-		return nil
-	}
-
-	return s.database.Do(ctx, func(tx db.Tx) error {
-		greetedUsers, err := db.GetJsonDefault(tx, keyOnJoinGreetedUsers, make(map[int64]struct{}))
-		if err != nil {
-			return fmt.Errorf("get greetedUsers: %w", err)
-		}
-
-		if _, ok := greetedUsers[sender.ID]; !ok {
-			greetedUsers[sender.ID] = struct{}{}
-			if err := db.SetJson(tx, keyOnJoinGreetedUsers, greetedUsers); err != nil {
-				return fmt.Errorf("set keyOnJoinGreetedUsers: %w", err)
-			}
-		}
-
-		return nil
-	})
-}
-
 func (s *Service) OnGreetJoinedUser(ctx context.Context, c tele.Context) error {
 	msg, chat := c.Message(), c.Chat()
 	if msg == nil || msg.UserJoined == nil || msg.UserJoined.IsBot || chat == nil || chat.ID != s.cfg.ChatID {
