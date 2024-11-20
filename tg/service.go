@@ -24,6 +24,7 @@ type Client interface {
 	SendSticker(threadID int, stickerID string) (int, error)
 	ReplyWithSticker(messageID int, stickerID string) (int, error)
 	ReplyWithSpoilerPhoto(messageID int, caption, name, mime string, reader io.ReadSeeker) (int, error)
+	ReplyWithDocument(messageID int, name, mime string, reader io.ReadSeeker) (int, error)
 	Pin(id int) error
 	Unpin(id int) error
 	SetReaction(messageID int, reaction Reaction, isBig bool) error
@@ -300,6 +301,25 @@ func (s *Service) ReplyWithSpoilerPhoto(messageID int, caption, name, mime strin
 	}
 	if err != nil {
 		return 0, fmt.Errorf("reply with spoiler photo: %w", err)
+	}
+
+	return message.ID, nil
+}
+
+func (s *Service) ReplyWithDocument(messageID int, name, mime string, reader io.ReadSeeker) (int, error) {
+	opts := tele.SendOptions{
+		ReplyTo: &tele.Message{
+			ID: messageID,
+		},
+	}
+	doc := tele.Document{
+		File:     tele.FromReader(reader),
+		FileName: name,
+		MIME:     mime,
+	}
+	message, err := s.bot.Send(s.chatID, &doc, &opts)
+	if err != nil {
+		return 0, fmt.Errorf("reply with document: %w", err)
 	}
 
 	return message.ID, nil

@@ -1,4 +1,4 @@
-package image
+package media
 
 import (
 	"context"
@@ -31,6 +31,8 @@ type GeneratorConfig struct {
 	UseJavaHighlight       bool
 	RodDownloadsSaveFolder string
 	RodDownloadsGetFolder  string
+	VCDomain               string
+	VCToken                string
 }
 
 type Generator struct {
@@ -57,14 +59,16 @@ func NewGeneratorFromCfg(
 ) *Generator {
 	return NewGenerator(
 		GeneratorConfig{
-			CarbonURL:              cfg.ImageGenerator.CarbonURL,
-			RaysoURL:               cfg.ImageGenerator.RaysoURL,
-			JavaHighlightURL:       cfg.ImageGenerator.JavaHighlightURL,
-			UseCarbon:              cfg.ImageGenerator.UseCarbon,
-			UseRayso:               cfg.ImageGenerator.UseRayso,
-			UseJavaHighlight:       cfg.ImageGenerator.UseJavaHighlight,
+			CarbonURL:              cfg.MediaGenerator.CarbonURL,
+			RaysoURL:               cfg.MediaGenerator.RaysoURL,
+			JavaHighlightURL:       cfg.MediaGenerator.JavaHighlightURL,
+			UseCarbon:              cfg.MediaGenerator.UseCarbon,
+			UseRayso:               cfg.MediaGenerator.UseRayso,
+			UseJavaHighlight:       cfg.MediaGenerator.UseJavaHighlight,
 			RodDownloadsSaveFolder: cfg.Rod.DownloadsFolder,
-			RodDownloadsGetFolder:  cfg.ImageGenerator.RodDownloadsFolder,
+			RodDownloadsGetFolder:  cfg.MediaGenerator.RodDownloadsFolder,
+			VCDomain:               cfg.VC.Domain,
+			VCToken:                cfg.VC.Token,
 		},
 		browser,
 	)
@@ -408,4 +412,67 @@ func (g *Generator) GenerateCodeSnippet(
 	}
 
 	return nil, errors.New("no preferred image generator enabled")
+}
+
+func (g *Generator) GenerateVCPagePdf(
+	ctx context.Context,
+	link string,
+) ([]byte, error) {
+	backoff := retry.LinearBackoff{
+		Delay:       time.Second,
+		MaxAttempts: 8,
+	}
+	return retry.Do(ctx, "vc page pdf "+link, backoff, func() ([]byte, error) {
+		slog.Info("start generate vc page pdf", slog.String("link", link))
+		err := g.browser.SetCookies([]*proto.NetworkCookieParam{{
+			Name:   "token",
+			Value:  g.cfg.VCToken,
+			Domain: g.cfg.VCDomain,
+		}})
+		if err != nil {
+			return nil, fmt.Errorf("set auth cookies: %w", err)
+		}
+		time.Sleep(time.Second)
+
+		page, err := g.browser.Timeout(30 * time.Second).Page(proto.TargetCreateTarget{URL: link})
+		if err != nil {
+			return nil, fmt.Errorf("fetch rayso page: %w", err)
+		}
+		defer func() {
+			if err := page.Close(); err != nil {
+				slog.Error("err closing page", slog.String("link", link), slog.Any("err", err))
+			}
+		}()
+		if err := page.WaitStable(300 * time.Millisecond); err != nil {
+			return nil, fmt.Errorf("wait page stabilization: %w", err)
+		}
+		slog.Info("fetched page", slog.String("link", link))
+
+		menuRight, err := page.Element(`.menu-right`)
+		if err != nil {
+			return nil, fmt.Errorf("get menu right: %w", err)
+		}
+		if err := menuRight.Remove(); err != nil {
+			return nil, fmt.Errorf("remove menu right: %w", err)
+		}
+		slog.Info("removed menu right", slog.String("link", link))
+
+		commentsForm, err := page.Element(`#post-comments-form`)
+		if err != nil {
+			return nil, fmt.Errorf("get comments form: %w", err)
+		}
+		if err := commentsForm.Remove(); err != nil {
+			return nil, fmt.Errorf("remove comments form: %w", err)
+		}
+		slog.Info("removed comments form", slog.String("link", link))
+
+		slog.Info("start pdf generation", slog.String("link", link))
+		reader, err := page.PDF(&proto.PagePrintToPDF{})
+		if err != nil {
+			return nil, fmt.Errorf("get pdf: %w", err)
+		}
+		slog.Info("generate pdf ok", slog.String("link", link))
+
+		return io.ReadAll(reader)
+	})
 }

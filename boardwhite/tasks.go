@@ -28,7 +28,7 @@ type postCodeSnippetArgs struct {
 
 func (s *Service) postCodeSnippet(ctx context.Context, tx db.Tx, args postCodeSnippetArgs) error {
 	sub := args.Submission
-	snippet, err := s.imageGenerator.GenerateCodeSnippet(ctx, sub.ID, sub.Lang, sub.Code)
+	snippet, err := s.mediaGenerator.GenerateCodeSnippet(ctx, sub.ID, sub.Lang, sub.Code)
 	if err != nil {
 		s.alerts.Errorxf(err, "err generate snippet: %+v", args)
 		return fmt.Errorf("generate snippet: %w", err)

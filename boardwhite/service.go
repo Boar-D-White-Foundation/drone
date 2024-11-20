@@ -4,14 +4,15 @@ import (
 	"fmt"
 	"log/slog"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/boar-d-white-foundation/drone/alert"
 	"github.com/boar-d-white-foundation/drone/config"
 	"github.com/boar-d-white-foundation/drone/db"
 	"github.com/boar-d-white-foundation/drone/dbq"
-	"github.com/boar-d-white-foundation/drone/image"
 	"github.com/boar-d-white-foundation/drone/leetcode"
+	"github.com/boar-d-white-foundation/drone/media"
 	"github.com/boar-d-white-foundation/drone/tg"
 )
 
@@ -66,8 +67,9 @@ type Service struct {
 	telegram           tg.Client
 	lcChickenQuestions lcChickenQuestions
 	alerts             *alert.Manager
-	imageGenerator     *image.Generator
+	mediaGenerator     *media.Generator
 	lcClient           *leetcode.Client
+	vcLinkRe           *regexp.Regexp
 }
 
 func NewService(
@@ -75,8 +77,9 @@ func NewService(
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
-	imageGenerator *image.Generator,
+	mediaGenerator *media.Generator,
 	lcClient *leetcode.Client,
+	vcLinkRe *regexp.Regexp,
 ) (*Service, error) {
 	questions, err := newLCChickenQuestions()
 	if err != nil {
@@ -89,8 +92,9 @@ func NewService(
 		telegram:           telegram,
 		lcChickenQuestions: questions,
 		alerts:             alerts,
-		imageGenerator:     imageGenerator,
+		mediaGenerator:     mediaGenerator,
 		lcClient:           lcClient,
+		vcLinkRe:           vcLinkRe,
 	}, nil
 }
 
@@ -99,7 +103,7 @@ func NewServiceFromConfig(
 	telegram tg.Client,
 	database db.DB,
 	alerts *alert.Manager,
-	imageGenerator *image.Generator,
+	mediaGenerator *media.Generator,
 	lcClient *leetcode.Client,
 ) (*Service, error) {
 	mocks := make(map[string]MockConfig)
@@ -114,6 +118,10 @@ func NewServiceFromConfig(
 		}
 	}
 
+	vcLinkRe := regexp.MustCompile(fmt.Sprintf(
+		`^\/pdf.+(?P<link>https:\/\/%s\/[^\/]+\/\d+)`,
+		strings.Replace(cfg.VC.Domain, ".", `\.`, -1),
+	))
 	serviceCfg := Config{
 		ChatID:                     cfg.Boardwhite.ChatID,
 		LeetcodeThreadID:           cfg.Boardwhite.LeetCodeThreadID,
@@ -127,7 +135,7 @@ func NewServiceFromConfig(
 		GreetingsNewUsersTemplates: cfg.GreetingsNewUsersTemplates,
 		GreetingsOldUsersTemplates: cfg.GreetingsOldUsersTemplates,
 	}
-	return NewService(serviceCfg, telegram, database, alerts, imageGenerator, lcClient)
+	return NewService(serviceCfg, telegram, database, alerts, mediaGenerator, lcClient, vcLinkRe)
 }
 
 type publishDailyReq struct {

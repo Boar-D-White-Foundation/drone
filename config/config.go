@@ -42,7 +42,7 @@ type Config struct {
 		DownloadsFolder string `yaml:"downloads_folder"`
 	} `yaml:"rod"`
 
-	ImageGenerator struct {
+	MediaGenerator struct {
 		CarbonURL          string `yaml:"carbon_url"`
 		RaysoURL           string `yaml:"rayso_url"`
 		JavaHighlightURL   string `yaml:"javahighlight_url"`
@@ -50,7 +50,12 @@ type Config struct {
 		UseRayso           bool   `yaml:"use_rayso"`
 		UseJavaHighlight   bool   `yaml:"use_javahighlight"`
 		RodDownloadsFolder string `yaml:"rod_downloads_folder"`
-	} `yaml:"image_generator"`
+	} `yaml:"media_generator"`
+
+	VC struct {
+		Domain string `yaml:"domain"`
+		Token  string `yaml:"token" json:"-"` // intentionally hidden from logs
+	} `yaml:"vc"`
 
 	Boardwhite struct {
 		ChatID                   int64 `yaml:"chat_id"`
@@ -127,9 +132,9 @@ func Load(filename string) (Config, error) {
 func (cfg Config) validate() error {
 	// TODO: 2 phase parsing to be able to use enums
 	enabledFlags := []bool{
-		cfg.ImageGenerator.UseCarbon,
-		cfg.ImageGenerator.UseRayso,
-		cfg.ImageGenerator.UseJavaHighlight,
+		cfg.MediaGenerator.UseCarbon,
+		cfg.MediaGenerator.UseRayso,
+		cfg.MediaGenerator.UseJavaHighlight,
 	}
 	enabledCount := 0
 	for _, flag := range enabledFlags {
