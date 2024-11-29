@@ -38,6 +38,7 @@ func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegis
 	registry.RegisterHandler(tele.OnPinned, "OnBotPinned", withContext(ctx, s.OnBotPinned))
 	registry.RegisterHandler(tele.OnUserJoined, "OnGreetJoinedUser", withContext(ctx, s.OnGreetJoinedUser))
 	registry.RegisterHandler(tele.OnText, "OnGenerateVCPdf", withContext(ctx, s.OnGenerateVCPdf))
+	registry.RegisterHandler(tele.OnText, "OnPostTwitterEmbed", withContext(ctx, s.OnPostTwitterEmbed))
 }
 
 func withContext(ctx context.Context, f func(context.Context, tele.Context) error) tele.HandlerFunc {
