@@ -231,24 +231,26 @@ class ImageRenderer {
         }
 
         fun getLanguage(lang: String?): String? {
-            if (lang == null) return null
-            when (lang) {
-                "cpp" -> return SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS
-                "java" -> return SyntaxConstants.SYNTAX_STYLE_JAVA
-                "python", "python3" -> return SyntaxConstants.SYNTAX_STYLE_PYTHON
-                "c" -> return SyntaxConstants.SYNTAX_STYLE_C
-                "csharp" -> return SyntaxConstants.SYNTAX_STYLE_CSHARP
-                "javascript" -> return SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT
-                "typescript" -> return SyntaxConstants.SYNTAX_STYLE_TYPESCRIPT
-                "php" -> return SyntaxConstants.SYNTAX_STYLE_PHP
-                "swift" -> return null
-                "kotlin" -> return SyntaxConstants.SYNTAX_STYLE_KOTLIN
-                "golang" -> return SyntaxConstants.SYNTAX_STYLE_GO
-                "ruby" -> return SyntaxConstants.SYNTAX_STYLE_RUBY
-                "scala" -> return SyntaxConstants.SYNTAX_STYLE_SCALA
-                "rust" -> return SyntaxConstants.SYNTAX_STYLE_RUST
-                "racket" -> return null
-                else -> return null
+            return when (lang) {
+                "cpp" -> SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS
+                "java" -> SyntaxConstants.SYNTAX_STYLE_JAVA
+                "python", "python3" -> SyntaxConstants.SYNTAX_STYLE_PYTHON
+                "c" -> SyntaxConstants.SYNTAX_STYLE_C
+                "csharp" -> SyntaxConstants.SYNTAX_STYLE_CSHARP
+                "javascript" -> SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT
+                "typescript" -> SyntaxConstants.SYNTAX_STYLE_TYPESCRIPT
+                "php" -> SyntaxConstants.SYNTAX_STYLE_PHP
+                "swift" -> null
+                "kotlin" -> SyntaxConstants.SYNTAX_STYLE_KOTLIN
+                "dart" -> SyntaxConstants.SYNTAX_STYLE_DART
+                "golang" -> SyntaxConstants.SYNTAX_STYLE_GO
+                "ruby" -> SyntaxConstants.SYNTAX_STYLE_RUBY
+                "scala" -> SyntaxConstants.SYNTAX_STYLE_SCALA
+                "rust" -> SyntaxConstants.SYNTAX_STYLE_RUST
+                "racket" -> SyntaxConstants.SYNTAX_STYLE_LISP
+                "erlang" -> null
+                "elixir" -> SyntaxConstants.SYNTAX_STYLE_RUBY
+                else -> null
             }
         }
     }
