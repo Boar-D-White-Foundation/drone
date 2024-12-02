@@ -332,7 +332,6 @@ func (s *Service) ReplyWithText(messageID int, text string) (int, error) {
 			ID: messageID,
 		},
 	}
-
 	message, err := s.bot.Send(s.chatID, text, &opts)
 	if err != nil {
 		return 0, fmt.Errorf("reply with text: %w", err)

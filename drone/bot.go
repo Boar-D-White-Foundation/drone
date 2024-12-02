@@ -19,7 +19,7 @@ import (
 )
 
 func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) error {
-	started := make(chan struct{})
+	started := make(chan struct{}, 1)
 	go func() {
 		select {
 		case <-started:

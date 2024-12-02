@@ -9,14 +9,7 @@ import (
 	tele "gopkg.in/telebot.v3"
 )
 
-var (
-	twitterLinkRe = regexp.MustCompile(`(http[s]?:\/\/)?(www\.)?\bx\.com\/[-a-zA-Z0-9@:%_\+~#?&\/\/=]+`)
-)
-
-const (
-	twitterDomainName = "x.com"
-	fixupxDomainName  = "i.fixupx.com"
-)
+var twitterLinkRe = regexp.MustCompile(`(https?://)?(www\.)?\b(x\.com|twitter\.com)/[-a-zA-Z0-9@:%_+~#?&/=]+`)
 
 func (s *Service) OnPostTwitterEmbed(ctx context.Context, c tele.Context) error {
 	msg, chat := c.Message(), c.Chat()
@@ -30,7 +23,8 @@ func (s *Service) OnPostTwitterEmbed(ctx context.Context, c tele.Context) error 
 	}
 
 	firstTwitterLink := matchedTwitterLinks[0]
-	embedTwitterLink := strings.Replace(firstTwitterLink, twitterDomainName, fixupxDomainName, 1)
+	embedTwitterLink := strings.Replace(firstTwitterLink, "x.com/", "i.fixupx.com/", 1)
+	embedTwitterLink = strings.Replace(embedTwitterLink, "twitter.com/", "i.fixupx.com/", 1)
 
 	_, err := s.telegram.ReplyWithText(msg.ID, embedTwitterLink)
 	if err != nil {
