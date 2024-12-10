@@ -74,11 +74,14 @@ const (
 	LangPHP
 	LangSwift
 	LangKotlin
+	LangDart
 	LangGO
 	LangRuby
 	LangScala
 	LangRust
 	LangRacket
+	LangErlang
+	LangElixir
 )
 
 func NewLang(raw string) Lang {
@@ -105,6 +108,8 @@ func NewLang(raw string) Lang {
 		return LangSwift
 	case raw == "kotlin":
 		return LangKotlin
+	case raw == "dart":
+		return LangDart
 	case raw == "golang":
 		return LangGO
 	case raw == "ruby":
@@ -115,6 +120,10 @@ func NewLang(raw string) Lang {
 		return LangRust
 	case raw == "racket":
 		return LangRacket
+	case raw == "erlang":
+		return LangErlang
+	case raw == "elixir":
+		return LangElixir
 	default:
 		return LangUnknown
 	}
@@ -144,6 +153,8 @@ func (l Lang) String() string {
 		return "swift"
 	case LangKotlin:
 		return "kotlin"
+	case LangDart:
+		return "dart"
 	case LangGO:
 		return "golang"
 	case LangRuby:
@@ -154,6 +165,10 @@ func (l Lang) String() string {
 		return "rust"
 	case LangRacket:
 		return "racket"
+	case LangErlang:
+		return "erlang"
+	case LangElixir:
+		return "elixir"
 	default:
 		return ""
 	}

@@ -115,6 +115,8 @@ func toJavaHighlightLang(lang leetcode.Lang) string {
 		return "swift"
 	case leetcode.LangKotlin:
 		return "kotlin"
+	case leetcode.LangDart:
+		return "dart"
 	case leetcode.LangGO:
 		return "golang"
 	case leetcode.LangRuby:
@@ -125,6 +127,8 @@ func toJavaHighlightLang(lang leetcode.Lang) string {
 		return "rust"
 	case leetcode.LangRacket:
 		return "racket"
+	case leetcode.LangElixir:
+		return "elixir"
 	default:
 		return ""
 	}
@@ -307,6 +311,8 @@ func toRaysoLang(lang leetcode.Lang) string {
 		return "swift"
 	case leetcode.LangKotlin:
 		return "kotlin"
+	case leetcode.LangDart:
+		return "dart"
 	case leetcode.LangGO:
 		return "go"
 	case leetcode.LangRuby:
@@ -317,6 +323,10 @@ func toRaysoLang(lang leetcode.Lang) string {
 		return "rust"
 	case leetcode.LangRacket:
 		return "lisp"
+	case leetcode.LangErlang:
+		return "erlang"
+	case leetcode.LangElixir:
+		return "elixir"
 	default:
 		return ""
 	}
