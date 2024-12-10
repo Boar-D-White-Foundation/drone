@@ -80,6 +80,7 @@ const (
 	LangScala
 	LangRust
 	LangRacket
+	LangErlang
 	LangElixir
 )
 
@@ -119,6 +120,8 @@ func NewLang(raw string) Lang {
 		return LangRust
 	case raw == "racket":
 		return LangRacket
+	case raw == "erlang":
+		return LangErlang
 	case raw == "elixir":
 		return LangElixir
 	default:
@@ -162,6 +165,8 @@ func (l Lang) String() string {
 		return "rust"
 	case LangRacket:
 		return "racket"
+	case LangErlang:
+		return "erlang"
 	case LangElixir:
 		return "elixir"
 	default:

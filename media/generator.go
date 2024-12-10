@@ -323,6 +323,8 @@ func toRaysoLang(lang leetcode.Lang) string {
 		return "rust"
 	case leetcode.LangRacket:
 		return "lisp"
+	case leetcode.LangErlang:
+		return "erlang"
 	case leetcode.LangElixir:
 		return "elixir"
 	default:
