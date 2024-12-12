@@ -6,8 +6,11 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
+	"strings"
 	"time"
 
+	"github.com/boar-d-white-foundation/drone/iterx"
 	"gopkg.in/yaml.v3"
 )
 
@@ -91,6 +94,12 @@ type Config struct {
 
 	GreetingsNewUsersTemplates []string `yaml:"greetings_new_users_templates"`
 	GreetingsOldUsersTemplates []string `yaml:"greetings_old_users_templates"`
+
+	Oborona struct {
+		Period   time.Duration `yaml:"period"`
+		Template string        `yaml:"template"`
+		Words    [][]string    `yaml:"words"`
+	} `yaml:"oborona"`
 }
 
 func (cfg Config) String() string {
@@ -102,6 +111,10 @@ func Default() (cfg Config, err error) {
 	err = yaml.Unmarshal(defaultConfigBytes, &cfg)
 	if err != nil {
 		return Config{}, fmt.Errorf("unmarshal default config: %w", err)
+	}
+
+	if err := cfg.validate(); err != nil {
+		return Config{}, fmt.Errorf("validate config: %w", err)
 	}
 
 	return cfg, nil
@@ -145,6 +158,40 @@ func (cfg Config) validate() error {
 
 	if enabledCount != 1 {
 		return errors.New("only one of use_carbon, use_rayso, and use_javahighlight should be enabled")
+	}
+
+	if !slices.Equal(cfg.DailyStickerIDs, iterx.Uniq(cfg.DailyStickerIDs)) {
+		return errors.New("all daily_sticker_ids must be unique")
+	}
+	if !slices.Equal(cfg.DailyChickensStickerIDs, iterx.Uniq(cfg.DailyChickensStickerIDs)) {
+		return errors.New("all daily_chickens_sticker_ids must be unique")
+	}
+	for _, mock := range cfg.Mocks {
+		if !slices.Equal(mock.StickerIDs, iterx.Uniq(mock.StickerIDs)) {
+			return errors.New("all mocks.sticker_ids must be unique")
+		}
+	}
+
+	if len(cfg.GreetingsNewUsersTemplates) == 0 {
+		return errors.New("greetings_new_users_templates must not be empty")
+	}
+	if len(cfg.GreetingsOldUsersTemplates) == 0 {
+		return errors.New("greetings_old_users_templates must not be empty")
+	}
+
+	if cfg.Oborona.Template == "" {
+		return errors.New("oborona.template must not be empty")
+	}
+	if len(cfg.Oborona.Words) == 0 {
+		return errors.New("oborona.words must not be empty")
+	}
+	for _, words := range cfg.Oborona.Words {
+		if len(words) == 0 {
+			return errors.New("oborona.words.[*] must not be empty")
+		}
+	}
+	if strings.Count(cfg.Oborona.Template, "%s") != len(cfg.Oborona.Words) {
+		return errors.New("oborona.template must have the same number of %s as there are words in oborona.words")
 	}
 
 	return nil
