@@ -31,6 +31,8 @@ const (
 	keyNCStats                = "boardwhite:neetcode:stats"
 
 	keyOnJoinGreetedUsers = "boardwhite:on_join_greeted_users"
+
+	keyOboronaLastGeneratedAt = "boardwhite:oborona:last_generated_at"
 )
 
 var (
@@ -54,6 +56,9 @@ type Config struct {
 	FloodThreadID              int
 	GreetingsNewUsersTemplates []string
 	GreetingsOldUsersTemplates []string
+	OboronaPeriod              time.Duration
+	OboronaTemplate            string
+	OboronaWords               [][]string
 }
 
 type tasks struct {
@@ -134,6 +139,9 @@ func NewServiceFromConfig(
 		FloodThreadID:              cfg.Boardwhite.FloodThreadID,
 		GreetingsNewUsersTemplates: cfg.GreetingsNewUsersTemplates,
 		GreetingsOldUsersTemplates: cfg.GreetingsOldUsersTemplates,
+		OboronaPeriod:              cfg.Oborona.Period,
+		OboronaTemplate:            cfg.Oborona.Template,
+		OboronaWords:               cfg.Oborona.Words,
 	}
 	return NewService(serviceCfg, telegram, database, alerts, mediaGenerator, lcClient, vcLinkRe)
 }

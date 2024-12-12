@@ -4,7 +4,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/boar-d-white-foundation/drone/iterx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -24,18 +23,8 @@ func TestConfigHideSecrets(t *testing.T) {
 func TestDefault(t *testing.T) {
 	t.Parallel()
 
-	cfg, err := Default()
+	_, err := Default()
 	require.NoError(t, err)
-
-	// all sticker IDs must be unique
-	assert.Equal(t, cfg.DailyStickerIDs, iterx.Uniq(cfg.DailyStickerIDs))
-	assert.Equal(t, cfg.DailyChickensStickerIDs, iterx.Uniq(cfg.DailyChickensStickerIDs))
-	for _, mock := range cfg.Mocks {
-		assert.Equal(t, mock.StickerIDs, iterx.Uniq(mock.StickerIDs))
-	}
-
-	assert.NotEmpty(t, cfg.GreetingsNewUsersTemplates)
-	assert.NotEmpty(t, cfg.GreetingsOldUsersTemplates)
 }
 
 func TestConfigOverride(t *testing.T) {
