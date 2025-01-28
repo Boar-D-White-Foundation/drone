@@ -33,6 +33,9 @@ const (
 	keyOnJoinGreetedUsers = "boardwhite:on_join_greeted_users"
 
 	keyOboronaLastGeneratedAt = "boardwhite:oborona:last_generated_at"
+
+	keyOkrValues        = "boardwhite:okr:values"
+	keyOkrPinnedMessage = "boardwhite:okr:pinned_message"
 )
 
 var (
@@ -59,6 +62,7 @@ type Config struct {
 	OboronaPeriod              time.Duration
 	OboronaTemplate            string
 	OboronaWords               [][]string
+	InterviewsThreadID         int
 }
 
 type tasks struct {
@@ -142,6 +146,7 @@ func NewServiceFromConfig(
 		OboronaPeriod:              cfg.Oborona.Period,
 		OboronaTemplate:            cfg.Oborona.Template,
 		OboronaWords:               cfg.Oborona.Words,
+		InterviewsThreadID:         cfg.Boardwhite.InterviewsThreadID,
 	}
 	return NewService(serviceCfg, telegram, database, alerts, mediaGenerator, lcClient, vcLinkRe)
 }

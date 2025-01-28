@@ -65,6 +65,7 @@ type Config struct {
 		LeetCodeThreadID         int   `yaml:"leetcode_thread_id"`
 		LeetcodeChickensThreadID int   `yaml:"leetcode_chickens_thread_id"`
 		FloodThreadID            int   `yaml:"flood_thread_id"`
+		InterviewsThreadID       int   `yaml:"interviews_thread_id"`
 	} `yaml:"boardwhite"`
 
 	Leetcode struct {

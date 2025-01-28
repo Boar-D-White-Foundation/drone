@@ -15,6 +15,7 @@ func migrate(ctx context.Context, database db.DB) error {
 	return db.MigrateJson(ctx, database, keyAppliedMigrations, []db.Migration{
 		{ID: "0001", Name: "add_default_greeted_users", Fn: addDefaultGreetedUsers},
 		{ID: "0002", Name: "drop_poisoned_db_queue", Fn: dropPoisonedDBQueue},
+		{ID: "0003", Name: "add_initial_okr_values", Fn: addInitialOkrValues},
 	})
 }
 
@@ -38,6 +39,31 @@ func addDefaultGreetedUsers(tx db.Tx) error {
 func dropPoisonedDBQueue(tx db.Tx) error {
 	key := "dbq:queue:boardwhite:post_code_snippet"
 	if err := db.SetJson[*int](tx, key, nil); err != nil {
+		return fmt.Errorf("set %q: %w", key, err)
+	}
+
+	return nil
+}
+
+func addInitialOkrValues(tx db.Tx) error {
+	key := "boardwhite:okr:values"
+
+	rejectionTag := "#unfortunately2025"
+	bigtechOfferTag := "#bigtech_offer2025"
+	faangOfferTag := "#faang_offer2025"
+	seniorPromoTag := "#senior_promo2025"
+	staffPromoTag := "#staff_promo2025"
+	usaRelocationTag := "#usa2025"
+
+	okrValues := make(map[string]int)
+	okrValues[rejectionTag] = 25
+	okrValues[bigtechOfferTag] = 1
+	okrValues[faangOfferTag] = 1
+	okrValues[seniorPromoTag] = 0
+	okrValues[staffPromoTag] = 0
+	okrValues[usaRelocationTag] = 0
+
+	if err := db.SetJson(tx, key, okrValues); err != nil {
 		return fmt.Errorf("set %q: %w", key, err)
 	}
 

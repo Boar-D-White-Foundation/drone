@@ -20,12 +20,14 @@ type Client interface {
 	BotID() int64
 	SendMonospace(threadID int, text string) (int, error)
 	SendMarkdownV2(threadID int, text string) (int, error)
+	SendText(threadID int, text string) (int, error)
 	SendSpoilerLink(threadID int, header, link string) (int, error)
 	SendSticker(threadID int, stickerID string) (int, error)
 	ReplyWithSticker(messageID int, stickerID string) (int, error)
 	ReplyWithSpoilerPhoto(messageID int, caption, name, mime string, reader io.ReadSeeker) (int, error)
 	ReplyWithDocument(messageID int, name, mime string, reader io.ReadSeeker) (int, error)
 	ReplyWithText(messageID int, text string) (int, error)
+	EditMessageText(messageID int, text string) (int, error)
 	Pin(id int) error
 	Unpin(id int) error
 	SetReaction(messageID int, reaction Reaction, isBig bool) error
@@ -220,6 +222,17 @@ func (s *Service) SendMarkdownV2(threadID int, text string) (int, error) {
 	return message.ID, nil
 }
 
+func (s *Service) SendText(threadID int, text string) (int, error) {
+	message, err := s.bot.Send(s.chatID, text, &tele.SendOptions{
+		ThreadID: threadID,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("send text %q: %w", text, err)
+	}
+
+	return message.ID, nil
+}
+
 func (s *Service) SendSpoilerLink(threadID int, header, link string) (int, error) {
 	payload := fmt.Sprintf("%s\n%s", header, link)
 	message, err := s.bot.Send(s.chatID, payload, &tele.SendOptions{
@@ -335,6 +348,20 @@ func (s *Service) ReplyWithText(messageID int, text string) (int, error) {
 	message, err := s.bot.Send(s.chatID, text, &opts)
 	if err != nil {
 		return 0, fmt.Errorf("reply with text: %w", err)
+	}
+
+	return message.ID, nil
+}
+
+func (s *Service) EditMessageText(messageID int, newText string) (int, error) {
+	editableMsg := tele.StoredMessage{
+		ChatID:    s.chat.ID,
+		MessageID: strconv.Itoa(messageID),
+	}
+
+	message, err := s.bot.Edit(editableMsg, newText)
+	if err != nil {
+		return 0, fmt.Errorf("edit message text: %w", err)
 	}
 
 	return message.ID, nil

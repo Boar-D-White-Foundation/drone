@@ -22,6 +22,7 @@ boardwhite:
   leetcode_thread_id: 10095
   leetcode_chickens_thread_id: 372377
   flood_thread_id: 11214
+  interviews_thread_id: 10100
 leetcode:
   session: ""
   csrf: ""
