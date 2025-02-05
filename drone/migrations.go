@@ -49,7 +49,8 @@ func addInitialOkrValues(tx db.Tx) error {
 	key := "boardwhite:okr:values"
 
 	type okrs struct {
-		Values map[string]int `json:"values"`
+		Values  map[string]int        `json:"values"`
+		Updates map[string][]struct{} `json:"updates"`
 	}
 
 	rejectionTag := "#unfortunately2025"
@@ -67,7 +68,7 @@ func addInitialOkrValues(tx db.Tx) error {
 	okrValues[staffPromoTag] = 0
 	okrValues[usaRelocationTag] = 0
 
-	if err := db.SetJson(tx, key, okrs{Values: okrValues}); err != nil {
+	if err := db.SetJson(tx, key, okrs{Values: okrValues, Updates: make(map[string][]struct{})}); err != nil {
 		return fmt.Errorf("set %q: %w", key, err)
 	}
 

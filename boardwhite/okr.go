@@ -92,9 +92,17 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 	}
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
-		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{Values: make(map[string]int), Updates: make(map[string][]tele.Update)})
+		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{})
 		if err != nil {
 			return fmt.Errorf("get okr values: %w", err)
+		}
+
+		if okrs.Values == nil {
+			okrs.Values = make(map[string]int)
+		}
+
+		if okrs.Updates == nil {
+			okrs.Updates = make(map[string][]tele.Update)
 		}
 
 		okrs.Values[tagToUpdate]++
@@ -109,28 +117,7 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 			return fmt.Errorf("construct progress message: %w", err)
 		}
 
-		// get pinned message ID if exists
-		pinnedMessageID, err := db.GetJson[int](tx, keyOkrPinnedMessage)
-
-		// if message hasn't been posted yet, post it, pin it and save the id
-		if errors.Is(err, db.ErrKeyNotFound) {
-			if err := postNewOkrMessage(s, tx, progressMessage); err != nil {
-				return fmt.Errorf("post initial okr message: %w", err)
-			}
-
-			return nil
-		}
-
-		if err != nil {
-			return fmt.Errorf("get pinned message id: %w", err)
-		}
-
-		_, err = s.telegram.EditMessageText(pinnedMessageID, progressMessage)
-		if err != nil {
-			return fmt.Errorf("edit pinned message: %w", err)
-		}
-
-		return nil
+		return s.updatePinnedOkrMessage(tx, progressMessage)
 	})
 }
 
@@ -156,33 +143,48 @@ func (s *Service) OnRemoveOkr(ctx context.Context, c tele.Context) error {
 	}
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
-		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{Values: make(map[string]int), Updates: make(map[string][]tele.Update)})
+		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{})
 		if err != nil {
 			return fmt.Errorf("get okr values: %w", err)
 		}
 
+		if okrs.Values == nil {
+			okrs.Values = make(map[string]int)
+		}
+
+		if okrs.Updates == nil {
+			okrs.Updates = make(map[string][]tele.Update)
+		}
+
 		okrUpdates := okrs.Updates[tagToRemoveFrom]
 		for i, update := range okrUpdates {
+
 			if update.Message.ID == originalOkrMessage.ID {
+
 				okrUpdates[i] = okrUpdates[len(okrUpdates)-1]
 				okrUpdates = okrUpdates[:len(okrUpdates)-1]
 
-				break
+				okrs.Updates[tagToRemoveFrom] = okrUpdates
+
+				if okrs.Values[tagToRemoveFrom] > 0 {
+					okrs.Values[tagToRemoveFrom]--
+				}
+
+				if err := db.SetJson(tx, keyOkrValues, okrs); err != nil {
+					return fmt.Errorf("save okr values: %w", err)
+				}
+
+				progressMessage, err := constructOkrProgressMessage(okrs.Values)
+				if err != nil {
+					return fmt.Errorf("construct progress message: %w", err)
+				}
+
+				return s.updatePinnedOkrMessage(tx, progressMessage)
 			}
-		}
-		okrs.Updates[tagToRemoveFrom] = okrUpdates
-
-		if okrs.Values[tagToRemoveFrom] > 0 {
-			okrs.Values[tagToRemoveFrom]--
-		}
-
-		if err := db.SetJson(tx, keyOkrValues, okrs); err != nil {
-			return fmt.Errorf("save okr values: %w", err)
 		}
 
 		return nil
 	})
-
 }
 
 func extractOkrTag(msgText string) string {
@@ -195,7 +197,32 @@ func extractOkrTag(msgText string) string {
 	return ""
 }
 
-func postNewOkrMessage(s *Service, tx db.Tx, progressMessage string) error {
+func (s *Service) updatePinnedOkrMessage(tx db.Tx, progressMessage string) error {
+	// get pinned message ID if exists
+	pinnedMessageID, err := db.GetJson[int](tx, keyOkrPinnedMessage)
+
+	// if message hasn't been posted yet, post it, pin it and save the id
+	if errors.Is(err, db.ErrKeyNotFound) {
+		if err := s.postNewOkrMessage(tx, progressMessage); err != nil {
+			return fmt.Errorf("post initial okr message: %w", err)
+		}
+
+		return nil
+	}
+
+	if err != nil {
+		return fmt.Errorf("get pinned message id: %w", err)
+	}
+
+	_, err = s.telegram.EditMessageText(pinnedMessageID, progressMessage)
+	if err != nil {
+		return fmt.Errorf("edit pinned message: %w", err)
+	}
+
+	return nil
+}
+
+func (s *Service) postNewOkrMessage(tx db.Tx, progressMessage string) error {
 	messageID, err := s.telegram.SendText(s.cfg.InterviewsThreadID, progressMessage)
 	if err != nil {
 		return fmt.Errorf("send okr message: %w", err)
