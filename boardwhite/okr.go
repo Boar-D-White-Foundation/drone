@@ -55,6 +55,10 @@ type okrTemplateData struct {
 	Rejection okrProgress
 }
 
+type okrs struct {
+	Values map[string]int `json:"values"`
+}
+
 var okrMessageTemplate = template.Must(template.New("okr").Parse(`ОКРы 2025:
 
 Офферы:
@@ -92,25 +96,25 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 	}
 
 	return s.database.Do(ctx, func(tx db.Tx) error {
-		okrValues, err := db.GetJsonDefault(tx, keyOkrValues, make(map[string]int))
+		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{Values: make(map[string]int)})
 		if err != nil {
 			return fmt.Errorf("get okr values: %w", err)
 		}
 
 		toRemove := strings.HasPrefix(text, removeCommand)
 		if toRemove {
-			if okrValues[tagToUpdate] > 0 {
-				okrValues[tagToUpdate]--
+			if okrs.Values[tagToUpdate] > 0 {
+				okrs.Values[tagToUpdate]--
 			}
 		} else {
-			okrValues[tagToUpdate]++
+			okrs.Values[tagToUpdate]++
 		}
 
-		if err := db.SetJson(tx, keyOkrValues, okrValues); err != nil {
+		if err := db.SetJson(tx, keyOkrValues, okrs); err != nil {
 			return fmt.Errorf("save okr values: %w", err)
 		}
 
-		progressMessage, err := constructOkrProgressMessage(okrValues)
+		progressMessage, err := constructOkrProgressMessage(okrs.Values)
 		if err != nil {
 			return fmt.Errorf("construct progress message: %w", err)
 		}
