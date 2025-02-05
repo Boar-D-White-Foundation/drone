@@ -56,7 +56,8 @@ type okrTemplateData struct {
 }
 
 type okrs struct {
-	Values map[string]int `json:"values"`
+	Values  map[string]int           `json:"values"`
+	Updates map[string][]tele.Update `json:"updates"`
 }
 
 var okrMessageTemplate = template.Must(template.New("okr").Parse(`ОКРы 2025:
@@ -76,38 +77,28 @@ var okrMessageTemplate = template.Must(template.New("okr").Parse(`ОКРы 2025:
 {{.Rejection.Current}}/{{.Rejection.Goal}} ({{.Rejection.Tag}}) {{.Rejection.Status}}`))
 
 func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
-	msg, chat := c.Message(), c.Chat()
+	msg, chat, update := c.Message(), c.Chat(), c.Update()
 	if msg == nil || chat == nil || chat.ID != s.cfg.ChatID {
 		return nil
 	}
 
-	var tagToUpdate string
-
-	for _, tag := range okrTags {
-		if strings.Contains(msg.Text, tag) {
-			tagToUpdate = tag
-			break
-		}
-	}
-
+	tagToUpdate := extractOkrTag(msg.Text)
 	if tagToUpdate == "" {
 		return nil
 	}
 
+	if strings.HasPrefix(msg.Text, removeCommand) {
+		return nil
+	}
+
 	return s.database.Do(ctx, func(tx db.Tx) error {
-		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{Values: make(map[string]int)})
+		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{Values: make(map[string]int), Updates: make(map[string][]tele.Update)})
 		if err != nil {
 			return fmt.Errorf("get okr values: %w", err)
 		}
 
-		toRemove := strings.HasPrefix(msg.Text, removeCommand)
-		if toRemove {
-			if okrs.Values[tagToUpdate] > 0 {
-				okrs.Values[tagToUpdate]--
-			}
-		} else {
-			okrs.Values[tagToUpdate]++
-		}
+		okrs.Values[tagToUpdate]++
+		okrs.Updates[tagToUpdate] = append(okrs.Updates[tagToUpdate], update)
 
 		if err := db.SetJson(tx, keyOkrValues, okrs); err != nil {
 			return fmt.Errorf("save okr values: %w", err)
@@ -141,6 +132,67 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 
 		return nil
 	})
+}
+
+func (s *Service) OnRemoveOkr(ctx context.Context, c tele.Context) error {
+	msg, chat := c.Message(), c.Chat()
+	if msg == nil || chat == nil || chat.ID != s.cfg.ChatID {
+		return nil
+	}
+
+	if !strings.HasPrefix(msg.Text, removeCommand) {
+		return nil
+	}
+
+	if !msg.IsReply() {
+		return nil
+	}
+
+	originalOkrMessage := msg.ReplyTo
+
+	tagToRemoveFrom := extractOkrTag(originalOkrMessage.Text)
+	if tagToRemoveFrom == "" {
+		return nil
+	}
+
+	return s.database.Do(ctx, func(tx db.Tx) error {
+		okrs, err := db.GetJsonDefault(tx, keyOkrValues, okrs{Values: make(map[string]int), Updates: make(map[string][]tele.Update)})
+		if err != nil {
+			return fmt.Errorf("get okr values: %w", err)
+		}
+
+		okrUpdates := okrs.Updates[tagToRemoveFrom]
+		for i, update := range okrUpdates {
+			if update.Message.ID == originalOkrMessage.ID {
+				okrUpdates[i] = okrUpdates[len(okrUpdates)-1]
+				okrUpdates = okrUpdates[:len(okrUpdates)-1]
+
+				break
+			}
+		}
+		okrs.Updates[tagToRemoveFrom] = okrUpdates
+
+		if okrs.Values[tagToRemoveFrom] > 0 {
+			okrs.Values[tagToRemoveFrom]--
+		}
+
+		if err := db.SetJson(tx, keyOkrValues, okrs); err != nil {
+			return fmt.Errorf("save okr values: %w", err)
+		}
+
+		return nil
+	})
+
+}
+
+func extractOkrTag(msgText string) string {
+	for _, tag := range okrTags {
+		if strings.Contains(msgText, tag) {
+			return tag
+		}
+	}
+
+	return ""
 }
 
 func postNewOkrMessage(s *Service, tx db.Tx, progressMessage string) error {
