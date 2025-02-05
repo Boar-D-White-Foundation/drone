@@ -81,11 +81,10 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 		return nil
 	}
 
-	text := strings.TrimSpace(strings.ToLower(msg.Text))
 	var tagToUpdate string
 
 	for _, tag := range okrTags {
-		if strings.Contains(text, tag) {
+		if strings.Contains(msg.Text, tag) {
 			tagToUpdate = tag
 			break
 		}
@@ -101,7 +100,7 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 			return fmt.Errorf("get okr values: %w", err)
 		}
 
-		toRemove := strings.HasPrefix(text, removeCommand)
+		toRemove := strings.HasPrefix(msg.Text, removeCommand)
 		if toRemove {
 			if okrs.Values[tagToUpdate] > 0 {
 				okrs.Values[tagToUpdate]--
@@ -129,7 +128,9 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 			}
 
 			return nil
-		} else if err != nil {
+		}
+
+		if err != nil {
 			return fmt.Errorf("get pinned message id: %w", err)
 		}
 
