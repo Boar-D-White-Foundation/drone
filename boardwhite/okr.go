@@ -39,20 +39,20 @@ var okrTags = []string{
 	usaRelocationTag,
 }
 
-type OkrProgress struct {
+type okrProgress struct {
 	Current int
 	Goal    int
 	Tag     string
 	Status  string
 }
 
-type OkrTemplateData struct {
-	Bigtech   OkrProgress
-	Faang     OkrProgress
-	Senior    OkrProgress
-	Staff     OkrProgress
-	Usa       OkrProgress
-	Rejection OkrProgress
+type okrTemplateData struct {
+	Bigtech   okrProgress
+	Faang     okrProgress
+	Senior    okrProgress
+	Staff     okrProgress
+	Usa       okrProgress
+	Rejection okrProgress
 }
 
 var okrMessageTemplate = template.Must(template.New("okr").Parse(`ОКРы 2025:
@@ -156,38 +156,38 @@ func postNewOkrMessage(s *Service, tx db.Tx, progressMessage string) error {
 }
 
 func constructOkrProgressMessage(values map[string]int) (string, error) {
-	data := OkrTemplateData{
-		Bigtech: OkrProgress{
+	data := okrTemplateData{
+		Bigtech: okrProgress{
 			Current: values[bigtechOfferTag],
 			Goal:    bigtechOfferOkrGoal,
 			Tag:     bigtechOfferTag,
 			Status:  getStatusEmoji(values[bigtechOfferTag], bigtechOfferOkrGoal),
 		},
-		Faang: OkrProgress{
+		Faang: okrProgress{
 			Current: values[faangOfferTag],
 			Goal:    faangOfferOkrGoal,
 			Tag:     faangOfferTag,
 			Status:  getStatusEmoji(values[faangOfferTag], faangOfferOkrGoal),
 		},
-		Senior: OkrProgress{
+		Senior: okrProgress{
 			Current: values[seniorPromoTag],
 			Goal:    seniorPromoOkrGoal,
 			Tag:     seniorPromoTag,
 			Status:  getStatusEmoji(values[seniorPromoTag], seniorPromoOkrGoal),
 		},
-		Staff: OkrProgress{
+		Staff: okrProgress{
 			Current: values[staffPromoTag],
 			Goal:    staffPromoOkrGoal,
 			Tag:     staffPromoTag,
 			Status:  getStatusEmoji(values[staffPromoTag], staffPromoOkrGoal),
 		},
-		Usa: OkrProgress{
+		Usa: okrProgress{
 			Current: values[usaRelocationTag],
 			Goal:    usaRelocationOkrGoal,
 			Tag:     usaRelocationTag,
 			Status:  getStatusEmoji(values[usaRelocationTag], usaRelocationOkrGoal),
 		},
-		Rejection: OkrProgress{
+		Rejection: okrProgress{
 			Current: values[rejectionTag],
 			Goal:    rejectionOkrGoal,
 			Tag:     rejectionTag,
