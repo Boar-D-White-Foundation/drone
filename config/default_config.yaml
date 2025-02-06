@@ -26,7 +26,7 @@ leetcode:
   session: ""
   csrf: ""
 leetcode_daily:
-  cron: "0 1 * * *" # every day at 01:00 UTC
+  cron: "5 0 * * *" # every day at 00:05 UTC
   rating_cron: "0 6 1 * *" # every month at 06:00 UTC
 neetcode_daily:
   cron: "0 12 * * *" #  every day at 12:00 UTC
