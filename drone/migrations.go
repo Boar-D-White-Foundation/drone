@@ -61,7 +61,7 @@ func addInitialOkrValues(tx db.Tx) error {
 	usaRelocationTag := "#usa2025"
 
 	okrValues := make(map[string]int)
-	okrValues[rejectionTag] = 25
+	okrValues[rejectionTag] = 28
 	okrValues[bigtechOfferTag] = 1
 	okrValues[faangOfferTag] = 1
 	okrValues[seniorPromoTag] = 0
