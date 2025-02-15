@@ -300,13 +300,17 @@ func (s *Service) postNewOkrMessage(tx db.Tx, progressMessage string) error {
 
 func buildOkrProgressMsg(counts map[okrTag]int) (string, error) {
 	build := func(tag okrTag) okrProgress {
-		goal := okrGoals[tag]
+		goal := okrGoals[tag].Goal
 		count := counts[tag]
+		status := "⏳"
+		if count >= goal {
+			status = "✅"
+		}
 		return okrProgress{
 			Current: count,
-			Goal:    goal.Goal,
+			Goal:    goal,
 			Tag:     tag,
-			Status:  getStatusEmoji(count, goal.Goal),
+			Status:  status,
 		}
 	}
 
@@ -327,11 +331,4 @@ func buildOkrProgressMsg(counts map[okrTag]int) (string, error) {
 	}
 
 	return buf.String(), nil
-}
-
-func getStatusEmoji(count, goal int) string {
-	if count >= goal {
-		return "✅"
-	}
-	return "⏳"
 }
