@@ -20,12 +20,14 @@ type Client interface {
 	BotID() int64
 	SendMonospace(threadID int, text string) (int, error)
 	SendMarkdownV2(threadID int, text string) (int, error)
+	SendText(threadID int, text string) (int, error)
 	SendSpoilerLink(threadID int, header, link string) (int, error)
 	SendSticker(threadID int, stickerID string) (int, error)
 	ReplyWithSticker(messageID int, stickerID string) (int, error)
 	ReplyWithSpoilerPhoto(messageID int, caption, name, mime string, reader io.ReadSeeker) (int, error)
 	ReplyWithDocument(messageID int, name, mime string, reader io.ReadSeeker) (int, error)
 	ReplyWithText(messageID int, text string) (int, error)
+	EditMessageText(messageID int, text string) error
 	Pin(id int) error
 	Unpin(id int) error
 	SetReaction(messageID int, reaction Reaction, isBig bool) error
@@ -97,6 +99,16 @@ func NewAdminClientFromConfig(cfg config.Config) (AdminClient, error) {
 	return tgService, nil
 }
 
+func SetReactionFor(c Client, messageID int) func(Reaction) error {
+	return func(reaction Reaction) error {
+		if err := c.SetReaction(messageID, reaction, false); err != nil {
+			return fmt.Errorf("set reaction %v: %w", reaction, err)
+		}
+
+		return nil
+	}
+}
+
 type handler struct {
 	name string
 	f    tele.HandlerFunc
@@ -146,9 +158,7 @@ func (s *Service) NewUpdateContext(u tele.Update) tele.Context {
 	return s.bot.NewContext(u)
 }
 
-var (
-	mdSpecialChars = []rune{'_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'}
-)
+var mdSpecialChars = []rune{'_', '*', '[', ']', '(', ')', '~', '`', '>', '#', '+', '-', '=', '|', '{', '}', '.', '!'}
 
 func EscapeMD(text string) string {
 	var result strings.Builder
@@ -215,6 +225,17 @@ func (s *Service) SendMarkdownV2(threadID int, text string) (int, error) {
 	})
 	if err != nil {
 		return 0, fmt.Errorf("send markdownV2 %q: %w", text, err)
+	}
+
+	return message.ID, nil
+}
+
+func (s *Service) SendText(threadID int, text string) (int, error) {
+	message, err := s.bot.Send(s.chatID, text, &tele.SendOptions{
+		ThreadID: threadID,
+	})
+	if err != nil {
+		return 0, fmt.Errorf("send text %q: %w", text, err)
 	}
 
 	return message.ID, nil
@@ -340,17 +361,36 @@ func (s *Service) ReplyWithText(messageID int, text string) (int, error) {
 	return message.ID, nil
 }
 
+func (s *Service) EditMessageText(messageID int, newText string) error {
+	msg := tele.StoredMessage{
+		MessageID: strconv.Itoa(messageID),
+		ChatID:    s.chat.ID,
+	}
+	if _, err := s.bot.Edit(msg, newText); err != nil {
+		return fmt.Errorf("edit message text: %w", err)
+	}
+
+	return nil
+}
+
 func (s *Service) Pin(id int) error {
 	msg := tele.StoredMessage{
 		MessageID: strconv.Itoa(id),
 		ChatID:    s.chat.ID,
 	}
+	if err := s.bot.Pin(msg, tele.Silent); err != nil {
+		return fmt.Errorf("pin msg %v: %w", id, err)
+	}
 
-	return s.bot.Pin(msg, tele.Silent)
+	return nil
 }
 
 func (s *Service) Unpin(id int) error {
-	return s.bot.Unpin(s.chat, id)
+	if err := s.bot.Unpin(s.chat, id); err != nil {
+		return fmt.Errorf("unpin msg %v: %w", id, err)
+	}
+
+	return nil
 }
 
 type setMessageReactionReq struct {

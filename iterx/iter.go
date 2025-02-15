@@ -15,16 +15,6 @@ func PickRandom[T any](xs []T) (T, error) {
 	return xs[idx.Int64()], nil
 }
 
-func Filter[T any](xs []T, f func(T) bool) []T {
-	result := make([]T, 0)
-	for _, x := range xs {
-		if f(x) {
-			result = append(result, x)
-		}
-	}
-	return result
-}
-
 func FilterMut[T any](xs []T, f func(T) bool) []T {
 	insertIdx := 0
 	for _, x := range xs {
@@ -49,11 +39,6 @@ func Uniq[T comparable](xs []T) []T {
 }
 
 func JoinNonEmpty(sep string, xs ...string) string {
-	nonEmpty := make([]string, 0, len(xs))
-	for _, s := range xs {
-		if len(s) > 0 {
-			nonEmpty = append(nonEmpty, s)
-		}
-	}
+	nonEmpty := FilterMut(xs, func(s string) bool { return len(s) > 0 })
 	return strings.Join(nonEmpty, sep)
 }

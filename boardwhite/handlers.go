@@ -40,6 +40,8 @@ func (s *Service) RegisterHandlers(ctx context.Context, registry tg.HandlerRegis
 	registry.RegisterHandler(tele.OnText, "OnGenerateVCPdf", withContext(ctx, s.OnGenerateVCPdf))
 	registry.RegisterHandler(tele.OnText, "OnPostTwitterEmbed", withContext(ctx, s.OnPostTwitterEmbed))
 	registry.RegisterHandler(tele.OnText, "OnOborona", withContext(ctx, s.OnOborona))
+	registry.RegisterHandler(tele.OnText, "OnUpdateOkr", withContext(ctx, s.OnUpdateOkr))
+	registry.RegisterHandler(tele.OnText, "OnRemoveOkr", withContext(ctx, s.OnRemoveOkr))
 }
 
 func withContext(ctx context.Context, f func(context.Context, tele.Context) error) tele.HandlerFunc {
