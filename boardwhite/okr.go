@@ -21,7 +21,6 @@ func (t okrTag) String() string {
 }
 
 var (
-	okrTagUnfortunately    okrTag = "#unfortunately2025"
 	okrTagTier1000Offer    okrTag = "#tier1000_offer2025"
 	okrTagBigtechOffer     okrTag = "#bigtech_offer2025"
 	okrTagFaangOffer       okrTag = "#faang_offer2025"
@@ -29,46 +28,42 @@ var (
 	okrTagStaffPromo       okrTag = "#staff_promo2025"
 	okrTagRussiaRelocation okrTag = "#russia2025"
 	okrTagUsaRelocation    okrTag = "#usa2025"
+	okrTagPassport         okrTag = "#passport2025"
+	okrTagUnfortunately    okrTag = "#unfortunately2025"
 )
 
 const okrRemoveCommand = "/remove_okr"
 
 type okrGoal struct {
-	Tag  okrTag
 	Goal int
 }
 
 var okrGoals = map[okrTag]okrGoal{
 	okrTagUnfortunately: {
-		Tag:  okrTagUnfortunately,
 		Goal: 300,
 	},
 	okrTagTier1000Offer: {
-		Tag:  okrTagTier1000Offer,
 		Goal: 50,
 	},
 	okrTagBigtechOffer: {
-		Tag:  okrTagBigtechOffer,
 		Goal: 5,
 	},
 	okrTagFaangOffer: {
-		Tag:  okrTagFaangOffer,
 		Goal: 3,
 	},
 	okrTagSeniorPromo: {
-		Tag:  okrTagSeniorPromo,
 		Goal: 3,
 	},
 	okrTagStaffPromo: {
-		Tag:  okrTagStaffPromo,
 		Goal: 1,
 	},
 	okrTagRussiaRelocation: {
-		Tag:  okrTagRussiaRelocation,
 		Goal: 1,
 	},
+	okrTagPassport: {
+		Goal: 2,
+	},
 	okrTagUsaRelocation: {
-		Tag:  okrTagUsaRelocation,
 		Goal: 1,
 	},
 }
@@ -86,8 +81,9 @@ type okrTemplateData struct {
 	Tier1000      okrProgress
 	Senior        okrProgress
 	Staff         okrProgress
-	Usa           okrProgress
 	Russia        okrProgress
+	Usa           okrProgress
+	Passport      okrProgress
 	Unfortunately okrProgress
 }
 
@@ -132,6 +128,7 @@ var okrMessageTemplate = template.Must(template.New("okr").Parse(`ОКРы 2025:
 Релокация:
 {{.Russia.Current}}/{{.Russia.Goal}} релока в Россию ({{.Russia.Tag}}) {{.Russia.Status}}
 {{.Usa.Current}}/{{.Usa.Goal}} релока в США ({{.Usa.Tag}}) {{.Usa.Status}}
+{{.Passport.Current}}/{{.Passport.Goal}} паспорта ({{.Passport.Tag}}) {{.Passport.Status}}
 
 Анфочантли:
 {{.Unfortunately.Current}}/{{.Unfortunately.Goal}} ({{.Unfortunately.Tag}}) {{.Unfortunately.Status}}`))
@@ -315,13 +312,14 @@ func buildOkrProgressMsg(counts map[okrTag]int) (string, error) {
 	}
 
 	data := okrTemplateData{
+		Tier1000:      build(okrTagTier1000Offer),
 		Bigtech:       build(okrTagBigtechOffer),
 		Faang:         build(okrTagFaangOffer),
-		Tier1000:      build(okrTagTier1000Offer),
 		Senior:        build(okrTagSeniorPromo),
 		Staff:         build(okrTagStaffPromo),
-		Usa:           build(okrTagUsaRelocation),
 		Russia:        build(okrTagRussiaRelocation),
+		Usa:           build(okrTagUsaRelocation),
+		Passport:      build(okrTagPassport),
 		Unfortunately: build(okrTagUnfortunately),
 	}
 
