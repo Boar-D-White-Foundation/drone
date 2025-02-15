@@ -19,3 +19,12 @@ func TestBuildOkrMsg(t *testing.T) {
 	require.NoError(t, err)
 	require.NotEmpty(t, msg)
 }
+
+func TestOkrInit(t *testing.T) {
+	t.Parallel()
+
+	okrs := okrs{Updates: []okrUpdate{{}}}
+	okrs.init()
+	require.NotNil(t, okrs.TotalCount)
+	require.NotNil(t, okrs.Updates[0].Counts)
+}

@@ -98,13 +98,13 @@ type okrs struct {
 	Updates    []okrUpdate    `json:"updates"`
 }
 
-func initOkrs(okrs *okrs) {
-	if okrs.TotalCount == nil {
-		okrs.TotalCount = make(map[okrTag]int)
+func (o *okrs) init() {
+	if o.TotalCount == nil {
+		o.TotalCount = make(map[okrTag]int)
 	}
-	for i := range okrs.Updates {
-		if okrs.Updates[i].Counts == nil {
-			okrs.Updates[i].Counts = make(map[okrTag]int)
+	for i := range o.Updates {
+		if o.Updates[i].Counts == nil {
+			o.Updates[i].Counts = make(map[okrTag]int)
 		}
 	}
 }
@@ -156,7 +156,7 @@ func (s *Service) OnUpdateOkr(ctx context.Context, c tele.Context) error {
 		if err != nil {
 			return fmt.Errorf("get okr values: %w", err)
 		}
-		initOkrs(&okrs)
+		okrs.init()
 
 		for tag, count := range counts {
 			okrs.TotalCount[tag] += count
@@ -195,7 +195,7 @@ func (s *Service) OnRemoveOkr(ctx context.Context, c tele.Context) error {
 		if err != nil {
 			return fmt.Errorf("get okr values: %w", err)
 		}
-		initOkrs(&okrs)
+		okrs.init()
 
 		idx := slices.IndexFunc(okrs.Updates, func(update okrUpdate) bool {
 			return update.Update.Message.ID == msg.ReplyTo.ID
