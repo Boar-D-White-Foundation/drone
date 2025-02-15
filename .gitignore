@@ -5,5 +5,5 @@ chromedriver
 config.yaml
 data/*
 !data/.gitkeep
-.idea/
 drone/data/*
+.idea/

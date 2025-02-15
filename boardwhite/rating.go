@@ -100,9 +100,7 @@ func (s *Service) makeStatsHandler(
 			return nil
 		}
 
-		set := func(reaction tg.Reaction) error {
-			return s.telegram.SetReaction(msg.ID, reaction, false)
-		}
+		set := tg.SetReactionFor(s.telegram, msg.ID)
 		return s.database.Do(ctx, func(tx db.Tx) error {
 			pinnedIDs, err := db.GetJsonDefault[[]int](tx, pinnedMessagesKey, nil)
 			if err != nil {

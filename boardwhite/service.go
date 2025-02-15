@@ -128,7 +128,7 @@ func NewServiceFromConfig(
 	}
 
 	vcLinkRe := regexp.MustCompile(fmt.Sprintf(
-		`^/pdf.+(?P<link>https://%s/[^/]+/\d+)`,
+		`(?P<link>https://%s/[^/]+/\d+)`,
 		strings.Replace(cfg.VC.Domain, ".", `\.`, -1),
 	))
 	serviceCfg := Config{

@@ -81,14 +81,14 @@ func TestDrone(t *testing.T) {
 	err = bw.PublishNCRating(ctx)
 	require.NoError(t, err)
 
+	err = bw.RegisterTasks(dbqRegistry)
+	require.NoError(t, err)
+
 	bw.RegisterHandlers(ctx, tgService)
 	tgService.RegisterHandler(tele.OnText, "OnDummy", func(c tele.Context) error {
 		slog.Info("got update", slog.Any("ctx", c))
 		return nil
 	})
-
-	err = bw.RegisterTasks(dbqRegistry)
-	require.NoError(t, err)
 
 	// assert
 	queue, err := dbq.NewQueue(dbqRegistry, database)

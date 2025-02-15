@@ -2,13 +2,16 @@ package tg
 
 // https://core.telegram.org/bots/api#reactiontype
 var (
-	ReactionClown    = NewReactionEmoji("🤡")
-	ReactionOk       = NewReactionEmoji("👌")
-	ReactionFire     = NewReactionEmoji("🔥")
-	ReactionMoai     = NewReactionEmoji("🗿")
-	ReactionEgor     = NewReactionEmoji("🌚")
-	ReactionThumbsUp = NewReactionEmoji("👍")
-	ReactionHotDog   = NewReactionEmoji("🌭")
+	ReactionClown       = NewReactionEmoji("🤡")
+	ReactionOk          = NewReactionEmoji("👌")
+	ReactionFire        = NewReactionEmoji("🔥")
+	ReactionMoai        = NewReactionEmoji("🗿")
+	ReactionEgor        = NewReactionEmoji("🌚")
+	ReactionThumbsUp    = NewReactionEmoji("👍")
+	ReactionHotDog      = NewReactionEmoji("🌭")
+	ReactionEyes        = NewReactionEmoji("👀")
+	ReactionHeadExplode = NewReactionEmoji("🤯")
+	ReactionWriting     = NewReactionEmoji("✍")
 )
 
 type Reaction struct {

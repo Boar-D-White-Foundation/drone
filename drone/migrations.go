@@ -49,26 +49,18 @@ func addInitialOkrValues(tx db.Tx) error {
 	key := "boardwhite:okr:values"
 
 	type okrs struct {
-		Values  map[string]int        `json:"values"`
-		Updates map[string][]struct{} `json:"updates"`
+		TotalCount map[string]int `json:"total_count"`
 	}
 
-	rejectionTag := "#unfortunately2025"
-	bigtechOfferTag := "#bigtech_offer2025"
-	faangOfferTag := "#faang_offer2025"
-	seniorPromoTag := "#senior_promo2025"
-	staffPromoTag := "#staff_promo2025"
-	usaRelocationTag := "#usa2025"
-
-	okrValues := make(map[string]int)
-	okrValues[rejectionTag] = 33
-	okrValues[bigtechOfferTag] = 1
-	okrValues[faangOfferTag] = 1
-	okrValues[seniorPromoTag] = 0
-	okrValues[staffPromoTag] = 0
-	okrValues[usaRelocationTag] = 0
-
-	if err := db.SetJson(tx, key, okrs{Values: okrValues, Updates: make(map[string][]struct{})}); err != nil {
+	counts := map[string]int{
+		"#unfortunately2025": 39,
+		"#bigtech_offer2025": 1,
+		"#faang_offer2025":   1,
+		"#senior_promo2025":  0,
+		"#staff_promo2025":   0,
+		"#usa2025":           0,
+	}
+	if err := db.SetJson(tx, key, okrs{TotalCount: counts}); err != nil {
 		return fmt.Errorf("set %q: %w", key, err)
 	}
 
