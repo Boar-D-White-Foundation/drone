@@ -25,6 +25,10 @@ func (s *Service) OnGenerateVCPdf(ctx context.Context, c tele.Context) error {
 		return set(tg.ReactionClown)
 	}
 
+	if s.mediaGenerator == nil {
+		return set(tg.ReactionHeadExplode)
+	}
+
 	if err := set(tg.ReactionEyes); err != nil {
 		return fmt.Errorf("set progress reaction for vc pdf generation: %w", err)
 	}

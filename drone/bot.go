@@ -29,7 +29,7 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 	}()
 
 	var mediaGenerator *media.Generator
-	if cfg.Features.SnippetsGenerationEnabled {
+	if cfg.Features.RodEnabled {
 		browser, cleanup, err := chrome.NewRemote(cfg.Rod.Host, cfg.Rod.Port)
 		if err != nil {
 			return err
@@ -37,9 +37,6 @@ func startDrone(ctx context.Context, cfg config.Config, alerts *alert.Manager) e
 		defer cleanup()
 
 		mediaGenerator = media.NewGeneratorFromCfg(cfg, browser)
-		if err := mediaGenerator.WarmUpCaches(ctx); err != nil {
-			return fmt.Errorf("fonts cache loading: %w", err)
-		}
 	}
 
 	lcClient := leetcode.NewClientFromConfig(cfg)

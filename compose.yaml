@@ -3,8 +3,6 @@ services:
     restart: always
     depends_on:
       - rod
-      - carbon
-      - rayso
       - javahighlight
     build:
       context: .
@@ -17,18 +15,6 @@ services:
     image: ghcr.io/go-rod/rod:v0.116.1
     volumes:
       - ./data:/opt/drone/data
-
-  carbon:
-    restart: always
-    build:
-      context: .
-      dockerfile: Dockerfile.carbon
-
-  rayso:
-    restart: always
-    build:
-      context: .
-      dockerfile: Dockerfile.rayso
 
   javahighlight:
     restart: always

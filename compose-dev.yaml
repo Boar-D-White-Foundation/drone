@@ -8,22 +8,6 @@ services:
     volumes:
       - ./data:/opt/drone/data
 
-  carbon:
-    restart: always
-    build:
-      context: .
-      dockerfile: Dockerfile.carbon
-    ports:
-      - '3000:3000'
-
-  rayso:
-    restart: always
-    build:
-      context: .
-      dockerfile: Dockerfile.rayso
-    ports:
-      - '3001:3001'
-
   javahighlight:
     restart: always
     build:

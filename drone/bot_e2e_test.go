@@ -41,8 +41,6 @@ func TestDrone(t *testing.T) {
 	defer cleanup()
 
 	mediaGenerator := media.NewGeneratorFromCfg(cfg, browser)
-	err = mediaGenerator.WarmUpCaches(ctx)
-	require.NoError(t, err)
 
 	lcClient := leetcode.NewClientFromConfig(cfg)
 

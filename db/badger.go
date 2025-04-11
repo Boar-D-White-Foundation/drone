@@ -13,7 +13,7 @@ import (
 )
 
 type BadgerDB struct {
-	sync.Mutex
+	mu         sync.Mutex
 	badgerOpts badger.Options
 	bdb        *badger.DB
 }
@@ -89,8 +89,8 @@ func (b *BadgerDB) Stop() {
 }
 
 func (b *BadgerDB) Do(ctx context.Context, f func(Tx) error) error {
-	b.Lock()
-	defer b.Unlock()
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 	err := b.bdb.Update(func(btx *badger.Txn) error {
 		tx := BadgerTx{btx: btx}
@@ -105,8 +105,8 @@ func (b *BadgerDB) Do(ctx context.Context, f func(Tx) error) error {
 
 func (b *BadgerDB) Dump(ctx context.Context) ([]KV, error) {
 	// badger already has a file level lock
-	b.Lock()
-	defer b.Unlock()
+	b.mu.Lock()
+	defer b.mu.Unlock()
 
 	var dump []KV
 	err := b.bdb.View(func(btx *badger.Txn) error {
