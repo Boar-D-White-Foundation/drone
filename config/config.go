@@ -30,7 +30,7 @@ type Config struct {
 	BadgerPath string `yaml:"badger_path"`
 
 	Features struct {
-		SnippetsGenerationEnabled bool `yaml:"snippets_generation_enabled"`
+		RodEnabled bool `yaml:"rod_enabled"`
 	} `yaml:"features"`
 
 	Tg struct {
@@ -46,12 +46,7 @@ type Config struct {
 	} `yaml:"rod"`
 
 	MediaGenerator struct {
-		CarbonURL          string `yaml:"carbon_url"`
-		RaysoURL           string `yaml:"rayso_url"`
 		JavaHighlightURL   string `yaml:"javahighlight_url"`
-		UseCarbon          bool   `yaml:"use_carbon"`
-		UseRayso           bool   `yaml:"use_rayso"`
-		UseJavaHighlight   bool   `yaml:"use_javahighlight"`
 		RodDownloadsFolder string `yaml:"rod_downloads_folder"`
 	} `yaml:"media_generator"`
 
@@ -144,23 +139,6 @@ func Load(filename string) (Config, error) {
 }
 
 func (cfg Config) validate() error {
-	// TODO: 2 phase parsing to be able to use enums
-	enabledFlags := []bool{
-		cfg.MediaGenerator.UseCarbon,
-		cfg.MediaGenerator.UseRayso,
-		cfg.MediaGenerator.UseJavaHighlight,
-	}
-	enabledCount := 0
-	for _, flag := range enabledFlags {
-		if flag {
-			enabledCount++
-		}
-	}
-
-	if enabledCount != 1 {
-		return errors.New("only one of use_carbon, use_rayso, and use_javahighlight should be enabled")
-	}
-
 	if !slices.Equal(cfg.DailyStickerIDs, iterx.Uniq(cfg.DailyStickerIDs)) {
 		return errors.New("all daily_sticker_ids must be unique")
 	}

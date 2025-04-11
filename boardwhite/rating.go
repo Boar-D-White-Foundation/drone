@@ -141,7 +141,7 @@ func (s *Service) makeStatsHandler(
 					return set(tg.ReactionClown)
 				}
 
-				if s.cfg.SnippetsGenerationEnabled {
+				if s.mediaGenerator != nil {
 					err := s.tasks.postCodeSnippet.Schedule(tx, 1, postCodeSnippetArgs{
 						MessageID:  msg.ID,
 						ThreadID:   msg.ThreadID,

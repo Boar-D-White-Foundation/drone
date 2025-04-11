@@ -54,7 +54,6 @@ type Config struct {
 	DailyStickersIDs           []string
 	DailyChickensStickerIDs    []string
 	DpStickerID                string
-	SnippetsGenerationEnabled  bool
 	Mocks                      map[string]MockConfig
 	FloodThreadID              int
 	GreetingsNewUsersTemplates []string
@@ -76,7 +75,7 @@ type Service struct {
 	telegram           tg.Client
 	lcChickenQuestions lcChickenQuestions
 	alerts             *alert.Manager
-	mediaGenerator     *media.Generator
+	mediaGenerator     *media.Generator // can be nil
 	lcClient           *leetcode.Client
 	vcLinkRe           *regexp.Regexp
 }
@@ -138,7 +137,6 @@ func NewServiceFromConfig(
 		DailyStickersIDs:           cfg.DailyStickerIDs,
 		DailyChickensStickerIDs:    cfg.DailyChickensStickerIDs,
 		DpStickerID:                cfg.DPStickerID,
-		SnippetsGenerationEnabled:  cfg.Features.SnippetsGenerationEnabled,
 		Mocks:                      mocks,
 		FloodThreadID:              cfg.Boardwhite.FloodThreadID,
 		GreetingsNewUsersTemplates: cfg.GreetingsNewUsersTemplates,

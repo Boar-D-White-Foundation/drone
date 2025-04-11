@@ -1,6 +1,6 @@
 badger_path: "data/badger"
 features:
-  snippets_generation_enabled: false
+  rod_enabled: true
 tg:
   api_key: ""
   long_poller_timeout: "10s"
@@ -10,12 +10,7 @@ rod:
   port: 7317
   downloads_folder: "/opt/drone/data/rod/downloads"
 media_generator:
-  carbon_url: "http://carbon:3000"
-  rayso_url: "http://rayso:3001"
   javahighlight_url: "http://javahighlight:3002"
-  use_carbon: false
-  use_rayso: false
-  use_javahighlight: true
   rod_downloads_folder: "/opt/drone/data/rod/downloads"
 boardwhite:
   chat_id: -1001640461540
@@ -146,7 +141,7 @@ mocks:
       - "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"
   - username: "romangoward"
     period: "48h"
-    sticker_ids: 
+    sticker_ids:
       - "CAACAgEAAxkBAAEM4mBm9b3oi05lz2KXbyG35vbZnbqJsQACCAADkzooTd0mr2l96bDKNgQ"
       - "CAACAgIAAxkBAAEM4mJm9b4J1P3GcSmJNgoz7LDfy_0ULQACexoAAqr0AUsWxy9aRgffRzYE"
 greetings_new_users_templates:

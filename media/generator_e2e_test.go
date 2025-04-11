@@ -23,29 +23,15 @@ func TestSnippetsGeneration(t *testing.T) {
 	//browser, cleanup, err := chrome.NewLocal()
 	require.NoError(t, err)
 	defer cleanup()
-	browser.ServeMonitor("127.0.0.1:56174")
+	//browser.ServeMonitor("127.0.0.1:56174")
 
 	mediaGenerator := media.NewGeneratorFromCfg(cfg, browser)
-	err = mediaGenerator.WarmUpCaches(ctx)
-	require.NoError(t, err)
 
-	codeBytes, err := os.ReadFile("./image/testdata/main.rs")
+	codeBytes, err := os.ReadFile("./media/testdata/main.rs")
 	require.NoError(t, err)
 	code := string(codeBytes)
 
-	buf, err := mediaGenerator.GenerateCodeSnippetCarbon(ctx, "1", leetcode.LangGO, code)
-	require.NoError(t, err)
-
-	err = os.WriteFile("snippet_carbon.png", buf, 0600)
-	require.NoError(t, err)
-
-	buf, err = mediaGenerator.GenerateCodeSnippetRayso(ctx, "1", leetcode.LangGO, code)
-	require.NoError(t, err)
-
-	err = os.WriteFile("snippet_rayso.png", buf, 0600)
-	require.NoError(t, err)
-
-	buf, err = mediaGenerator.GenerateCodeSnippetJavaHighlight(ctx, "1", leetcode.LangGO, code)
+	buf, err := mediaGenerator.GenerateCodeSnippet(ctx, "1", leetcode.LangGO, code)
 	require.NoError(t, err)
 
 	err = os.WriteFile("snippet_java_highlight.png", buf, 0600)
