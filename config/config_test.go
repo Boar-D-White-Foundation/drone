@@ -1,7 +1,6 @@
 package config
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -16,8 +15,8 @@ func TestConfigHideSecrets(t *testing.T) {
 
 	cfg.Tg.Key = "secret"
 	s := cfg.String()
-	require.False(t, strings.Contains(s, "apiKey"))
-	require.False(t, strings.Contains(s, cfg.Tg.Key))
+	require.NotContains(t, s, "apiKey")
+	require.NotContains(t, s, cfg.Tg.Key)
 }
 
 func TestDefault(t *testing.T) {
