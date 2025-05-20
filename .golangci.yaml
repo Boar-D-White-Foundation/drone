@@ -9,3 +9,5 @@ linters:
   disable:
     - exhaustive
     - musttag
+    - recvcheck
+

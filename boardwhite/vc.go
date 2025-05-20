@@ -15,13 +15,15 @@ func (s *Service) OnGenerateVCPdf(ctx context.Context, c tele.Context) error {
 	if msg == nil || chat == nil || chat.ID != s.cfg.ChatID {
 		return nil
 	}
-	if !strings.HasPrefix(msg.Text, "/pdf") {
+
+	cmdPrefix := "/pdf"
+	if !(strings.HasPrefix(msg.Text, cmdPrefix) || strings.HasPrefix(msg.Caption, cmdPrefix)) {
 		return nil
 	}
 
 	set := tg.SetReactionFor(s.telegram, msg.ID)
-	match := s.vcLinkRe.FindStringSubmatch(msg.Text)
-	if len(match) < 2 {
+	link := s.getVcLink(msg)
+	if link == "" {
 		return set(tg.ReactionClown)
 	}
 
@@ -34,7 +36,6 @@ func (s *Service) OnGenerateVCPdf(ctx context.Context, c tele.Context) error {
 	}
 
 	// TODO: move to dbq
-	link := match[1]
 	buf, err := s.mediaGenerator.GenerateVCPagePdf(ctx, link)
 	if err != nil {
 		if err := set(tg.ReactionHeadExplode); err != nil {
@@ -49,4 +50,21 @@ func (s *Service) OnGenerateVCPdf(ctx context.Context, c tele.Context) error {
 	}
 
 	return nil
+}
+
+func (s *Service) getVcLink(msg *tele.Message) string {
+	options := make([]string, 0, 4)
+	options = append(options, msg.Text, msg.Caption)
+	if msg.ReplyTo != nil {
+		options = append(options, msg.ReplyTo.Text, msg.ReplyTo.Caption)
+	}
+
+	for _, opt := range options {
+		match := s.vcLinkRe.FindStringSubmatch(opt)
+		if len(match) >= 2 {
+			return match[1]
+		}
+	}
+
+	return ""
 }
