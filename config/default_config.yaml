@@ -141,7 +141,7 @@ mocks:
     sticker_ids:
       - "CAACAgIAAxkBAAELwGNl-qw2RTN5nAeBv3aIoXdXUgXBywACcjUAAkbqsUsFx3HeYBqyNjQE"
   - username: "romangoward"
-    period: "48h"
+    period: "130h"
     sticker_ids:
       - "CAACAgEAAxkBAAEM4mBm9b3oi05lz2KXbyG35vbZnbqJsQACCAADkzooTd0mr2l96bDKNgQ"
       - "CAACAgIAAxkBAAEM4mJm9b4J1P3GcSmJNgoz7LDfy_0ULQACexoAAqr0AUsWxy9aRgffRzYE"
