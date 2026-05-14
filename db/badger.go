@@ -65,7 +65,7 @@ func buildDBOpts(path string) badger.Options {
 		WithVerifyValueChecksum(true).
 		WithChecksumVerificationMode(options.OnTableAndBlockRead).
 		// https://github.com/dgraph-io/badger/issues/1297#issuecomment-612941482
-		WithValueLogFileSize(1024 * 1024 * 16).
+		WithValueLogFileSize(4 * 1 << 30).
 		WithNumVersionsToKeep(1).
 		WithCompactL0OnClose(true).
 		WithNumLevelZeroTables(1).
